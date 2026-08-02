@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Measure DI RevOps - Company Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-guard.js"></script>
+  </head>
+  <body class="bg-slate-50 min-h-screen text-slate-800">
+    
+    <!-- Navigation Bar Container -->
+    <div id="navbar-container"></div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      
+      <!-- Header & Controls -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Company Executive Dashboard</h1>
+          <p class="text-sm text-slate-500 mt-1">Measure DI Technologies — Revenue Operations & AOP Achievement Overview</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-ping"></span> Live RevOps Sync
+          </span>
+          <button onclick="renderDashboardData()" class="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-semibold text-xs rounded-xl border border-indigo-200 transition-colors flex items-center space-x-1 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>Refresh Data</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3 AOP Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="aop-summary-cards">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Vertical Achievement Comparison & Chart -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Target vs Achieved by Vertical -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Vertical Performance Breakdown</h2>
+              <p class="text-xs text-slate-500">Contribution-weighted revenue vs AOP Targets</p>
+            </div>
+            <select id="dash-fy-select" onchange="renderDashboardData()" class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+              <option value="All">All Time (2024 - 2026)</option>
+              <option value="2024-25">FY 2024-25</option>
+              <option value="2025-26" selected>FY 2025-26</option>
+              <option value="2026-27">FY 2026-27</option>
+            </select>
+          </div>
+
+          <div id="vertical-progress-bars" class="space-y-6">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Today's Pending Follow-ups -->
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+              <span>Pending Follow-ups Today</span>
+            </h2>
+            <a href="leads.html" class="text-xs font-semibold text-indigo-600 hover:underline">View All Leads &rarr;</a>
+          </div>
+          <div id="pending-followups-list" class="space-y-3 max-h-80 overflow-y-auto">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Team Leaderboard Table -->
+      <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+        <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Team Leaderboard & KPI Achievement</h2>
+            <p class="text-xs text-slate-500">Individual contribution-weighted achieved revenue against primary AOP targets</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <input type="text" id="leaderboard-search" oninput="filterLeaderboard()" placeholder="Search team member..." class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Employee</th>
+                <th class="py-3 px-4">Designation & Vertical</th>
+                <th class="py-3 px-4 text-right">Annual Target</th>
+                <th class="py-3 px-4 text-right">Achieved Revenue</th>
+                <th class="py-3 px-4 text-right">% Achieved</th>
+                <th class="py-3 px-4 text-center">Status</th>
+                <th class="py-3 px-4 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-tbody" class="divide-y divide-slate-100 text-xs">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        if (checkAuth(['admin', 'manager'])) {
+          renderDashboardData();
+        }
+      });
+
+      function renderDashboardData() {
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+        var rawOrders = window.RevOpsStore.getCollection('orders') || [];
+        var selectedFy = document.getElementById('dash-fy-select') ? document.getElementById('dash-fy-select').value : 'All';
+        var orders = rawOrders.filter(function(ord) {
+          if (selectedFy === 'All') return true;
+          var fy = typeof getFinancialYear === 'function' ? getFinancialYear(ord.orderDate) : '2025-26';
+          return fy === selectedFy;
+        });
+        var leads = window.RevOpsStore.getCollection('leads') || [];
+        var aopTargets = window.RevOpsStore.getCollection('aopTargets') || [];
+
+        // 1. Calculate Contribution-Weighted Revenue for each employee & vertical
+        var employeeAchievedMap = {};
+        employees.forEach(function(e) {
+          employeeAchievedMap[e.employeeId] = 0;
+        });
+
+        var verticalAchievedMap = {
+          "Sales": 0,
+          "Service/Parts": 0,
+          "Projects": 0
+        };
+
+        var totalCompanyAchieved = 0;
+
+        orders.forEach(function(ord) {
+          if (ord.status === "Won") {
+            var val = Number(ord.orderValue) || 0;
+            totalCompanyAchieved += val;
+
+            // Map contributors
+            var contribs = ord.contributors || [];
+            if (!Array.isArray(contribs) || contribs.length === 0) {
+              contribs = [{ employeeId: ord.employeeId, contributionPct: 100 }];
+            }
+
+            contribs.forEach(function(c) {
+              var pct = Number(c.contributionPct) || 0;
+              var share = (val * pct) / 100;
+              if (employeeAchievedMap[c.employeeId] !== undefined) {
+                employeeAchievedMap[c.employeeId] += share;
+              } else {
+                employeeAchievedMap[c.employeeId] = share;
+              }
+            });
+
+            // Vertical aggregation
+            var rawV = ord.vertical || "Sales";
+            var vName = "Sales";
+            if (rawV === "Sales") {
+              vName = "Sales";
+            } else if (rawV.indexOf("Projects") !== -1 && rawV.indexOf("Service") === -1) {
+              vName = "Projects";
+            } else {
+              vName = "Service/Parts";
+            }
+            if (verticalAchievedMap[vName] !== undefined) {
+              verticalAchievedMap[vName] += val;
+            } else {
+              verticalAchievedMap[vName] = val;
+            }
+          }
+        });
+
+        // 2. Compute Company AOP Targets based on Selected Financial Year
+        var fyDefaults = {
+          '2024-25': { company: 80000000, sales: 20000000, service: 60000000, label: 'FY 24-25' },
+          '2025-26': { company: 100000000, sales: 25000000, service: 75000000, label: 'FY 25-26' },
+          '2026-27': { company: 66666667, sales: 16666667, service: 50000000, label: 'FY 26-27 (4M Pro-Rata)' },
+          'All':     { company: 246666667, sales: 61666667, service: 185000000, label: 'All FYs Combined' }
+        };
+        var def = fyDefaults[selectedFy] || fyDefaults['All'];
+        var companyTotalTarget = def.company;
+        var salesTarget = def.sales;
+        var serviceProjectsTarget = def.service;
+
+        var customRecord = aopTargets.find(function(a) { 
+          return (selectedFy === 'All' || a.financialYear === selectedFy) && (a.companyTarget !== undefined || a.verticalTargets !== undefined); 
+        });
+        if (customRecord) {
+          if (customRecord.companyTarget !== undefined) companyTotalTarget = customRecord.companyTarget;
+          if (customRecord.verticalTargets) {
+            salesTarget = customRecord.verticalTargets["Sales"] || salesTarget;
+            serviceProjectsTarget = (customRecord.verticalTargets["Service/Parts"] || 0) + (customRecord.verticalTargets["Projects"] || 0) || serviceProjectsTarget;
+          }
+        } else {
+          var compItem = aopTargets.find(function(a) { return (selectedFy === 'All' || a.financialYear === selectedFy) && a.lineItem && a.lineItem.indexOf('Company Total') !== -1; });
+          if (compItem && compItem.annualTarget) companyTotalTarget = compItem.annualTarget;
+
+          var sItem = aopTargets.find(function(a) { return (selectedFy === 'All' || a.financialYear === selectedFy) && a.lineItem === 'Sales Vertical Revenue'; });
+          if (sItem && sItem.annualTarget) salesTarget = sItem.annualTarget;
+
+          var spItem = aopTargets.find(function(a) { return (selectedFy === 'All' || a.financialYear === selectedFy) && a.lineItem && a.lineItem.indexOf('Service/Parts') !== -1; });
+          if (spItem && spItem.annualTarget) serviceProjectsTarget = spItem.annualTarget;
+        }
+
+        if (selectedFy === 'All') {
+          var companySum = 0;
+          aopTargets.forEach(function(a) {
+            if (a.lineItem && a.lineItem.indexOf('Company Total') !== -1) {
+              companySum += (Number(a.annualTarget) || 0);
+            }
+          });
+          if (companySum > 0) companyTotalTarget = companySum;
+        }
+
+        // Render Summary Cards
+        var cardsHtml = `
+          <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Company Total AOP</span>
+              <span class="p-2 rounded-xl bg-indigo-50 text-indigo-600 font-bold text-xs">Total</span>
+            </div>
+            <div class="text-2xl font-black text-slate-900 tracking-tight">${formatINR(totalCompanyAchieved)}</div>
+            <div class="text-xs text-slate-500 mt-1">Target: <span class="font-semibold text-slate-700">${formatINR(companyTotalTarget)}</span></div>
+            <div class="w-full bg-slate-100 h-2.5 rounded-full mt-4 overflow-hidden">
+              <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: ${Math.min(100, Math.round((totalCompanyAchieved / companyTotalTarget) * 100))}%"></div>
+            </div>
+            <div class="flex justify-between items-center text-[11px] font-semibold text-slate-500 mt-2">
+              <span>Overall Achievement</span>
+              <span class="text-indigo-600 font-bold">${Math.round((totalCompanyAchieved / companyTotalTarget) * 100)}%</span>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Sales Vertical</span>
+              <span class="p-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-xs">Sales</span>
+            </div>
+            <div class="text-2xl font-black text-slate-900 tracking-tight">${formatINR(verticalAchievedMap["Sales"])}</div>
+            <div class="text-xs text-slate-500 mt-1">Target: <span class="font-semibold text-slate-700">${formatINR(salesTarget)}</span></div>
+            <div class="w-full bg-slate-100 h-2.5 rounded-full mt-4 overflow-hidden">
+              <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: ${Math.min(100, Math.round((verticalAchievedMap["Sales"] / salesTarget) * 100))}%"></div>
+            </div>
+            <div class="flex justify-between items-center text-[11px] font-semibold text-slate-500 mt-2">
+              <span>Vertical Achievement</span>
+              <span class="text-blue-600 font-bold">${Math.round((verticalAchievedMap["Sales"] / salesTarget) * 100)}%</span>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 relative overflow-hidden">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Service / Parts / Projects</span>
+              <span class="p-2 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-xs">Service</span>
+            </div>
+            <div class="text-2xl font-black text-slate-900 tracking-tight">${formatINR((verticalAchievedMap["Service/Parts"] || 0) + (verticalAchievedMap["Projects"] || 0))}</div>
+            <div class="text-xs text-slate-500 mt-1">Target: <span class="font-semibold text-slate-700">${formatINR(serviceProjectsTarget)}</span></div>
+            <div class="w-full bg-slate-100 h-2.5 rounded-full mt-4 overflow-hidden">
+              <div class="bg-emerald-600 h-2.5 rounded-full transition-all duration-500" style="width: ${Math.min(100, Math.round((((verticalAchievedMap["Service/Parts"] || 0) + (verticalAchievedMap["Projects"] || 0)) / serviceProjectsTarget) * 100))}%"></div>
+            </div>
+            <div class="flex justify-between items-center text-[11px] font-semibold text-slate-500 mt-2">
+              <span>Vertical Achievement</span>
+              <span class="text-emerald-600 font-bold">${Math.round((((verticalAchievedMap["Service/Parts"] || 0) + (verticalAchievedMap["Projects"] || 0)) / serviceProjectsTarget) * 100)}%</span>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('aop-summary-cards').innerHTML = cardsHtml;
+
+        // Render Vertical Bars
+        var serviceOnlyTarget = Math.round(serviceProjectsTarget * 0.8);
+        var projectsOnlyTarget = serviceProjectsTarget - serviceOnlyTarget;
+        var serviceAchieved = verticalAchievedMap["Service/Parts"] || 0;
+        var projectsAchieved = verticalAchievedMap["Projects"] || 0;
+        var salesAchieved = verticalAchievedMap["Sales"] || 0;
+
+        var verticalBarsHtml = `
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs font-semibold text-slate-700">
+              <span>Equipment Sales Vertical</span>
+              <span>${formatINR(salesAchieved)} / ${formatINR(salesTarget)} (${salesTarget > 0 ? Math.round((salesAchieved/salesTarget)*100) : 0}%)</span>
+            </div>
+            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+              <div class="bg-indigo-600 h-3 rounded-full" style="width: ${salesTarget > 0 ? Math.min(100, Math.round((salesAchieved/salesTarget)*100)) : 0}%"></div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs font-semibold text-slate-700">
+              <span>Service & AMC Vertical</span>
+              <span>${formatINR(serviceAchieved)} / ${formatINR(serviceOnlyTarget)} (${serviceOnlyTarget > 0 ? Math.round((serviceAchieved/serviceOnlyTarget)*100) : 0}%)</span>
+            </div>
+            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+              <div class="bg-emerald-600 h-3 rounded-full" style="width: ${serviceOnlyTarget > 0 ? Math.min(100, Math.round((serviceAchieved/serviceOnlyTarget)*100)) : 0}%"></div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs font-semibold text-slate-700">
+              <span>Steel Plant Projects Vertical</span>
+              <span>${formatINR(projectsAchieved)} / ${formatINR(projectsOnlyTarget)} (${projectsOnlyTarget > 0 ? Math.round((projectsAchieved/projectsOnlyTarget)*100) : 0}%)</span>
+            </div>
+            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+              <div class="bg-blue-600 h-3 rounded-full" style="width: ${projectsOnlyTarget > 0 ? Math.min(100, Math.round((projectsAchieved/projectsOnlyTarget)*100)) : 0}%"></div>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('vertical-progress-bars').innerHTML = verticalBarsHtml;
+
+        // Render Pending Follow-ups Today
+        var today = getFormattedToday();
+        var pendingLeads = leads.filter(function(l) {
+          return l.status !== "Won" && l.status !== "Lost";
+        });
+
+        var pendingHtml = "";
+        if (pendingLeads.length === 0) {
+          pendingHtml = `<div class="p-4 text-center text-xs text-slate-400">No pending lead follow-ups for today.</div>`;
+        } else {
+          pendingLeads.forEach(function(l) {
+            pendingHtml += `
+              <div class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors flex items-center justify-between">
+                <div>
+                  <div class="font-semibold text-xs text-slate-900">${l.customerName}</div>
+                  <div class="text-[11px] text-slate-500">${l.vertical} &bull; Expected: ${formatINR(l.expectedValue)}</div>
+                </div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-800">${l.status}</span>
+              </div>
+            `;
+          });
+        }
+        document.getElementById('pending-followups-list').innerHTML = pendingHtml;
+
+        // Render Leaderboard
+        window.currentLeaderboardEmps = employees;
+        window.currentAchievedMap = employeeAchievedMap;
+        renderLeaderboardRows(employees, employeeAchievedMap);
+      }
+
+      function renderLeaderboardRows(employees, achievedMap) {
+        var tbody = document.getElementById('leaderboard-tbody');
+        tbody.innerHTML = "";
+        var selectedFy = document.getElementById('dashboard-fy-select') ? document.getElementById('dashboard-fy-select').value : 'All';
+        var kras = window.RevOpsStore.getCollection('kraTargets') || [];
+
+        function getEmployeeTarget(emp, fy, kraList) {
+          var empId = typeof emp === 'object' ? emp.employeeId : emp;
+          var empKras = kraList.filter(function(k) {
+            if (k.employeeId !== empId) return false;
+            var isAmt = (k.kpiType === "Amount" || (k.kraName || "").toLowerCase().indexOf("order") !== -1 || (k.kraName || "").toLowerCase().indexOf("spares") !== -1);
+            if (!isAmt) return false;
+            if (!k.financialYear) return true;
+            return fy === 'All' || k.financialYear === fy;
+          });
+
+          if (empKras.length > 0) {
+            var tot = 0;
+            empKras.forEach(function(k) {
+              tot += (Number(k.annualTarget) || Number(k.targetValue) || 0);
+            });
+            if (tot > 0) return tot;
+          }
+
+          var raw = typeof emp === 'object' ? (Number(emp.primaryAopTarget) || 0) : 0;
+          if (!raw) return 0;
+          if (fy === '2024-25') return Math.round(raw * 0.4);
+          if (fy === '2025-26') return Math.round(raw * 0.5);
+          if (fy === '2026-27') return Math.round(raw * 0.333333);
+          if (fy === 'All') return Math.round(raw * 1.233333);
+          return raw;
+        }
+
+        employees.forEach(function(emp) {
+          if (emp.employeeId === 'E-001') return; // Business Head leads everyone, excluded from individual leaderboard
+          var target = getEmployeeTarget(emp, selectedFy, kras);
+          var achieved = Number(achievedMap[emp.employeeId]) || 0;
+          var pct = target > 0 ? Math.round((achieved / target) * 100) : 0;
+
+          var pillClass = "bg-rose-100 text-rose-800";
+          var statusText = "Needs Push";
+          if (pct >= 90) {
+            pillClass = "bg-emerald-100 text-emerald-800";
+            statusText = "On Track";
+          } else if (pct >= 70) {
+            pillClass = "bg-amber-100 text-amber-800";
+            statusText = "Moderate";
+          }
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-semibold text-slate-900">
+              <div class="flex items-center space-x-2">
+                <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center shrink-0">
+                  ${emp.fullName.charAt(0)}
+                </div>
+                <div>
+                  <div class="font-bold text-slate-900">${emp.fullName}</div>
+                  <div class="text-[10px] text-slate-400 font-mono">${emp.employeeId}</div>
+                </div>
+              </div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="text-slate-800 font-medium">${emp.designation}</div>
+              <div class="text-[11px] text-slate-500">${emp.vertical}</div>
+            </td>
+            <td class="py-3 px-4 text-right font-medium text-slate-600">${formatINR(target)}</td>
+            <td class="py-3 px-4 text-right font-bold text-slate-900">${formatINR(achieved)}</td>
+            <td class="py-3 px-4 text-right font-black text-indigo-600">${pct}%</td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${pillClass}">${statusText}</span>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <a href="my-scorecard.html?employeeId=${emp.employeeId}" class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs hover:underline">
+                View Scorecard &rarr;
+              </a>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function filterLeaderboard() {
+        var query = document.getElementById('leaderboard-search').value.toLowerCase();
+        if (!window.currentLeaderboardEmps) return;
+        var filtered = window.currentLeaderboardEmps.filter(function(e) {
+          return e.fullName.toLowerCase().includes(query) || e.employeeId.toLowerCase().includes(query) || e.vertical.toLowerCase().includes(query);
+        });
+        renderLeaderboardRows(filtered, window.currentAchievedMap);
+      }
+    </script>
+  </body>
+</html>

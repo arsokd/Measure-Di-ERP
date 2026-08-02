@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Measure DI RevOps - Attendance Punch In/Out</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-guard.js"></script>
+  </head>
+  <body class="bg-slate-50 min-h-screen text-slate-800">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      
+      <!-- Top Title & Current Date/Status Banner -->
+      <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-widest text-indigo-600">Daily Attendance Control</span>
+          <h1 class="text-3xl font-black text-slate-900 tracking-tight mt-1" id="today-date-display">01/08/2026</h1>
+          <p class="text-sm font-semibold text-slate-500 mt-1" id="current-attendance-status-text">Status: Checking status...</p>
+        </div>
+
+        <div id="att-filter-container" class="hidden flex items-center space-x-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">View History For:</label>
+          <select id="att-filter-emp" onchange="onAttFilterChange()" class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+      </div>
+
+      <!-- Punch Actions Card (Self Only) -->
+      <div id="punch-actions-card" class="bg-white p-8 rounded-2xl shadow-xs border border-slate-200 space-y-6">
+        <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Punch Actions & DWM Compliance Gate</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Punch In Column -->
+          <div class="bg-emerald-50/60 p-6 rounded-2xl border border-emerald-100 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center space-x-2 text-emerald-800 font-bold text-base mb-1">
+                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                <span>Morning Punch In</span>
+              </div>
+              <p class="text-xs text-emerald-700">Requires at least 1 planned DWM activity logged for today.</p>
+            </div>
+
+            <div id="punch-in-warning-box" class="hidden p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 space-y-2">
+              <div class="flex items-center space-x-1 font-semibold">
+                <span>⚠️ Please plan today's DWM activities first.</span>
+              </div>
+              <a href="dwm.html" class="inline-block px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] rounded-lg transition-colors">
+                Go to DWM Plan &rarr;
+              </a>
+            </div>
+
+            <button id="punch-in-btn" onclick="executePunchIn()" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span>Punch In Now</span>
+            </button>
+          </div>
+
+          <!-- Punch Out Column -->
+          <div class="bg-rose-50/60 p-6 rounded-2xl border border-rose-100 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center space-x-2 text-rose-800 font-bold text-base mb-1">
+                <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                <span>Evening Punch Out</span>
+              </div>
+              <p class="text-xs text-rose-700">Requires all today's DWM activities to be updated (non-Pending).</p>
+            </div>
+
+            <div id="punch-out-warning-box" class="hidden p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 space-y-2">
+              <div class="flex items-center space-x-1 font-semibold" id="pending-dwm-msg">
+                <span>⚠️ Please update accomplishment for all today's DWM activities first.</span>
+              </div>
+              <a href="dwm.html" class="inline-block px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] rounded-lg transition-colors">
+                Go to DWM Accomplishment &rarr;
+              </a>
+            </div>
+
+            <button id="punch-out-btn" onclick="executePunchOut()" class="w-full py-4 bg-rose-600 hover:bg-rose-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <span>Punch Out Now</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Attendance History Table -->
+      <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden space-y-4">
+        <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Attendance History</h2>
+            <p class="text-xs text-slate-500" id="att-history-subtitle">Showing attendance records and DWM compliance snapshots</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Filter Period:</label>
+            <select id="att-period-filter" onchange="renderAttendanceUI(viewingAttEmpId)" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold focus:outline-none">
+              <option value="All">All 24 Months</option>
+              <option value="2024-25">FY 2024-25</option>
+              <option value="2025-26" selected>FY 2025-26</option>
+              <option value="2026-27">FY 2026-27</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Date</th>
+                <th class="py-3 px-4">Punch In Time</th>
+                <th class="py-3 px-4">Punch Out Time</th>
+                <th class="py-3 px-4 text-center">Worked Hours</th>
+                <th class="py-3 px-4 text-center">DWM Compliance</th>
+                <th class="py-3 px-4 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="att-history-tbody" class="divide-y divide-slate-100 text-xs">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <script>
+      var viewingAttEmpId = null;
+
+      document.addEventListener('DOMContentLoaded', function() {
+        if (checkAuth(['admin', 'manager', 'staff'])) {
+          initAttendancePage();
+        }
+      });
+
+      function initAttendancePage() {
+        var userRole = localStorage.getItem('userRole');
+        var myEmpId = localStorage.getItem('employeeId');
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+
+        document.getElementById('today-date-display').innerText = getFormattedToday();
+
+        if (userRole === 'admin' || userRole === 'manager') {
+          var container = document.getElementById('att-filter-container');
+          var dropdown = document.getElementById('att-filter-emp');
+          container.classList.remove('hidden');
+
+          dropdown.innerHTML = "";
+          employees.forEach(function(e) {
+            var opt = document.createElement('option');
+            opt.value = e.employeeId;
+            opt.innerText = e.fullName + " (" + e.employeeId + ")";
+            if (e.employeeId === myEmpId) opt.selected = true;
+            dropdown.appendChild(opt);
+          });
+        }
+
+        viewingAttEmpId = myEmpId;
+        renderAttendanceUI(myEmpId);
+      }
+
+      function onAttFilterChange() {
+        var dropdown = document.getElementById('att-filter-emp');
+        viewingAttEmpId = dropdown.value;
+        renderAttendanceUI(viewingAttEmpId);
+      }
+
+      function renderAttendanceUI(empId) {
+        var myEmpId = localStorage.getItem('employeeId');
+        var isOwnRecord = (empId === myEmpId);
+
+        var punchCard = document.getElementById('punch-actions-card');
+        if (isOwnRecord) {
+          punchCard.classList.remove('hidden');
+        } else {
+          punchCard.classList.add('hidden');
+        }
+
+        var attendance = window.RevOpsStore.getCollection('attendance') || [];
+        var dwmActivities = window.RevOpsStore.getCollection('dwmActivities') || [];
+        var today = getFormattedToday();
+
+        // Check Today's Attendance Record for this employee
+        var todayAtt = attendance.find(function(a) {
+          return a.employeeId === empId && a.date === today;
+        });
+
+        // Check Today's DWM Activities for this employee
+        var todayDwm = dwmActivities.filter(function(a) {
+          return a.employeeId === empId && a.date === today;
+        });
+
+        var pendingDwmCount = todayDwm.filter(function(a) {
+          return a.accomplishmentStatus === 'Pending';
+        }).length;
+
+        // Render Status Banner
+        var statusText = document.getElementById('current-attendance-status-text');
+        var inBtn = document.getElementById('punch-in-btn');
+        var outBtn = document.getElementById('punch-out-btn');
+        var inWarnBox = document.getElementById('punch-in-warning-box');
+        var outWarnBox = document.getElementById('punch-out-warning-box');
+
+        inWarnBox.classList.add('hidden');
+        outWarnBox.classList.add('hidden');
+
+        if (!todayAtt) {
+          statusText.innerText = "Status: Not Punched In Today";
+          statusText.className = "text-sm font-bold text-amber-600 mt-1";
+
+          // Punch In Check
+          if (todayDwm.length === 0) {
+            inBtn.disabled = true;
+            inWarnBox.classList.remove('hidden');
+          } else {
+            inBtn.disabled = false;
+          }
+
+          // Punch Out Disabled
+          outBtn.disabled = true;
+
+        } else if (todayAtt.status === 'Punched In') {
+          var timeStr = todayAtt.punchInTime ? new Date(todayAtt.punchInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Today';
+          statusText.innerText = "Status: Punched In at " + timeStr;
+          statusText.className = "text-sm font-bold text-emerald-600 mt-1";
+
+          inBtn.disabled = true; // Already punched in
+
+          // Punch Out Check
+          if (pendingDwmCount > 0) {
+            outBtn.disabled = true;
+            outWarnBox.classList.remove('hidden');
+            document.getElementById('pending-dwm-msg').innerText = "⚠️ Please update accomplishment for all today's DWM activities first (" + pendingDwmCount + " of " + todayDwm.length + " still pending).";
+          } else {
+            outBtn.disabled = false;
+          }
+
+        } else if (todayAtt.status === 'Completed') {
+          statusText.innerText = "Status: Completed — " + (todayAtt.workedHours || 8.0) + " hours worked";
+          statusText.className = "text-sm font-bold text-blue-600 mt-1";
+
+          inBtn.disabled = true;
+          outBtn.disabled = true;
+        }
+
+        // Render History Table
+        renderAttendanceHistoryTable(empId, attendance);
+      }
+
+      function renderAttendanceHistoryTable(empId, attendance) {
+        var tbody = document.getElementById('att-history-tbody');
+        tbody.innerHTML = "";
+
+        var period = document.getElementById('att-period-filter') ? document.getElementById('att-period-filter').value : 'All';
+
+        var myAttHistory = attendance.filter(function(a) {
+          if (a.employeeId !== empId) return false;
+          if (period === 'All') return true;
+          var attFy = typeof getFinancialYear === 'function' ? getFinancialYear(a.date) : '2025-26';
+          return attFy === period;
+        });
+
+        if (myAttHistory.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-slate-400">No attendance history records found.</td></tr>`;
+          return;
+        }
+
+        myAttHistory.forEach(function(att) {
+          var inTime = att.punchInTime ? new Date(att.punchInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--';
+          var outTime = att.punchOutTime ? new Date(att.punchOutTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--';
+          var worked = att.workedHours ? att.workedHours + " hrs" : '--';
+
+          var dwmComp = (att.dwmAccomplishedCount || 0) + "/" + (att.dwmPlanCount || 0) + " activities completed";
+
+          var statusPill = "bg-amber-100 text-amber-800";
+          if (att.status === 'Completed') statusPill = "bg-emerald-100 text-emerald-800";
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-semibold text-slate-900">${att.date}</td>
+            <td class="py-3 px-4 text-slate-700">${inTime}</td>
+            <td class="py-3 px-4 text-slate-700">${outTime}</td>
+            <td class="py-3 px-4 text-center font-bold text-slate-900">${worked}</td>
+            <td class="py-3 px-4 text-center text-slate-600 font-medium">${dwmComp}</td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusPill}">${att.status}</span>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function executePunchIn() {
+        var myEmpId = localStorage.getItem('employeeId');
+        var myName = localStorage.getItem('userName');
+        var today = getFormattedToday();
+
+        var dwmActivities = window.RevOpsStore.getCollection('dwmActivities') || [];
+        var todayDwm = dwmActivities.filter(function(a) {
+          return a.employeeId === myEmpId && a.date === today;
+        });
+
+        var newAtt = {
+          employeeId: myEmpId,
+          employeeName: myName,
+          date: today,
+          punchInTime: new Date().toISOString(),
+          punchOutTime: null,
+          workedHours: null,
+          dwmPlanCount: todayDwm.length,
+          dwmAccomplishedCount: 0,
+          status: 'Punched In'
+        };
+
+        window.RevOpsStore.addItem('attendance', newAtt);
+        alert("Punched In successfully for today!");
+        renderAttendanceUI(myEmpId);
+      }
+
+      function executePunchOut() {
+        var myEmpId = localStorage.getItem('employeeId');
+        var today = getFormattedToday();
+
+        var attendance = window.RevOpsStore.getCollection('attendance') || [];
+        var todayAtt = attendance.find(function(a) {
+          return a.employeeId === myEmpId && a.date === today;
+        });
+
+        if (!todayAtt) return;
+
+        var dwmActivities = window.RevOpsStore.getCollection('dwmActivities') || [];
+        var todayDwm = dwmActivities.filter(function(a) {
+          return a.employeeId === myEmpId && a.date === today;
+        });
+
+        var accomplishedCount = todayDwm.filter(function(a) {
+          return a.accomplishmentStatus && a.accomplishmentStatus !== 'Pending';
+        }).length;
+
+        var punchInTime = new Date(todayAtt.punchInTime);
+        var punchOutTime = new Date();
+        var diffMs = punchOutTime - punchInTime;
+        var computedHours = Math.round((diffMs / (1000 * 60 * 60)) * 10) / 10;
+        if (computedHours <= 0) computedHours = 8.0;
+
+        window.RevOpsStore.updateItem('attendance', todayAtt.id, {
+          punchOutTime: punchOutTime.toISOString(),
+          workedHours: computedHours,
+          dwmAccomplishedCount: accomplishedCount,
+          status: 'Completed'
+        });
+
+        alert("Punched Out successfully! Work duration recorded: " + computedHours + " hours.");
+        renderAttendanceUI(myEmpId);
+      }
+    </script>
+  </body>
+</html>

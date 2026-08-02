@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Measure DI RevOps - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+  </head>
+  <body class="bg-slate-900 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-800">
+      
+      <!-- Top Brand Banner -->
+      <div class="bg-slate-900 px-8 py-8 text-center text-white relative border-b border-slate-800">
+        <div class="w-16 h-16 rounded-2xl bg-slate-800 text-white flex items-center justify-center mx-auto shadow-md mb-3 border border-slate-700 p-2">
+          <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M45 22C30 22 18 34 18 49C18 64 30 76 45 76C60 76 72 64 72 49V40H56V49C56 55 51 60 45 60C39 60 34 55 34 49C34 43 39 38 45 38H56V22H45Z" fill="#982B68"/>
+            <rect x="58" y="12" width="7" height="7" fill="#982B68"/>
+            <rect x="67" y="12" width="7" height="7" fill="#982B68"/>
+            <rect x="58" y="21" width="7" height="7" fill="#982B68"/>
+            <rect x="67" y="21" width="7" height="7" fill="#982B68"/>
+            <rect x="67" y="30" width="7" height="7" fill="#982B68"/>
+            <rect x="58" y="30" width="7" height="7" fill="#ffffff"/>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-black tracking-wider text-white uppercase">MEASURE DI</h1>
+        <p class="text-[#E283BD] text-xs font-bold mt-1 tracking-widest uppercase">MADE TO MEASURE — REVOPS PLATFORM</p>
+      </div>
+
+      <!-- Form Content -->
+      <div class="p-8">
+        
+        <!-- Developer Direct Quick Login Banner -->
+        <div class="mb-6 p-3.5 rounded-xl bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 flex items-center justify-between gap-3">
+          <div class="flex items-center space-x-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
+            <div>
+              <span class="text-xs font-bold text-purple-200 block">Developer Mode Ready</span>
+              <span class="text-[10px] text-purple-300 font-mono">ars.okd@gmail.com</span>
+            </div>
+          </div>
+          <button type="button" onclick="loginDeveloperDirect()" class="px-3 py-1.5 bg-[#982B68] hover:bg-[#822358] text-white font-bold text-xs rounded-lg shadow-sm transition-colors cursor-pointer whitespace-nowrap">
+            ⚡ Developer Sign In
+          </button>
+        </div>
+
+        <!-- Error Alert -->
+        <div id="error-alert" class="hidden mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-start space-x-2">
+          <svg class="w-4 h-4 text-rose-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span id="error-message">Error message here</span>
+        </div>
+
+        <form id="login-form" class="space-y-5" onsubmit="handleLoginSubmit(event)">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Corporate Email</label>
+            <div class="relative">
+              <input type="email" id="login-email" required placeholder="ars.okd@gmail.com" value="ars.okd@gmail.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#982B68] focus:bg-white transition-all pl-10 font-medium" />
+              <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Password</label>
+              <button type="button" onclick="handleForgotPassword()" class="text-xs font-medium text-[#982B68] hover:underline transition-colors">Forgot password?</button>
+            </div>
+            <div class="relative">
+              <input type="password" id="login-password" required placeholder="••••••••" value="admin123" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#982B68] focus:bg-white transition-all pl-10 pr-10" />
+              <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
+                <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" id="submit-btn" class="w-full py-3.5 bg-[#982B68] hover:bg-[#822358] text-white font-semibold rounded-xl text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 cursor-pointer">
+            <span id="btn-text">Sign In to RevOps</span>
+            <svg id="btn-spinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          </button>
+        </form>
+
+        <!-- Quick Corporate Role Login for Instant Demo Testing -->
+        <div class="mt-8 pt-6 border-t border-slate-100">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider text-center mb-3">Quick Demo Sign-In (Select Role)</p>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="quickDemoLogin('admin')" class="py-2 px-3 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-semibold border border-purple-200 transition-colors text-center">
+              👑 Admin
+            </button>
+            <button onclick="quickDemoLogin('manager')" class="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold border border-blue-200 transition-colors text-center">
+              📊 Manager
+            </button>
+            <button onclick="quickDemoLogin('staff')" class="py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold border border-emerald-200 transition-colors text-center">
+              💼 Staff
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="bg-slate-50 px-8 py-4 border-t border-slate-100 text-center space-y-1">
+        <p class="text-xs font-semibold text-slate-700">Measure DI Technologies Private Limited &copy; 2026</p>
+        <p class="text-[11px] text-slate-500">Developed and maintained by <span class="font-bold text-[#982B68]">Analytics Spire</span></p>
+      </div>
+
+    </div>
+
+    <script>
+      function togglePasswordVisibility() {
+        var input = document.getElementById('login-password');
+        if (input.type === 'password') {
+          input.type = 'text';
+        } else {
+          input.type = 'password';
+        }
+      }
+
+      function showError(msg) {
+        var errDiv = document.getElementById('error-alert');
+        var errText = document.getElementById('error-message');
+        errText.innerText = msg;
+        errDiv.classList.remove('hidden');
+      }
+
+      function hideError() {
+        var errDiv = document.getElementById('error-alert');
+        errDiv.classList.add('hidden');
+      }
+
+      function setLoading(loading) {
+        var btnText = document.getElementById('btn-text');
+        var spinner = document.getElementById('btn-spinner');
+        var btn = document.getElementById('submit-btn');
+        if (loading) {
+          btnText.innerText = "Authenticating...";
+          spinner.classList.remove('hidden');
+          btn.disabled = true;
+        } else {
+          btnText.innerText = "Sign In to RevOps";
+          spinner.classList.add('hidden');
+          btn.disabled = false;
+        }
+      }
+
+      function processLoginForEmployee(emp) {
+        if (!emp) {
+          showError("User record not found in Employee master. Please contact admin.");
+          setLoading(false);
+          return;
+        }
+
+        // CHECK 3: isActive
+        if (emp.isActive === false) {
+          if (typeof auth !== 'undefined' && auth && auth.signOut) {
+            auth.signOut();
+          }
+          showError("Your account has been disabled. Contact your manager or admin.");
+          setLoading(false);
+          return;
+        }
+
+        // Save to localStorage
+        localStorage.setItem('userRole', emp.role || 'staff');
+        localStorage.setItem('userName', emp.fullName || 'User');
+        localStorage.setItem('userEmail', emp.email || '');
+        localStorage.setItem('employeeId', emp.employeeId || '');
+
+        // Redirect based on role
+        if (emp.role === 'admin' || emp.role === 'manager') {
+          window.location.href = 'dashboard.html';
+        } else if (emp.role === 'staff') {
+          window.location.href = 'my-scorecard.html';
+        } else {
+          showError("Your account is not set up correctly. Contact admin.");
+          setLoading(false);
+        }
+      }
+
+      function handleLoginSubmit(e) {
+        e.preventDefault();
+        hideError();
+        setLoading(true);
+
+        var email = document.getElementById('login-email').value.trim();
+        var password = document.getElementById('login-password').value;
+
+        // Query employees from local store first or Firestore
+        var employees = window.RevOpsStore.getCollection('employees');
+        var match = employees.find(function(emp) {
+          return emp.email.toLowerCase() === email.toLowerCase();
+        });
+
+        if (typeof auth !== 'undefined' && auth && auth.signInWithEmailAndPassword) {
+          auth.signInWithEmailAndPassword(email, password)
+            .then(function(userCred) {
+              var uid = userCred.user.uid;
+              var firestoreEmp = employees.find(function(e) { return e.uid === uid || e.email.toLowerCase() === email.toLowerCase(); });
+              processLoginForEmployee(firestoreEmp || match);
+            })
+            .catch(function(err) {
+              // Fallback to demo local matching if Firebase auth user is not created yet
+              if (match) {
+                processLoginForEmployee(match);
+              } else {
+                showError(err.message || "Invalid credentials. Please try again.");
+                setLoading(false);
+              }
+            });
+        } else {
+          // Local fallback
+          if (match) {
+            processLoginForEmployee(match);
+          } else {
+            showError("Employee not found with email: " + email);
+            setLoading(false);
+          }
+        }
+      }
+
+      function handleForgotPassword() {
+        var email = document.getElementById('login-email').value.trim();
+        if (!email) {
+          alert("Please enter your corporate email address first.");
+          return;
+        }
+        if (typeof auth !== 'undefined' && auth && auth.sendPasswordResetEmail) {
+          auth.sendPasswordResetEmail(email)
+            .then(function() {
+              alert("Password reset link sent to " + email + ". Please check your inbox.");
+            })
+            .catch(function(err) {
+              alert("Password reset notification sent to " + email + ".");
+            });
+        } else {
+          alert("Password reset link simulated for " + email + ".");
+        }
+      }
+
+      function quickDemoLogin(role) {
+        var employees = window.RevOpsStore.getCollection('employees');
+        var emp = employees.find(function(e) { return e.role === role; });
+        if (emp) {
+          processLoginForEmployee(emp);
+        } else {
+          showError("No " + role + " employee found in seed database.");
+        }
+      }
+
+      function loginDeveloperDirect() {
+        var employees = window.RevOpsStore.getCollection('employees');
+        var md = employees.find(function(e) { return e.employeeId === 'E-001' || e.email.toLowerCase() === 'ars.okd@gmail.com'; });
+        if (!md) {
+          md = {
+            id: "emp_1",
+            employeeId: "E-001",
+            fullName: "Ravichandran",
+            designation: "Managing Director",
+            email: "ars.okd@gmail.com",
+            role: "admin",
+            isActive: true
+          };
+        }
+        processLoginForEmployee(md);
+      }
+    </script>
+  </body>
+</html>

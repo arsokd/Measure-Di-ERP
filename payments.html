@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Measure DI RevOps - Payment Collections</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-guard.js"></script>
+  </head>
+  <body class="bg-slate-50 min-h-screen text-slate-800">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      
+      <!-- Header -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Payment Collections & Receivables</h1>
+          <p class="text-sm text-slate-500 mt-1">Track customer cash inflows, bank transfers, cheque clearances & outstanding receivables</p>
+        </div>
+
+        <button onclick="openPaymentModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span>+ Record Payment</span>
+        </button>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Cleared Collections</span>
+          <div class="text-3xl font-black text-emerald-600 mt-1" id="stat-collected-total">Rs.0</div>
+          <p class="text-xs text-slate-400 mt-1">Realized Cash Inflow</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Pending Cheque / Clearance</span>
+          <div class="text-3xl font-black text-amber-600 mt-1" id="stat-pending-total">Rs.0</div>
+          <p class="text-xs text-slate-400 mt-1">In Process / Post-Dated Cheques</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Collection Transactions</span>
+          <div class="text-3xl font-black text-slate-900 mt-1" id="stat-trans-count">0</div>
+          <p class="text-xs text-slate-400 mt-1">Total Payment Entries</p>
+        </div>
+      </div>
+
+      <!-- Payments Table -->
+      <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden space-y-4">
+        <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h2 class="text-lg font-bold text-slate-900">Payment Collection Transactions</h2>
+          
+          <div class="flex items-center space-x-3">
+            <select id="payment-fy-filter" onchange="renderPaymentsTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="All">All FYs (2024 - 2026)</option>
+              <option value="2024-25">FY 2024-25</option>
+              <option value="2025-26">FY 2025-26</option>
+              <option value="2026-27">FY 2026-27</option>
+            </select>
+            <div id="payment-filter-wrapper" class="hidden">
+              <select id="payment-emp-filter" onchange="renderPaymentsTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <input type="text" id="payment-search-input" oninput="renderPaymentsTable()" placeholder="Search customer, invoice, UTR..." class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Customer Name</th>
+                <th class="py-3 px-4">Invoice #</th>
+                <th class="py-3 px-4 text-right">Amount Collected (Rs.)</th>
+                <th class="py-3 px-4">Mode / UTR #</th>
+                <th class="py-3 px-4">Payment Date</th>
+                <th class="py-3 px-4 text-center">Status</th>
+                <th class="py-3 px-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="payments-tbody" class="divide-y divide-slate-100 text-xs">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Modal: Record Payment -->
+    <div id="payment-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="text-base font-bold text-slate-900" id="payment-modal-title">Record Payment Collection</h3>
+          <button onclick="closePaymentModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+        </div>
+
+        <form onsubmit="handleSavePayment(event)" class="p-6 space-y-4">
+          <input type="hidden" id="payment-doc-id" />
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Customer Name *</label>
+            <input type="text" id="inp-pay-customer" required placeholder="e.g. JSW Steel Limited" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Invoice Number</label>
+              <input type="text" id="inp-pay-invoice" placeholder="INV/2025-26/042" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Amount Collected (Rs.) *</label>
+              <input type="number" id="inp-pay-amount" required placeholder="500000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Mode *</label>
+              <select id="inp-pay-mode" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="NEFT/RTGS">NEFT / RTGS</option>
+                <option value="Cheque">Cheque</option>
+                <option value="UPI">UPI / Net Banking</option>
+                <option value="Cash">Cash</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">UTR / Cheque Number</label>
+              <input type="text" id="inp-pay-utr" placeholder="e.g. UTR192837465" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Date *</label>
+              <input type="text" id="inp-pay-date" required placeholder="DD/MM/YYYY" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Status *</label>
+              <select id="inp-pay-status" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="Cleared">Cleared</option>
+                <option value="Pending Clearance">Pending Clearance</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Remarks</label>
+            <textarea id="inp-pay-remarks" rows="2" placeholder="Bank name, TDS deduction details, balance payment due date..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+            <button type="button" onclick="closePaymentModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer">
+              Save Payment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        if (checkAuth(['admin', 'manager', 'staff'])) {
+          initPaymentsPage();
+        }
+      });
+
+      function initPaymentsPage() {
+        var userRole = localStorage.getItem('userRole');
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+
+        if (userRole === 'admin' || userRole === 'manager') {
+          var wrapper = document.getElementById('payment-filter-wrapper');
+          var select = document.getElementById('payment-emp-filter');
+          wrapper.classList.remove('hidden');
+
+          select.innerHTML = `<option value="All">All Collectors</option>`;
+          employees.forEach(function(e) {
+            var opt = document.createElement('option');
+            opt.value = e.employeeId;
+            opt.innerText = e.fullName + " (" + e.employeeId + ")";
+            select.appendChild(opt);
+          });
+        }
+
+        renderPaymentsTable();
+      }
+
+      function renderPaymentsTable() {
+        var userRole = localStorage.getItem('userRole');
+        var myEmpId = localStorage.getItem('employeeId');
+        var searchQuery = document.getElementById('payment-search-input').value.toLowerCase();
+        
+        var selectedFilterEmp = "All";
+        var filterElem = document.getElementById('payment-emp-filter');
+        if (filterElem) selectedFilterEmp = filterElem.value;
+
+        var payments = window.RevOpsStore.getCollection('payments') || [];
+
+        var selectedFy = document.getElementById('payment-fy-filter') ? document.getElementById('payment-fy-filter').value : 'All';
+        var filtered = payments.filter(function(p) {
+          if (selectedFy !== 'All') {
+            var payFy = typeof getFinancialYear === 'function' ? getFinancialYear(p.paymentDate) : '2025-26';
+            if (payFy !== selectedFy) return false;
+          }
+          if (userRole === 'staff' && p.employeeId !== myEmpId) return false;
+          if (selectedFilterEmp !== 'All' && p.employeeId !== selectedFilterEmp) return false;
+
+          var textMatch = p.customerName.toLowerCase().includes(searchQuery) ||
+                            (p.invoiceNumber || '').toLowerCase().includes(searchQuery) ||
+                            (p.utrNumber || '').toLowerCase().includes(searchQuery);
+          return textMatch;
+        });
+
+        // Compute Stats
+        var clearedTotal = 0;
+        var pendingTotal = 0;
+
+        filtered.forEach(function(p) {
+          var amt = Number(p.amount) || 0;
+          if (p.status === 'Cleared') clearedTotal += amt;
+          else pendingTotal += amt;
+        });
+
+        document.getElementById('stat-collected-total').innerText = formatINR(clearedTotal);
+        document.getElementById('stat-pending-total').innerText = formatINR(pendingTotal);
+        document.getElementById('stat-trans-count').innerText = filtered.length;
+
+        var tbody = document.getElementById('payments-tbody');
+        tbody.innerHTML = "";
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">No payment collection records found.</td></tr>`;
+          return;
+        }
+
+        filtered.forEach(function(p) {
+          var statusPill = (p.status === "Cleared") ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800";
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-bold text-slate-900">${p.customerName}</td>
+            <td class="py-3 px-4 font-mono text-slate-600">${p.invoiceNumber || '--'}</td>
+            <td class="py-3 px-4 text-right font-black text-slate-900">${formatINR(p.amount)}</td>
+            <td class="py-3 px-4 text-slate-700">
+              <span class="font-semibold">${p.paymentMode}</span>
+              ${p.utrNumber ? `<span class="block text-[10px] text-slate-400 font-mono">Ref: ${p.utrNumber}</span>` : ''}
+            </td>
+            <td class="py-3 px-4 text-slate-500 font-mono">${p.paymentDate}</td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusPill}">${p.status}</span>
+            </td>
+            <td class="py-3 px-4 text-center space-x-2">
+              <button onclick="editPayment('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
+              <button onclick="deletePayment('${p.id}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function openPaymentModal() {
+        document.getElementById('payment-doc-id').value = "";
+        document.getElementById('payment-modal-title').innerText = "Record Payment Collection";
+
+        document.getElementById('inp-pay-customer').value = "";
+        document.getElementById('inp-pay-invoice').value = "";
+        document.getElementById('inp-pay-amount').value = 500000;
+        document.getElementById('inp-pay-mode').value = "NEFT/RTGS";
+        document.getElementById('inp-pay-utr').value = "";
+        document.getElementById('inp-pay-date').value = getFormattedToday();
+        document.getElementById('inp-pay-status').value = "Cleared";
+        document.getElementById('inp-pay-remarks').value = "";
+
+        document.getElementById('payment-modal').classList.remove('hidden');
+      }
+
+      function closePaymentModal() {
+        document.getElementById('payment-modal').classList.add('hidden');
+      }
+
+      function editPayment(docId) {
+        var payments = window.RevOpsStore.getCollection('payments') || [];
+        var p = payments.find(function(item) { return item.id === docId; });
+        if (!p) return;
+
+        document.getElementById('payment-doc-id').value = p.id;
+        document.getElementById('payment-modal-title').innerText = "Edit Payment Collection";
+
+        document.getElementById('inp-pay-customer').value = p.customerName;
+        document.getElementById('inp-pay-invoice').value = p.invoiceNumber || '';
+        document.getElementById('inp-pay-amount').value = p.amount;
+        document.getElementById('inp-pay-mode').value = p.paymentMode;
+        document.getElementById('inp-pay-utr').value = p.utrNumber || '';
+        document.getElementById('inp-pay-date').value = p.paymentDate;
+        document.getElementById('inp-pay-status').value = p.status;
+        document.getElementById('inp-pay-remarks').value = p.remarks || '';
+
+        document.getElementById('payment-modal').classList.remove('hidden');
+      }
+
+      function handleSavePayment(e) {
+        e.preventDefault();
+        var docId = document.getElementById('payment-doc-id').value;
+        var myEmpId = localStorage.getItem('employeeId');
+        var myName = localStorage.getItem('userName');
+
+        var payData = {
+          customerName: document.getElementById('inp-pay-customer').value.trim(),
+          invoiceNumber: document.getElementById('inp-pay-invoice').value.trim(),
+          amount: Number(document.getElementById('inp-pay-amount').value) || 0,
+          paymentMode: document.getElementById('inp-pay-mode').value,
+          utrNumber: document.getElementById('inp-pay-utr').value.trim(),
+          paymentDate: document.getElementById('inp-pay-date').value.trim(),
+          status: document.getElementById('inp-pay-status').value,
+          remarks: document.getElementById('inp-pay-remarks').value.trim(),
+          employeeId: myEmpId,
+          employeeName: myName,
+          updatedAt: new Date().toISOString()
+        };
+
+        if (docId) {
+          window.RevOpsStore.updateItem('payments', docId, payData);
+        } else {
+          payData.createdAt = new Date().toISOString();
+          window.RevOpsStore.addItem('payments', payData);
+        }
+
+        closePaymentModal();
+        renderPaymentsTable();
+      }
+
+      function deletePayment(docId) {
+        if (confirm("Are you sure you want to delete this payment record?")) {
+          window.RevOpsStore.deleteItem('payments', docId);
+          renderPaymentsTable();
+        }
+      }
+    </script>
+  </body>
+</html>

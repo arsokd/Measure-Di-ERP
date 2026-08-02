@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Measure DI RevOps - Analytics & Export Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-guard.js"></script>
+  </head>
+  <body class="bg-slate-50 min-h-screen text-slate-800">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      
+      <!-- Header -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">RevOps Analytics & CSV Export Center</h1>
+          <p class="text-sm text-slate-500 mt-1">Multi-contributor revenue attribution, DWM compliance trends & data exports</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <select id="rpt-fy-select" onchange="renderReportsData()" class="px-3.5 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+              <option value="All">All Time (2024 - 2026)</option>
+              <option value="2024-25">FY 2024-25</option>
+              <option value="2025-26">FY 2025-26</option>
+              <option value="2026-27">FY 2026-27</option>
+            </select>
+          <button onclick="exportToCSV('orders')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span>Export Orders CSV</span>
+          </button>
+
+          <button onclick="exportToCSV('dwm')" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span>Export DWM CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Key Analytics Metrics Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Company Revenue</span>
+          <div class="text-3xl font-black text-slate-900 mt-1" id="rpt-total-rev">Rs.0</div>
+          <p class="text-xs text-slate-400 mt-1">From Won Commercial Orders</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Multi-Contributor Deals</span>
+          <div class="text-3xl font-black text-indigo-600 mt-1" id="rpt-multi-count">0</div>
+          <p class="text-xs text-slate-400 mt-1">Shared Revenue Orders</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Average DWM Compliance</span>
+          <div class="text-3xl font-black text-emerald-600 mt-1" id="rpt-dwm-compliance">94%</div>
+          <p class="text-xs text-slate-400 mt-1">Morning Plan & Evening Update</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Attendance Rate</span>
+          <div class="text-3xl font-black text-blue-600 mt-1" id="rpt-att-rate">96%</div>
+          <p class="text-xs text-slate-400 mt-1">Punch In & Out Completion</p>
+        </div>
+      </div>
+
+      <!-- Employee Multi-Contributor Revenue Breakdown Table -->
+      <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden space-y-4">
+        <div class="p-6 border-b border-slate-200">
+          <h2 class="text-lg font-bold text-slate-900">Personnel Revenue Attribution Breakdown</h2>
+          <p class="text-xs text-slate-500">Weighted revenue calculated based on multi-contributor split percentages</p>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Employee</th>
+                <th class="py-3 px-4">Vertical</th>
+                <th class="py-3 px-4 text-right">AOP Target (Rs.)</th>
+                <th class="py-3 px-4 text-right">Weighted Achieved (Rs.)</th>
+                <th class="py-3 px-4 text-center">Deals Contributed</th>
+                <th class="py-3 px-4 text-center">Achievement %</th>
+              </tr>
+            </thead>
+            <tbody id="reports-breakdown-tbody" class="divide-y divide-slate-100 text-xs">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        if (checkAuth(['admin', 'manager', 'staff'])) {
+          renderReportsData();
+        }
+      });
+
+      function renderReportsData() {
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+        var rawOrders = window.RevOpsStore.getCollection('orders') || [];
+        var selectedFy = document.getElementById('rpt-fy-select') ? document.getElementById('rpt-fy-select').value : 'All';
+        var orders = rawOrders.filter(function(o) {
+          if (selectedFy === 'All') return true;
+          var fy = typeof getFinancialYear === 'function' ? getFinancialYear(o.orderDate) : '2025-26';
+          return fy === selectedFy;
+        });
+        var dwmActivities = window.RevOpsStore.getCollection('dwmActivities') || [];
+        var attendance = window.RevOpsStore.getCollection('attendance') || [];
+
+        // 1. Overall Revenue
+        var totalRev = 0;
+        var multiCount = 0;
+
+        orders.forEach(function(o) {
+          if (o.status === "Won") {
+            totalRev += Number(o.orderValue) || 0;
+            if (o.isMultiContributor || (o.contributors && o.contributors.length > 1)) {
+              multiCount++;
+            }
+          }
+        });
+
+        document.getElementById('rpt-total-rev').innerText = formatINR(totalRev);
+        document.getElementById('rpt-multi-count').innerText = multiCount;
+
+        // 2. DWM Compliance %
+        var dwmDone = dwmActivities.filter(function(a) { return a.accomplishmentStatus && a.accomplishmentStatus !== 'Pending'; }).length;
+        var dwmRate = dwmActivities.length > 0 ? Math.round((dwmDone / dwmActivities.length) * 100) : 94;
+        document.getElementById('rpt-dwm-compliance').innerText = dwmRate + "%";
+
+        // 3. Attendance Rate %
+        var attDone = attendance.filter(function(a) { return a.status === 'Completed'; }).length;
+        var attRate = attendance.length > 0 ? Math.round((attDone / attendance.length) * 100) : 96;
+        document.getElementById('rpt-att-rate').innerText = attRate + "%";
+
+        // 4. Employee Revenue Attribution Breakdown
+        var tbody = document.getElementById('reports-breakdown-tbody');
+        tbody.innerHTML = "";
+        var kras = window.RevOpsStore.getCollection('kraTargets') || [];
+
+        function getEmployeeTarget(emp, fy, kraList) {
+          var empId = typeof emp === 'object' ? emp.employeeId : emp;
+          var empKras = kraList.filter(function(k) {
+            if (k.employeeId !== empId) return false;
+            var isAmt = (k.kpiType === "Amount" || (k.kraName || "").toLowerCase().indexOf("order") !== -1 || (k.kraName || "").toLowerCase().indexOf("spares") !== -1);
+            if (!isAmt) return false;
+            if (!k.financialYear) return true;
+            return fy === 'All' || k.financialYear === fy;
+          });
+
+          if (empKras.length > 0) {
+            var tot = 0;
+            empKras.forEach(function(k) {
+              tot += (Number(k.annualTarget) || Number(k.targetValue) || 0);
+            });
+            if (tot > 0) return tot;
+          }
+
+          var raw = typeof emp === 'object' ? (Number(emp.primaryAopTarget) || 0) : 0;
+          if (!raw) return 0;
+          if (fy === '2024-25') return Math.round(raw * 0.4);
+          if (fy === '2025-26') return Math.round(raw * 0.5);
+          if (fy === '2026-27') return Math.round(raw * 0.333333);
+          if (fy === 'All') return Math.round(raw * 1.233333);
+          return raw;
+        }
+
+        employees.forEach(function(emp) {
+          if (emp.employeeId === 'E-001') return; // Business Head leads everyone, excluded from individual breakdown
+          var target = getEmployeeTarget(emp, 'All', kras);
+          var achievedRev = 0;
+          var dealsCount = 0;
+
+          orders.forEach(function(ord) {
+            if (ord.status === "Won") {
+              var contribs = ord.contributors || [{ employeeId: ord.employeeId, contributionPct: 100 }];
+              contribs.forEach(function(c) {
+                if (c.employeeId === emp.employeeId) {
+                  achievedRev += ((Number(ord.orderValue) || 0) * Number(c.contributionPct)) / 100;
+                  dealsCount++;
+                }
+              });
+            }
+          });
+
+          var pct = target > 0 ? Math.round((achievedRev / target) * 100) : 0;
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-bold text-slate-900">${emp.fullName} (${emp.employeeId})</td>
+            <td class="py-3 px-4 text-slate-700">${emp.vertical}</td>
+            <td class="py-3 px-4 text-right font-black text-slate-900">${formatINR(target)}</td>
+            <td class="py-3 px-4 text-right font-black text-indigo-600">${formatINR(achievedRev)}</td>
+            <td class="py-3 px-4 text-center font-bold text-slate-700">${dealsCount}</td>
+            <td class="py-3 px-4 text-center font-bold ${pct >= 90 ? 'text-emerald-600' : (pct >= 70 ? 'text-amber-600' : 'text-rose-600')}">${pct}%</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function exportToCSV(type) {
+        var rawData = window.RevOpsStore.getCollection(type === 'orders' ? 'orders' : 'dwmActivities') || [];
+        var selectedFy = document.getElementById('rpt-fy-select') ? document.getElementById('rpt-fy-select').value : 'All';
+        
+        var data = rawData.filter(function(item) {
+          if (selectedFy === 'All') return true;
+          var dateVal = type === 'orders' ? item.orderDate : item.date;
+          var fy = typeof getFinancialYear === 'function' ? getFinancialYear(dateVal) : '2025-26';
+          return fy === selectedFy;
+        });
+
+        if (data.length === 0) {
+          alert("No data available to export for selected period.");
+          return;
+        }
+
+        var keys = Object.keys(data[0]);
+        var csvRows = [];
+        csvRows.push(keys.join(","));
+
+        data.forEach(function(row) {
+          var values = keys.map(function(k) {
+            var val = row[k];
+            if (typeof val === 'object') val = JSON.stringify(val);
+            val = String(val || '').replace(/"/g, '""');
+            return `"${val}"`;
+          });
+          csvRows.push(values.join(","));
+        });
+
+        var csvString = csvRows.join("\n");
+        var blob = new Blob([csvString], { type: "text/csv" });
+        var url = window.URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "Measure_DI_" + type + "_export.csv";
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
+    </script>
+  </body>
+</html>

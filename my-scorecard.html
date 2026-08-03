@@ -131,7 +131,7 @@
         var urlParams = new URLSearchParams(window.location.search);
         var urlEmpId = urlParams.get('employeeId');
 
-        if (urlEmpId && (userRole === 'admin' || userRole === 'manager')) {
+        if (urlEmpId && (userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager')) {
           viewingEmpId = urlEmpId;
           if (viewingEmpId !== myEmpId) {
             isReadOnlyView = true;
@@ -142,7 +142,7 @@
 
         // Handle Admin/Manager Employee Dropdown Selector
         var employees = window.RevOpsStore.getCollection('employees') || [];
-        if (userRole === 'admin' || userRole === 'manager') {
+        if (userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') {
           var container = document.getElementById('employee-select-container');
           var dropdown = document.getElementById('employee-dropdown');
           container.classList.remove('hidden');

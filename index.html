@@ -28,7 +28,7 @@
       document.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
           var userRole = localStorage.getItem('userRole');
-          if (userRole === 'admin' || userRole === 'manager') {
+          if (userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') {
             window.location.href = 'dashboard.html';
           } else if (userRole === 'staff') {
             window.location.href = 'my-scorecard.html';

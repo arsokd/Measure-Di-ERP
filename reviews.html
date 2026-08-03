@@ -220,7 +220,7 @@
 
         // Determine Team List
         var teamList = [];
-        if (userRole === 'admin') {
+        if (userRole === 'super_admin' || userRole === 'admin') {
           teamList = employees.filter(function(e) { return e.employeeId !== myEmpId && e.employeeId !== 'E-001'; });
         } else {
           teamList = employees.filter(function(e) { return e.reportsTo === myEmpId && e.employeeId !== 'E-001'; });
@@ -256,7 +256,7 @@
         var employees = window.RevOpsStore.getCollection('employees') || [];
         var reviews = window.RevOpsStore.getCollection('reviews') || [];
 
-        var teamList = (userRole === 'admin') 
+        var teamList = (userRole === 'super_admin' || userRole === 'admin') 
           ? employees.filter(function(e) { return e.employeeId !== myEmpId && e.employeeId !== 'E-001'; })
           : employees.filter(function(e) { return e.reportsTo === myEmpId && e.employeeId !== 'E-001'; });
 

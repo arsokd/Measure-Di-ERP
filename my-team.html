@@ -180,7 +180,7 @@
 
         // Target Team Roster
         var teamList = [];
-        if (userRole === 'admin') {
+        if (userRole === 'super_admin' || userRole === 'admin') {
           teamList = employees.filter(function(e) { return e.employeeId !== myEmpId; });
         } else {
           teamList = employees.filter(function(e) { return e.reportsTo === myEmpId; });

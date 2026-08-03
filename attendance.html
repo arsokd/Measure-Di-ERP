@@ -148,7 +148,7 @@
 
         document.getElementById('today-date-display').innerText = getFormattedToday();
 
-        if (userRole === 'admin' || userRole === 'manager') {
+        if (userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') {
           var container = document.getElementById('att-filter-container');
           var dropdown = document.getElementById('att-filter-emp');
           container.classList.remove('hidden');

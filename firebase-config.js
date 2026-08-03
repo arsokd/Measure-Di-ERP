@@ -67,11 +67,24 @@ window.RevOpsStore = {
       console.log("Seeding Google Sheets RevOps data for Measure DI Technologies...");
       
       
-      // Cleanup legacy E-000 / Arun Sharma if present in local storage
+      // Cleanup legacy E-000 / Arun Sharma if present in local storage and update roles
       var currentEmps = window.RevOpsStore.getCollection('employees') || [];
-      if (currentEmps.some(function(e) { return e.employeeId === 'E-000' || e.fullName.indexOf('Arun') !== -1; })) {
+      var empListChanged = false;
+      if (currentEmps.some(function(e) { return e.employeeId === 'E-000' || (e.fullName && e.fullName.indexOf('Arun') !== -1); })) {
         console.log('Cleaning legacy E-000 record...');
-        currentEmps = currentEmps.filter(function(e) { return e.employeeId !== 'E-000' && e.fullName.indexOf('Arun') === -1; });
+        currentEmps = currentEmps.filter(function(e) { return e.employeeId !== 'E-000' && (!e.fullName || e.fullName.indexOf('Arun') === -1); });
+        empListChanged = true;
+      }
+      currentEmps.forEach(function(e) {
+        if (e.employeeId === 'E-001' && e.role !== 'super_admin') {
+          e.role = 'super_admin';
+          empListChanged = true;
+        } else if (e.employeeId === 'E-002' && e.role !== 'admin') {
+          e.role = 'admin';
+          empListChanged = true;
+        }
+      });
+      if (empListChanged) {
         window.RevOpsStore.setCollection('employees', currentEmps);
       }
 
@@ -94,7 +107,7 @@ window.RevOpsStore = {
     "primaryAopMetric": "Sales Revenue, Service Revenue, Spare parts Revenue",
     "primaryAopTarget": 0,
     "unit": "\u20b9 (INR)",
-    "role": "admin",
+    "role": "super_admin",
     "remarks": "",
     "isActive": true
   },
@@ -116,7 +129,7 @@ window.RevOpsStore = {
     "primaryAopMetric": "Sales Revenue, Service Revenue, Spare parts Revenue, DOS",
     "primaryAopTarget": 200000000.0,
     "unit": "\u20b9 (INR)",
-    "role": "manager",
+    "role": "admin",
     "remarks": "",
     "isActive": true
   },

@@ -139,12 +139,59 @@
                 <option value="staff">Staff</option>
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
+                <option value="super_admin">Super Admin</option>
               </select>
             </div>
 
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Primary AOP Target (Rs.)</label>
               <input type="number" id="inp-aop-target" placeholder="10000000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <!-- Section: Payroll & Financial Master -->
+          <div class="pt-4 border-t border-slate-200 space-y-4">
+            <h4 class="text-xs font-bold text-indigo-900 uppercase tracking-wider">Payroll & Bank Details</h4>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Monthly Salary CTC (Rs.)</label>
+                <input type="number" id="inp-monthly-ctc" placeholder="e.g. 75000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Bank Name</label>
+                <input type="text" id="inp-bank-name" placeholder="e.g. HDFC Bank" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Bank Account No</label>
+                <input type="text" id="inp-account-number" placeholder="50100234982" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Bank IFSC Code</label>
+                <input type="text" id="inp-ifsc-code" placeholder="HDFC0000123" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">PAN Number</label>
+                <input type="text" id="inp-pan-number" placeholder="AAAPM1234F" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">PF UAN / Number</label>
+                <input type="text" id="inp-pf-number" placeholder="UAN10098273" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Salary Advance Balance (Rs.)</label>
+                <input type="number" id="inp-advance-balance" placeholder="0" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-rose-600" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Employee Loan Balance (Rs.)</label>
+                <input type="number" id="inp-loan-balance" placeholder="0" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-amber-600" />
+              </div>
             </div>
           </div>
 
@@ -155,6 +202,54 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Modal: Digital File Dossier -->
+    <div id="digital-dossier-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+          <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white text-sm" id="dossier-avatar">M</div>
+            <div>
+              <h3 class="text-base font-bold text-white" id="dossier-title">Digital Employee Dossier</h3>
+              <p class="text-xs text-slate-400 font-mono" id="dossier-sub">E-002 • Active Master Record</p>
+            </div>
+          </div>
+          <button onclick="closeDigitalDossier()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+        </div>
+
+        <div class="p-6 space-y-6 overflow-y-auto bg-white text-xs">
+          <!-- Overview Grid -->
+          <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div><span class="font-bold text-slate-500 uppercase block">Full Legal Name</span> <span class="font-bold text-slate-900 text-sm" id="dos-name">Murugan</span></div>
+            <div><span class="font-bold text-slate-500 uppercase block">Designation</span> <span class="font-semibold text-slate-800" id="dos-designation">Sales & Marketing Head</span></div>
+            <div><span class="font-bold text-slate-500 uppercase block">Vertical & Sub-Vertical</span> <span class="font-semibold text-indigo-700" id="dos-vertical">Sales (Project Sales)</span></div>
+            <div><span class="font-bold text-slate-500 uppercase block">Reporting Manager</span> <span class="font-semibold text-slate-800" id="dos-manager">Top Level / None</span></div>
+            <div><span class="font-bold text-slate-500 uppercase block">Official Email</span> <span class="font-mono text-slate-800" id="dos-email">murugan@measuredi.com</span></div>
+            <div><span class="font-bold text-slate-500 uppercase block">Mobile & Location</span> <span class="font-semibold text-slate-800" id="dos-contact">+91 98400 12345 (Chennai)</span></div>
+          </div>
+
+          <!-- Financial & Statutory Grid -->
+          <div class="space-y-2">
+            <h4 class="font-bold text-slate-900 uppercase tracking-wider text-[11px]">Financial & Payroll Master Data</h4>
+            <div class="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div><span class="text-slate-500 uppercase block font-bold">Monthly CTC</span> <span class="font-black text-slate-900 text-sm" id="dos-ctc">Rs.110,000</span></div>
+              <div><span class="text-slate-500 uppercase block font-bold">Annual AOP Target</span> <span class="font-bold text-slate-900" id="dos-aop">Rs.10,000,000</span></div>
+              <div><span class="text-slate-500 uppercase block font-bold">System Role</span> <span class="font-bold text-indigo-600 uppercase" id="dos-role">Staff</span></div>
+              <div><span class="text-slate-500 uppercase block font-bold">Bank Name</span> <span class="font-semibold text-slate-800" id="dos-bank">HDFC Bank</span></div>
+              <div><span class="text-slate-500 uppercase block font-bold">Account Number</span> <span class="font-mono text-slate-800" id="dos-account">****4892</span></div>
+              <div><span class="text-slate-500 uppercase block font-bold">IFSC Code</span> <span class="font-mono text-slate-800" id="dos-ifsc">HDFC0000123</span></div>
+              <div><span class="text-slate-500 uppercase block font-bold">PAN Number</span> <span class="font-mono text-slate-800" id="dos-pan">AAAPM1234F</span></div>
+              <div><span class="text-slate-500 uppercase block font-bold">PF UAN No</span> <span class="font-mono text-slate-800" id="dos-pf">UAN10098273</span></div>
+              <div><span class="text-slate-500 uppercase block font-bold">Salary Advance Balance</span> <span class="font-bold text-rose-600" id="dos-advance">Rs.0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end shrink-0">
+          <button onclick="closeDigitalDossier()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl">Close Dossier</button>
+        </div>
       </div>
     </div>
 
@@ -262,11 +357,12 @@
               <div class="text-[10px] text-slate-400">${emp.mobile}</div>
             </td>
             <td class="py-3 px-4 text-center">
-              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-700">${emp.role}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${emp.role === 'super_admin' ? 'bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-300' : emp.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-300' : emp.role === 'manager' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-slate-100 text-slate-700'}">${emp.role ? emp.role.replace('_', ' ') : 'staff'}</span>
             </td>
             <td class="py-3 px-4 text-center">${toggleHtml}</td>
             <td class="py-3 px-4 text-center">${loginMgmtHtml}</td>
             <td class="py-3 px-4 text-center space-x-2">
+              <button onclick="viewDigitalFile('${emp.id}')" class="text-emerald-600 hover:text-emerald-800 font-bold hover:underline">File</button>
               <button onclick="editEmployee('${emp.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
               <button onclick="deleteEmployee('${emp.id}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
             </td>
@@ -295,6 +391,14 @@
         document.getElementById('inp-location').value = "";
         document.getElementById('inp-role').value = "staff";
         document.getElementById('inp-aop-target').value = 10000000;
+        document.getElementById('inp-monthly-ctc').value = 75000;
+        document.getElementById('inp-bank-name').value = "HDFC Bank";
+        document.getElementById('inp-account-number').value = "";
+        document.getElementById('inp-ifsc-code').value = "";
+        document.getElementById('inp-pan-number').value = "";
+        document.getElementById('inp-pf-number').value = "";
+        document.getElementById('inp-advance-balance').value = 0;
+        document.getElementById('inp-loan-balance').value = 0;
 
         // Populate Reports To
         var employees = window.RevOpsStore.getCollection('employees') || [];
@@ -332,6 +436,14 @@
         document.getElementById('inp-location').value = emp.location || '';
         document.getElementById('inp-role').value = emp.role || 'staff';
         document.getElementById('inp-aop-target').value = (emp.primaryAopTarget !== undefined && emp.primaryAopTarget !== null) ? emp.primaryAopTarget : 0;
+        document.getElementById('inp-monthly-ctc').value = emp.monthlyCtc || 75000;
+        document.getElementById('inp-bank-name').value = emp.bankName || 'HDFC Bank';
+        document.getElementById('inp-account-number').value = emp.accountNumber || '';
+        document.getElementById('inp-ifsc-code').value = emp.ifscCode || '';
+        document.getElementById('inp-pan-number').value = emp.panNumber || '';
+        document.getElementById('inp-pf-number').value = emp.pfNumber || '';
+        document.getElementById('inp-advance-balance').value = emp.salaryAdvanceBalance || 0;
+        document.getElementById('inp-loan-balance').value = emp.employeeLoanBalance || 0;
 
         var reportsToSelect = document.getElementById('inp-reports-to');
         reportsToSelect.innerHTML = `<option value="">None (Top Level)</option>`;
@@ -346,6 +458,42 @@
         });
 
         document.getElementById('emp-modal').classList.remove('hidden');
+      }
+
+      function viewDigitalFile(docId) {
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+        var emp = employees.find(function(e) { return e.id === docId; });
+        if (!emp) return;
+
+        var manager = employees.find(function(m) { return m.employeeId === emp.reportsTo; });
+        var managerName = manager ? manager.fullName : (emp.reportsTo || 'Top Level / None');
+
+        document.getElementById('dossier-avatar').innerText = emp.fullName.charAt(0).toUpperCase();
+        document.getElementById('dossier-title').innerText = emp.fullName;
+        document.getElementById('dossier-sub').innerText = emp.employeeId + " • " + (emp.isActive !== false ? 'Active Master Record' : 'Inactive');
+
+        document.getElementById('dos-name').innerText = emp.fullName;
+        document.getElementById('dos-designation').innerText = emp.designation;
+        document.getElementById('dos-vertical').innerText = emp.vertical + (emp.subVertical ? (' (' + emp.subVertical + ')') : '');
+        document.getElementById('dos-manager').innerText = managerName;
+        document.getElementById('dos-email').innerText = emp.email;
+        document.getElementById('dos-contact').innerText = emp.mobile + (emp.location ? (' (' + emp.location + ')') : '');
+
+        document.getElementById('dos-ctc').innerText = formatINR(emp.monthlyCtc || 75000);
+        document.getElementById('dos-aop').innerText = formatINR(emp.primaryAopTarget || 10000000);
+        document.getElementById('dos-role').innerText = emp.role || 'staff';
+        document.getElementById('dos-bank').innerText = emp.bankName || 'HDFC Bank';
+        document.getElementById('dos-account').innerText = emp.accountNumber ? ('****' + emp.accountNumber.slice(-4)) : '****4892';
+        document.getElementById('dos-ifsc').innerText = emp.ifscCode || 'HDFC0000123';
+        document.getElementById('dos-pan').innerText = emp.panNumber || 'AAAPM1234F';
+        document.getElementById('dos-pf').innerText = emp.pfNumber || 'UAN10098273';
+        document.getElementById('dos-advance').innerText = formatINR(emp.salaryAdvanceBalance || 0);
+
+        document.getElementById('digital-dossier-modal').classList.remove('hidden');
+      }
+
+      function closeDigitalDossier() {
+        document.getElementById('digital-dossier-modal').classList.add('hidden');
       }
 
       function handleSaveEmployee(e) {
@@ -364,6 +512,14 @@
           location: document.getElementById('inp-location').value.trim(),
           role: document.getElementById('inp-role').value,
           primaryAopTarget: document.getElementById('inp-aop-target').value !== "" ? Number(document.getElementById('inp-aop-target').value) : 0,
+          monthlyCtc: document.getElementById('inp-monthly-ctc').value !== "" ? Number(document.getElementById('inp-monthly-ctc').value) : 75000,
+          bankName: document.getElementById('inp-bank-name').value.trim(),
+          accountNumber: document.getElementById('inp-account-number').value.trim(),
+          ifscCode: document.getElementById('inp-ifsc-code').value.trim(),
+          panNumber: document.getElementById('inp-pan-number').value.trim(),
+          pfNumber: document.getElementById('inp-pf-number').value.trim(),
+          salaryAdvanceBalance: Number(document.getElementById('inp-advance-balance').value) || 0,
+          employeeLoanBalance: Number(document.getElementById('inp-loan-balance').value) || 0,
           isActive: true
         };
 

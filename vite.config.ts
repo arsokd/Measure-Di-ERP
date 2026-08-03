@@ -29,6 +29,7 @@ export default defineConfig(() => {
           myTeam: path.resolve(__dirname, 'my-team.html'),
           reviews: path.resolve(__dirname, 'reviews.html'),
           reports: path.resolve(__dirname, 'reports.html'),
+          userGuide: path.resolve(__dirname, 'user-guide.html'),
         },
       },
     },

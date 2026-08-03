@@ -3,59 +3,239 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Measure DI RevOps - Company Dashboard</title>
+    <title>Measure DI RevOps - Executive Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="firebase-config.js"></script>
     <script src="auth-guard.js"></script>
+    <style>
+      .sticky-header {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        backdrop-filter: blur(12px);
+        background-color: rgba(15, 23, 42, 0.95);
+      }
+      .preset-btn.active {
+        background-color: #4f46e5 !important;
+        color: #ffffff !important;
+        border-color: #6366f1 !important;
+        box-shadow: 0 2px 4px rgba(79, 70, 229, 0.4);
+      }
+    </style>
   </head>
   <body class="bg-slate-50 min-h-screen text-slate-800">
     
     <!-- Navigation Bar Container -->
     <div id="navbar-container"></div>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      
-      <!-- Header & Controls -->
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
-        <div>
-          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Company Executive Dashboard</h1>
-          <p class="text-sm text-slate-500 mt-1">Measure DI Technologies — Revenue Operations & AOP Achievement Overview</p>
-        </div>
-        <div class="flex items-center space-x-3">
-          <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-ping"></span> Live RevOps Sync
-          </span>
-          <button onclick="renderDashboardData()" class="px-4 py-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-semibold text-xs rounded-xl border border-indigo-200 transition-colors flex items-center space-x-1 cursor-pointer">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            <span>Refresh Data</span>
-          </button>
-        </div>
-      </div>
+    <!-- FROZEN / STICKY TOP EXECUTIVE CONTROL BAR -->
+    <div class="sticky-header border-b border-slate-800 text-white py-3.5 px-4 sm:px-6 lg:px-8 shadow-xl">
+      <div class="max-w-7xl mx-auto space-y-3">
+        
+        <!-- Header Row 1: Executive Title & Time Preset Buttons -->
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-400/40 flex items-center justify-center text-indigo-400 font-black text-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h1 class="text-base font-bold text-white tracking-tight">Executive RevOps Dashboard</h1>
+                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">MD View</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Measure DI Technologies &bull; Real-Time Performance & Trend Analytics</p>
+            </div>
+          </div>
 
-      <!-- 3 AOP Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="aop-summary-cards">
+          <!-- Quick Time Presets Buttons -->
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden xl:inline">Period:</span>
+            <button onclick="applyPreset('WTD')" id="btn-preset-WTD" class="preset-btn px-2.5 py-1 text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition-all cursor-pointer">WTD</button>
+            <button onclick="applyPreset('MTD')" id="btn-preset-MTD" class="preset-btn px-2.5 py-1 text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition-all cursor-pointer">MTD</button>
+            <button onclick="applyPreset('QTD')" id="btn-preset-QTD" class="preset-btn px-2.5 py-1 text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition-all cursor-pointer">QTD</button>
+            <button onclick="applyPreset('Q1')" id="btn-preset-Q1" class="preset-btn px-2.5 py-1 text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition-all cursor-pointer">Q1</button>
+            <button onclick="applyPreset('Q2')" id="btn-preset-Q2" class="preset-btn px-2.5 py-1 text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition-all cursor-pointer">Q2</button>
+            <button onclick="applyPreset('Q3')" id="btn-preset-Q3" class="preset-btn px-2.5 py-1 text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition-all cursor-pointer">Q3</button>
+            <button onclick="applyPreset('Q4')" id="btn-preset-Q4" class="preset-btn px-2.5 py-1 text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition-all cursor-pointer">Q4</button>
+            <button onclick="applyPreset('H1')" id="btn-preset-H1" class="preset-btn px-2.5 py-1 text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition-all cursor-pointer">H1</button>
+            <button onclick="applyPreset('H2')" id="btn-preset-H2" class="preset-btn px-2.5 py-1 text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg transition-all cursor-pointer">H2</button>
+            <button onclick="applyPreset('Full')" id="btn-preset-Full" class="preset-btn active px-2.5 py-1 text-[11px] font-bold bg-indigo-600 text-white border border-indigo-500 rounded-lg transition-all cursor-pointer">Full Year</button>
+          </div>
+        </div>
+
+        <!-- Header Row 2: Dropdown Filters & Custom Date Range -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
+          
+          <!-- Financial Year Filter -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Financial Year</label>
+            <select id="dash-fy-select" onchange="onFilterChange()" class="w-full bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+              <option value="2026-27">FY 2026-27</option>
+              <option value="2025-26" selected>FY 2025-26</option>
+              <option value="2024-25">FY 2024-25</option>
+              <option value="All">All Time Combined</option>
+            </select>
+          </div>
+
+          <!-- Vertical Filter -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Vertical</label>
+            <select id="dash-vertical-select" onchange="onFilterChange()" class="w-full bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+              <option value="All">All Verticals</option>
+              <option value="Sales">Equipment Sales</option>
+              <option value="Service/Parts">Service & Spares</option>
+              <option value="Projects">Steel Plant Projects</option>
+            </select>
+          </div>
+
+          <!-- Employee Filter -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Employee</label>
+            <select id="dash-employee-select" onchange="onFilterChange()" class="w-full bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+              <option value="All">All Team Members</option>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <!-- From Date -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">From Date</label>
+            <input type="date" id="dash-start-date" onchange="onCustomDateChange()" class="w-full bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+          </div>
+
+          <!-- To Date -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">To Date</label>
+            <input type="date" id="dash-end-date" onchange="onCustomDateChange()" class="w-full bg-slate-800 text-white text-xs border border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+          </div>
+
+          <!-- Refresh & Reset Button -->
+          <div class="flex items-end space-x-1.5">
+            <button onclick="resetAllDashboardFilters()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs py-1.5 px-2 rounded-lg border border-slate-700 transition-colors cursor-pointer text-center">
+              Reset
+            </button>
+            <button onclick="renderDashboardData()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-1.5 px-3 rounded-lg border border-indigo-500 transition-colors flex items-center justify-center space-x-1 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <span class="hidden sm:inline">Sync</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Active Filter Bar Summary -->
+        <div id="active-filter-summary" class="text-[11px] text-indigo-300 font-medium flex items-center justify-between border-t border-slate-800 pt-2">
+          <span>Active Selection: <strong text-white id="summary-filter-text">FY 2025-26 &bull; All Verticals &bull; All Employees &bull; Full Year</strong></span>
+          <span id="comparison-benchmark-label" class="text-slate-400 text-[10px]">Comparing trend vs Previous Period</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+
+      <!-- KPI SCORECARDS WITH TREND COMPARISON -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" id="kpi-scorecards-grid">
         <!-- Rendered dynamically -->
       </div>
 
-      <!-- Vertical Achievement Comparison & Chart -->
+      <!-- CHARTS SECTION: TIMELINE TRAJECTORY & VERTICAL CONTRIBUTION -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Target vs Achieved by Vertical -->
-        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-6">
-          <div class="flex items-center justify-between">
+        <!-- Chart 1: Revenue Performance Timeline & Trajectory (2 Cols) -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-4">
             <div>
-              <h2 class="text-lg font-bold text-slate-900">Vertical Performance Breakdown</h2>
+              <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                <span>Revenue Performance Trajectory & Monthly Trend</span>
+              </h2>
+              <p class="text-xs text-slate-500">Month-by-month revenue booked vs projected target trajectory</p>
+            </div>
+            <div id="timeline-stat-badge" class="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold border border-indigo-100 self-start sm:self-auto">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+          <div class="relative h-72 w-full">
+            <canvas id="timelineChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 2: Vertical Revenue Share (1 Col) -->
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4 flex flex-col justify-between">
+          <div class="border-b border-slate-100 pb-4">
+            <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+              <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+              <span>Vertical Contribution Share</span>
+            </h2>
+            <p class="text-xs text-slate-500">Equipment Sales vs Service vs Steel Projects</p>
+          </div>
+          <div class="relative h-60 w-full flex items-center justify-center">
+            <canvas id="verticalDonutChart"></canvas>
+          </div>
+          <div id="vertical-share-legend" class="grid grid-cols-3 gap-2 text-center text-[11px] pt-2 border-t border-slate-100">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CHARTS SECTION: PIPELINE STAGE FUNNEL & TEAM MEMBER CONTRIBUTION -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Chart 3: Commercial Pipeline Stage Funnel -->
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+                <span>Deal Pipeline Conversion Funnel</span>
+              </h2>
+              <p class="text-xs text-slate-500">Active commercial leads distribution across sales stages</p>
+            </div>
+            <a href="leads.html" class="text-xs font-semibold text-indigo-600 hover:underline">Manage Pipeline &rarr;</a>
+          </div>
+          <div class="relative h-64 w-full">
+            <canvas id="pipelineFunnelChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Chart 4: Team Member Contribution & Target vs Achieved -->
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span>Team Contribution Comparison</span>
+              </h2>
+              <p class="text-xs text-slate-500">Achieved weighted revenue vs target per team member</p>
+            </div>
+            <a href="my-team.html" class="text-xs font-semibold text-indigo-600 hover:underline">Team Hierarchy &rarr;</a>
+          </div>
+          <div class="relative h-64 w-full">
+            <canvas id="teamContributionChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- VERTICAL BREAKDOWN & PENDING FOLLOW-UPS -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Target vs Achieved by Vertical Progress Cards -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Vertical Performance Deep-Dive</h2>
               <p class="text-xs text-slate-500">Contribution-weighted revenue vs AOP Targets</p>
             </div>
-            <select id="dash-fy-select" onchange="renderDashboardData()" class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
-              <option value="All">All Time (2024 - 2026)</option>
-              <option value="2024-25">FY 2024-25</option>
-              <option value="2025-26" selected>FY 2025-26</option>
-              <option value="2026-27">FY 2026-27</option>
-            </select>
+            <span id="vertical-runrate-tag" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+              Run Rate Active
+            </span>
           </div>
 
           <div id="vertical-progress-bars" class="space-y-6">
@@ -65,12 +245,12 @@
 
         <!-- Today's Pending Follow-ups -->
         <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
             <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-              <span>Pending Follow-ups Today</span>
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <span>Pending Action Leads</span>
             </h2>
-            <a href="leads.html" class="text-xs font-semibold text-indigo-600 hover:underline">View All Leads &rarr;</a>
+            <a href="leads.html" class="text-xs font-semibold text-indigo-600 hover:underline">View All &rarr;</a>
           </div>
           <div id="pending-followups-list" class="space-y-3 max-h-80 overflow-y-auto">
             <!-- Rendered dynamically -->
@@ -79,25 +259,25 @@
 
       </div>
 
-      <!-- Team Leaderboard Table -->
+      <!-- TEAM LEADERBOARD TABLE -->
       <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
-        <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/50">
           <div>
-            <h2 class="text-lg font-bold text-slate-900">Team Leaderboard & KPI Achievement</h2>
-            <p class="text-xs text-slate-500">Individual contribution-weighted achieved revenue against primary AOP targets</p>
+            <h2 class="text-lg font-bold text-slate-900">Team Leaderboard & Individual Contribution</h2>
+            <p class="text-xs text-slate-500">Contribution-weighted revenue against individual targets (Excluding MD)</p>
           </div>
           <div class="flex items-center space-x-2">
-            <input type="text" id="leaderboard-search" oninput="filterLeaderboard()" placeholder="Search team member..." class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <input type="text" id="leaderboard-search" oninput="filterLeaderboard()" placeholder="Search team member..." class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs w-52 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <tr class="bg-slate-100/80 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
                 <th class="py-3 px-4">Employee</th>
                 <th class="py-3 px-4">Designation & Vertical</th>
-                <th class="py-3 px-4 text-right">Annual Target</th>
+                <th id="th-leaderboard-target" class="py-3 px-4 text-right">Period Target</th>
                 <th class="py-3 px-4 text-right">Achieved Revenue</th>
                 <th class="py-3 px-4 text-right">% Achieved</th>
                 <th class="py-3 px-4 text-center">Status</th>
@@ -114,279 +294,691 @@
     </main>
 
     <script>
+      // Global Chart Instances
+      var chartTimeline = null;
+      var chartVerticalDonut = null;
+      var chartPipelineFunnel = null;
+      var chartTeamContribution = null;
+
+      // Active Preset Tracking
+      var currentPreset = 'Full';
+      var customStartDate = null;
+      var customEndDate = null;
+
       document.addEventListener('DOMContentLoaded', function() {
         if (checkAuth(['admin', 'manager'])) {
+          populateEmployeeDropdown();
           renderDashboardData();
         }
       });
 
+      function populateEmployeeDropdown() {
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+        var sel = document.getElementById('dash-employee-select');
+        if (!sel) return;
+        
+        sel.innerHTML = '<option value="All">All Team Members</option>';
+        employees.forEach(function(emp) {
+          if (emp.employeeId === 'E-001') return; // Exclude MD E-001
+          var opt = document.createElement('option');
+          opt.value = emp.employeeId;
+          opt.innerText = emp.fullName + " (" + emp.employeeId + " - " + emp.vertical + ")";
+          sel.appendChild(opt);
+        });
+      }
+
+      function applyPreset(presetKey) {
+        currentPreset = presetKey;
+        // Highlight active preset button
+        var buttons = document.querySelectorAll('.preset-btn');
+        buttons.forEach(function(btn) {
+          btn.classList.remove('active', 'bg-indigo-600', 'text-white');
+          btn.classList.add('bg-slate-800', 'text-slate-300');
+        });
+
+        var activeBtn = document.getElementById('btn-preset-' + presetKey);
+        if (activeBtn) {
+          activeBtn.classList.add('active', 'bg-indigo-600', 'text-white');
+          activeBtn.classList.remove('bg-slate-800', 'text-slate-300');
+        }
+
+        // Reset custom date inputs
+        document.getElementById('dash-start-date').value = "";
+        document.getElementById('dash-end-date').value = "";
+        customStartDate = null;
+        customEndDate = null;
+
+        renderDashboardData();
+      }
+
+      function onCustomDateChange() {
+        var sVal = document.getElementById('dash-start-date').value;
+        var eVal = document.getElementById('dash-end-date').value;
+
+        if (sVal || eVal) {
+          currentPreset = 'Custom';
+          var buttons = document.querySelectorAll('.preset-btn');
+          buttons.forEach(function(btn) {
+            btn.classList.remove('active', 'bg-indigo-600', 'text-white');
+            btn.classList.add('bg-slate-800', 'text-slate-300');
+          });
+          customStartDate = sVal ? new Date(sVal) : null;
+          customEndDate = eVal ? new Date(eVal + 'T23:59:59') : null;
+          renderDashboardData();
+        }
+      }
+
+      function onFilterChange() {
+        renderDashboardData();
+      }
+
+      function resetAllDashboardFilters() {
+        document.getElementById('dash-fy-select').value = '2025-26';
+        document.getElementById('dash-vertical-select').value = 'All';
+        document.getElementById('dash-employee-select').value = 'All';
+        document.getElementById('dash-start-date').value = "";
+        document.getElementById('dash-end-date').value = "";
+        customStartDate = null;
+        customEndDate = null;
+        applyPreset('Full');
+      }
+
+      // Helper Date Parser
+      function parseAppDate(dateStr) {
+        if (!dateStr || typeof dateStr !== 'string') return null;
+        if (dateStr.indexOf('/') !== -1) {
+          var parts = dateStr.split('/');
+          if (parts.length >= 3) {
+            var day = parseInt(parts[0], 10);
+            var month = parseInt(parts[1], 10) - 1;
+            var year = parseInt(parts[2], 10);
+            if (year < 100) year += 2000;
+            return new Date(year, month, day);
+          }
+        } else if (dateStr.indexOf('-') !== -1) {
+          var parts = dateStr.split('T')[0].split('-');
+          if (parts.length >= 3) {
+            var year = parseInt(parts[0], 10);
+            var month = parseInt(parts[1], 10) - 1;
+            var day = parseInt(parts[2], 10);
+            return new Date(year, month, day);
+          }
+        }
+        var d = new Date(dateStr);
+        return isNaN(d.getTime()) ? null : d;
+      }
+
+      // Get Start & End Dates for Selected Preset in Financial Year
+      function getPeriodRange(fy, preset) {
+        var startYear = 2025;
+        if (fy === '2024-25') startYear = 2024;
+        else if (fy === '2026-27') startYear = 2026;
+        else if (fy === 'All') startYear = 2024; // Base
+
+        if (preset === 'Custom') {
+          var ratio = 1.0;
+          if (customStartDate && customEndDate) {
+            var diffMs = customEndDate.getTime() - customStartDate.getTime();
+            var diffDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+            ratio = Math.min(1.0, Math.max(0.01, diffDays / 365.0));
+          }
+          return {
+            current: { start: customStartDate, end: customEndDate },
+            previous: null,
+            ratio: ratio,
+            label: 'Custom Range',
+            shortLabel: 'Custom',
+            prevLabel: 'Previous Period'
+          };
+        }
+
+        if (preset === 'WTD') {
+          var now = new Date();
+          var day = now.getDay();
+          var diffToMon = now.getDate() - day + (day === 0 ? -6 : 1);
+          var mon = new Date(now.setDate(diffToMon));
+          mon.setHours(0,0,0,0);
+          var today = new Date();
+
+          var prevMon = new Date(mon);
+          prevMon.setDate(prevMon.getDate() - 7);
+          var prevSun = new Date(mon);
+          prevSun.setDate(prevSun.getDate() - 1);
+
+          return {
+            current: { start: mon, end: today },
+            previous: { start: prevMon, end: prevSun },
+            ratio: 7 / 365.0,
+            label: 'Week To Date (WTD)',
+            shortLabel: 'WTD',
+            prevLabel: 'Previous Week'
+          };
+        }
+
+        if (preset === 'MTD') {
+          var now = new Date();
+          var startM = new Date(now.getFullYear(), now.getMonth(), 1);
+          var today = new Date();
+
+          var prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          var prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+          return {
+            current: { start: startM, end: today },
+            previous: { start: prevMonthStart, end: prevMonthEnd },
+            ratio: 1 / 12.0,
+            label: 'Month To Date (MTD)',
+            shortLabel: 'MTD',
+            prevLabel: 'Previous Month'
+          };
+        }
+
+        if (preset === 'QTD') {
+          var now = new Date();
+          var m = now.getMonth();
+          var qStartMonth = Math.floor(m / 3) * 3;
+          var startQ = new Date(now.getFullYear(), qStartMonth, 1);
+          var today = new Date();
+
+          var prevQStart = new Date(now.getFullYear(), qStartMonth - 3, 1);
+          var prevQEnd = new Date(now.getFullYear(), qStartMonth, 0);
+
+          return {
+            current: { start: startQ, end: today },
+            previous: { start: prevQStart, end: prevQEnd },
+            ratio: 0.25,
+            label: 'Quarter To Date (QTD)',
+            shortLabel: 'QTD',
+            prevLabel: 'Previous Quarter'
+          };
+        }
+
+        if (preset === 'Q1') {
+          return {
+            current: { start: new Date(startYear, 3, 1), end: new Date(startYear, 5, 30, 23, 59, 59) },
+            previous: { start: new Date(startYear - 1, 0, 1), end: new Date(startYear, 2, 31, 23, 59, 59) },
+            ratio: 0.25,
+            label: 'Q1 (Apr-Jun ' + startYear + ')',
+            shortLabel: 'Q1',
+            prevLabel: 'Q4 (Jan-Mar ' + startYear + ')'
+          };
+        }
+
+        if (preset === 'Q2') {
+          return {
+            current: { start: new Date(startYear, 6, 1), end: new Date(startYear, 8, 30, 23, 59, 59) },
+            previous: { start: new Date(startYear, 3, 1), end: new Date(startYear, 5, 30, 23, 59, 59) },
+            ratio: 0.25,
+            label: 'Q2 (Jul-Sep ' + startYear + ')',
+            shortLabel: 'Q2',
+            prevLabel: 'Q1 (Apr-Jun ' + startYear + ')'
+          };
+        }
+
+        if (preset === 'Q3') {
+          return {
+            current: { start: new Date(startYear, 9, 1), end: new Date(startYear, 11, 31, 23, 59, 59) },
+            previous: { start: new Date(startYear, 6, 1), end: new Date(startYear, 8, 30, 23, 59, 59) },
+            ratio: 0.25,
+            label: 'Q3 (Oct-Dec ' + startYear + ')',
+            shortLabel: 'Q3',
+            prevLabel: 'Q2 (Jul-Sep ' + startYear + ')'
+          };
+        }
+
+        if (preset === 'Q4') {
+          return {
+            current: { start: new Date(startYear + 1, 0, 1), end: new Date(startYear + 1, 2, 31, 23, 59, 59) },
+            previous: { start: new Date(startYear, 9, 1), end: new Date(startYear, 11, 31, 23, 59, 59) },
+            ratio: 0.25,
+            label: 'Q4 (Jan-Mar ' + (startYear + 1) + ')',
+            shortLabel: 'Q4',
+            prevLabel: 'Q3 (Oct-Dec ' + startYear + ')'
+          };
+        }
+
+        if (preset === 'H1') {
+          return {
+            current: { start: new Date(startYear, 3, 1), end: new Date(startYear, 8, 30, 23, 59, 59) },
+            previous: { start: new Date(startYear - 1, 9, 1), end: new Date(startYear, 2, 31, 23, 59, 59) },
+            ratio: 0.5,
+            label: 'H1 (Apr-Sep ' + startYear + ')',
+            shortLabel: 'H1',
+            prevLabel: 'H2 Previous'
+          };
+        }
+
+        if (preset === 'H2') {
+          return {
+            current: { start: new Date(startYear, 9, 1), end: new Date(startYear + 1, 2, 31, 23, 59, 59) },
+            previous: { start: new Date(startYear, 3, 1), end: new Date(startYear, 8, 30, 23, 59, 59) },
+            ratio: 0.5,
+            label: 'H2 (Oct-Mar ' + (startYear + 1) + ')',
+            shortLabel: 'H2',
+            prevLabel: 'H1 (Apr-Sep ' + startYear + ')'
+          };
+        }
+
+        // Full Year
+        if (fy === 'All') {
+          return {
+            current: { start: new Date(2024, 3, 1), end: new Date(2027, 2, 31, 23, 59, 59) },
+            previous: null,
+            ratio: 1.0,
+            label: 'All Time (2024-2027)',
+            shortLabel: 'All Time',
+            prevLabel: 'Previous Period'
+          };
+        }
+
+        return {
+          current: { start: new Date(startYear, 3, 1), end: new Date(startYear + 1, 2, 31, 23, 59, 59) },
+          previous: { start: new Date(startYear - 1, 3, 1), end: new Date(startYear, 2, 31, 23, 59, 59) },
+          ratio: 1.0,
+          label: 'Full Year (' + fy + ')',
+          shortLabel: 'Full Year',
+          prevLabel: 'FY ' + (startYear - 1) + '-' + (startYear % 100)
+        };
+      }
+
       function renderDashboardData() {
         var employees = window.RevOpsStore.getCollection('employees') || [];
         var rawOrders = window.RevOpsStore.getCollection('orders') || [];
-        var selectedFy = document.getElementById('dash-fy-select') ? document.getElementById('dash-fy-select').value : 'All';
-        var orders = rawOrders.filter(function(ord) {
-          if (selectedFy === 'All') return true;
-          var fy = typeof getFinancialYear === 'function' ? getFinancialYear(ord.orderDate) : '2025-26';
-          return fy === selectedFy;
-        });
-        var leads = window.RevOpsStore.getCollection('leads') || [];
+        var rawLeads = window.RevOpsStore.getCollection('leads') || [];
         var aopTargets = window.RevOpsStore.getCollection('aopTargets') || [];
 
-        // 1. Calculate Contribution-Weighted Revenue for each employee & vertical
-        var employeeAchievedMap = {};
-        employees.forEach(function(e) {
-          employeeAchievedMap[e.employeeId] = 0;
-        });
+        // Active Dropdown Filters
+        var selectedFy = document.getElementById('dash-fy-select').value;
+        var selectedVertical = document.getElementById('dash-vertical-select').value;
+        var selectedEmpId = document.getElementById('dash-employee-select').value;
 
-        var verticalAchievedMap = {
-          "Sales": 0,
-          "Service/Parts": 0,
-          "Projects": 0
-        };
+        // Active Period Range
+        var periodInfo = getPeriodRange(selectedFy, currentPreset);
+        var currStart = periodInfo.current ? periodInfo.current.start : null;
+        var currEnd = periodInfo.current ? periodInfo.current.end : null;
 
-        var totalCompanyAchieved = 0;
+        var prevStart = periodInfo.previous ? periodInfo.previous.start : null;
+        var prevEnd = periodInfo.previous ? periodInfo.previous.end : null;
 
-        orders.forEach(function(ord) {
-          if (ord.status === "Won") {
-            var val = Number(ord.orderValue) || 0;
-            totalCompanyAchieved += val;
+        // Update Summary Filter Text Bar
+        var empText = selectedEmpId === 'All' ? 'All Employees' : (employees.find(e => e.employeeId === selectedEmpId)?.fullName || selectedEmpId);
+        var vertText = selectedVertical === 'All' ? 'All Verticals' : selectedVertical;
+        document.getElementById('summary-filter-text').innerText = selectedFy + ' • ' + vertText + ' • ' + empText + ' • ' + periodInfo.label;
+        document.getElementById('comparison-benchmark-label').innerText = periodInfo.prevLabel ? ('Benchmark vs ' + periodInfo.prevLabel) : 'Full Cumulative View';
 
-            // Map contributors
-            var contribs = ord.contributors || [];
-            if (!Array.isArray(contribs) || contribs.length === 0) {
-              contribs = [{ employeeId: ord.employeeId, contributionPct: 100 }];
+        // Filter Orders for Current Period
+        function filterOrdersList(ordList, rangeStart, rangeEnd) {
+          return ordList.filter(function(ord) {
+            // FY Filter
+            if (selectedFy !== 'All') {
+              var ordFy = typeof getFinancialYear === 'function' ? getFinancialYear(ord.orderDate) : '2025-26';
+              if (ordFy !== selectedFy) return false;
             }
 
-            contribs.forEach(function(c) {
-              var pct = Number(c.contributionPct) || 0;
-              var share = (val * pct) / 100;
-              if (employeeAchievedMap[c.employeeId] !== undefined) {
-                employeeAchievedMap[c.employeeId] += share;
-              } else {
-                employeeAchievedMap[c.employeeId] = share;
+            // Date Range Filter
+            if (rangeStart || rangeEnd) {
+              var d = parseAppDate(ord.orderDate);
+              if (d) {
+                if (rangeStart && d < rangeStart) return false;
+                if (rangeEnd && d > rangeEnd) return false;
               }
-            });
-
-            // Vertical aggregation
-            var rawV = ord.vertical || "Sales";
-            var vName = "Sales";
-            if (rawV === "Sales") {
-              vName = "Sales";
-            } else if (rawV.indexOf("Projects") !== -1 && rawV.indexOf("Service") === -1) {
-              vName = "Projects";
-            } else {
-              vName = "Service/Parts";
             }
-            if (verticalAchievedMap[vName] !== undefined) {
-              verticalAchievedMap[vName] += val;
-            } else {
-              verticalAchievedMap[vName] = val;
-            }
-          }
-        });
 
-        // 2. Compute Company AOP Targets based on Selected Financial Year
+            // Vertical Filter
+            if (selectedVertical !== 'All') {
+              var rawV = ord.vertical || 'Sales';
+              var normV = 'Sales';
+              if (rawV.indexOf('Projects') !== -1 && rawV.indexOf('Service') === -1) normV = 'Projects';
+              else if (rawV !== 'Sales') normV = 'Service/Parts';
+              if (normV !== selectedVertical) return false;
+            }
+
+            // Employee Filter
+            if (selectedEmpId !== 'All') {
+              var contribs = ord.contributors || [];
+              if (contribs.length > 0) {
+                var isContrib = contribs.some(c => c.employeeId === selectedEmpId);
+                if (!isContrib) return false;
+              } else {
+                if (ord.employeeId !== selectedEmpId) return false;
+              }
+            }
+
+            return true;
+          });
+        }
+
+        var currentOrders = filterOrdersList(rawOrders, currStart, currEnd);
+        var previousOrders = prevStart ? filterOrdersList(rawOrders, prevStart, prevEnd) : [];
+
+        // Compute Revenue for Period
+        function computeRevenueData(ordersList) {
+          var tot = 0;
+          var vertMap = { "Sales": 0, "Service/Parts": 0, "Projects": 0 };
+          var empMap = {};
+          employees.forEach(e => empMap[e.employeeId] = 0);
+
+          ordersList.forEach(function(ord) {
+            if (ord.status === "Won") {
+              var val = Number(ord.orderValue) || 0;
+              tot += val;
+
+              // Vertical
+              var rawV = ord.vertical || "Sales";
+              var vName = "Sales";
+              if (rawV.indexOf("Projects") !== -1 && rawV.indexOf("Service") === -1) vName = "Projects";
+              else if (rawV !== "Sales") vName = "Service/Parts";
+              vertMap[vName] = (vertMap[vName] || 0) + val;
+
+              // Employee Share
+              var contribs = ord.contributors || [];
+              if (!Array.isArray(contribs) || contribs.length === 0) {
+                contribs = [{ employeeId: ord.employeeId, contributionPct: 100 }];
+              }
+              contribs.forEach(function(c) {
+                var pct = Number(c.contributionPct) || 0;
+                var share = (val * pct) / 100;
+                empMap[c.employeeId] = (empMap[c.employeeId] || 0) + share;
+              });
+            }
+          });
+
+          return { total: tot, verticals: vertMap, employees: empMap, count: ordersList.filter(o => o.status === "Won").length };
+        }
+
+        var currRev = computeRevenueData(currentOrders);
+        var prevRev = computeRevenueData(previousOrders);
+
+        // Compute Targets for Selected FY
         var fyDefaults = {
-          '2024-25': { company: 80000000, sales: 20000000, service: 60000000, label: 'FY 24-25' },
-          '2025-26': { company: 100000000, sales: 25000000, service: 75000000, label: 'FY 25-26' },
-          '2026-27': { company: 66666667, sales: 16666667, service: 50000000, label: 'FY 26-27 (4M Pro-Rata)' },
-          'All':     { company: 246666667, sales: 61666667, service: 185000000, label: 'All FYs Combined' }
+          '2024-25': { company: 80000000, sales: 20000000, service: 48000000, projects: 12000000 },
+          '2025-26': { company: 100000000, sales: 25000000, service: 60000000, projects: 15000000 },
+          '2026-27': { company: 66666667, sales: 16666667, service: 40000000, projects: 10000000 },
+          'All':     { company: 246666667, sales: 61666667, service: 148000000, projects: 37000000 }
         };
-        var def = fyDefaults[selectedFy] || fyDefaults['All'];
-        var companyTotalTarget = def.company;
-        var salesTarget = def.sales;
-        var serviceProjectsTarget = def.service;
+        var def = fyDefaults[selectedFy] || fyDefaults['2025-26'];
+        var periodRatio = periodInfo.ratio || 1.0;
 
-        var customRecord = aopTargets.find(function(a) { 
-          return (selectedFy === 'All' || a.financialYear === selectedFy) && (a.companyTarget !== undefined || a.verticalTargets !== undefined); 
-        });
-        if (customRecord) {
-          if (customRecord.companyTarget !== undefined) companyTotalTarget = customRecord.companyTarget;
-          if (customRecord.verticalTargets) {
-            salesTarget = customRecord.verticalTargets["Sales"] || salesTarget;
-            serviceProjectsTarget = (customRecord.verticalTargets["Service/Parts"] || 0) + (customRecord.verticalTargets["Projects"] || 0) || serviceProjectsTarget;
+        var periodCompanyTarget = Math.round(def.company * periodRatio);
+        var periodSalesTarget = Math.round(def.sales * periodRatio);
+        var periodServiceTarget = Math.round(def.service * periodRatio);
+        var periodProjectsTarget = Math.round(def.projects * periodRatio);
+
+        // Render KPI Scorecards
+        renderKpiScorecards(currRev, prevRev, periodCompanyTarget, periodSalesTarget, periodServiceTarget, periodProjectsTarget, periodInfo);
+
+        // Render Vertical Progress Bars
+        renderVerticalProgress(currRev.verticals, periodSalesTarget, periodServiceTarget, periodProjectsTarget, periodInfo);
+
+        // Filter Leads for Pipeline Stage Chart
+        var filteredLeads = rawLeads.filter(function(l) {
+          if (selectedFy !== 'All') {
+            var lFy = typeof getFinancialYear === 'function' ? getFinancialYear(l.createdDate) : '2025-26';
+            if (lFy !== selectedFy) return false;
           }
-        } else {
-          var compItem = aopTargets.find(function(a) { return (selectedFy === 'All' || a.financialYear === selectedFy) && a.lineItem && a.lineItem.indexOf('Company Total') !== -1; });
-          if (compItem && compItem.annualTarget) companyTotalTarget = compItem.annualTarget;
-
-          var sItem = aopTargets.find(function(a) { return (selectedFy === 'All' || a.financialYear === selectedFy) && a.lineItem === 'Sales Vertical Revenue'; });
-          if (sItem && sItem.annualTarget) salesTarget = sItem.annualTarget;
-
-          var spItem = aopTargets.find(function(a) { return (selectedFy === 'All' || a.financialYear === selectedFy) && a.lineItem && a.lineItem.indexOf('Service/Parts') !== -1; });
-          if (spItem && spItem.annualTarget) serviceProjectsTarget = spItem.annualTarget;
-        }
-
-        if (selectedFy === 'All') {
-          var companySum = 0;
-          aopTargets.forEach(function(a) {
-            if (a.lineItem && a.lineItem.indexOf('Company Total') !== -1) {
-              companySum += (Number(a.annualTarget) || 0);
-            }
-          });
-          if (companySum > 0) companyTotalTarget = companySum;
-        }
-
-        // Render Summary Cards
-        var cardsHtml = `
-          <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 relative overflow-hidden">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Company Total AOP</span>
-              <span class="p-2 rounded-xl bg-indigo-50 text-indigo-600 font-bold text-xs">Total</span>
-            </div>
-            <div class="text-2xl font-black text-slate-900 tracking-tight">${formatINR(totalCompanyAchieved)}</div>
-            <div class="text-xs text-slate-500 mt-1">Target: <span class="font-semibold text-slate-700">${formatINR(companyTotalTarget)}</span></div>
-            <div class="w-full bg-slate-100 h-2.5 rounded-full mt-4 overflow-hidden">
-              <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: ${Math.min(100, Math.round((totalCompanyAchieved / companyTotalTarget) * 100))}%"></div>
-            </div>
-            <div class="flex justify-between items-center text-[11px] font-semibold text-slate-500 mt-2">
-              <span>Overall Achievement</span>
-              <span class="text-indigo-600 font-bold">${Math.round((totalCompanyAchieved / companyTotalTarget) * 100)}%</span>
-            </div>
-          </div>
-
-          <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 relative overflow-hidden">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Sales Vertical</span>
-              <span class="p-2 rounded-xl bg-blue-50 text-blue-600 font-bold text-xs">Sales</span>
-            </div>
-            <div class="text-2xl font-black text-slate-900 tracking-tight">${formatINR(verticalAchievedMap["Sales"])}</div>
-            <div class="text-xs text-slate-500 mt-1">Target: <span class="font-semibold text-slate-700">${formatINR(salesTarget)}</span></div>
-            <div class="w-full bg-slate-100 h-2.5 rounded-full mt-4 overflow-hidden">
-              <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: ${Math.min(100, Math.round((verticalAchievedMap["Sales"] / salesTarget) * 100))}%"></div>
-            </div>
-            <div class="flex justify-between items-center text-[11px] font-semibold text-slate-500 mt-2">
-              <span>Vertical Achievement</span>
-              <span class="text-blue-600 font-bold">${Math.round((verticalAchievedMap["Sales"] / salesTarget) * 100)}%</span>
-            </div>
-          </div>
-
-          <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 relative overflow-hidden">
-            <div class="flex items-center justify-between mb-3">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Service / Parts / Projects</span>
-              <span class="p-2 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-xs">Service</span>
-            </div>
-            <div class="text-2xl font-black text-slate-900 tracking-tight">${formatINR((verticalAchievedMap["Service/Parts"] || 0) + (verticalAchievedMap["Projects"] || 0))}</div>
-            <div class="text-xs text-slate-500 mt-1">Target: <span class="font-semibold text-slate-700">${formatINR(serviceProjectsTarget)}</span></div>
-            <div class="w-full bg-slate-100 h-2.5 rounded-full mt-4 overflow-hidden">
-              <div class="bg-emerald-600 h-2.5 rounded-full transition-all duration-500" style="width: ${Math.min(100, Math.round((((verticalAchievedMap["Service/Parts"] || 0) + (verticalAchievedMap["Projects"] || 0)) / serviceProjectsTarget) * 100))}%"></div>
-            </div>
-            <div class="flex justify-between items-center text-[11px] font-semibold text-slate-500 mt-2">
-              <span>Vertical Achievement</span>
-              <span class="text-emerald-600 font-bold">${Math.round((((verticalAchievedMap["Service/Parts"] || 0) + (verticalAchievedMap["Projects"] || 0)) / serviceProjectsTarget) * 100)}%</span>
-            </div>
-          </div>
-        `;
-
-        document.getElementById('aop-summary-cards').innerHTML = cardsHtml;
-
-        // Render Vertical Bars
-        var serviceOnlyTarget = Math.round(serviceProjectsTarget * 0.8);
-        var projectsOnlyTarget = serviceProjectsTarget - serviceOnlyTarget;
-        var serviceAchieved = verticalAchievedMap["Service/Parts"] || 0;
-        var projectsAchieved = verticalAchievedMap["Projects"] || 0;
-        var salesAchieved = verticalAchievedMap["Sales"] || 0;
-
-        var verticalBarsHtml = `
-          <div class="space-y-2">
-            <div class="flex justify-between text-xs font-semibold text-slate-700">
-              <span>Equipment Sales Vertical</span>
-              <span>${formatINR(salesAchieved)} / ${formatINR(salesTarget)} (${salesTarget > 0 ? Math.round((salesAchieved/salesTarget)*100) : 0}%)</span>
-            </div>
-            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-              <div class="bg-indigo-600 h-3 rounded-full" style="width: ${salesTarget > 0 ? Math.min(100, Math.round((salesAchieved/salesTarget)*100)) : 0}%"></div>
-            </div>
-          </div>
-
-          <div class="space-y-2">
-            <div class="flex justify-between text-xs font-semibold text-slate-700">
-              <span>Service & AMC Vertical</span>
-              <span>${formatINR(serviceAchieved)} / ${formatINR(serviceOnlyTarget)} (${serviceOnlyTarget > 0 ? Math.round((serviceAchieved/serviceOnlyTarget)*100) : 0}%)</span>
-            </div>
-            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-              <div class="bg-emerald-600 h-3 rounded-full" style="width: ${serviceOnlyTarget > 0 ? Math.min(100, Math.round((serviceAchieved/serviceOnlyTarget)*100)) : 0}%"></div>
-            </div>
-          </div>
-
-          <div class="space-y-2">
-            <div class="flex justify-between text-xs font-semibold text-slate-700">
-              <span>Steel Plant Projects Vertical</span>
-              <span>${formatINR(projectsAchieved)} / ${formatINR(projectsOnlyTarget)} (${projectsOnlyTarget > 0 ? Math.round((projectsAchieved/projectsOnlyTarget)*100) : 0}%)</span>
-            </div>
-            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-              <div class="bg-blue-600 h-3 rounded-full" style="width: ${projectsOnlyTarget > 0 ? Math.min(100, Math.round((projectsAchieved/projectsOnlyTarget)*100)) : 0}%"></div>
-            </div>
-          </div>
-        `;
-
-        document.getElementById('vertical-progress-bars').innerHTML = verticalBarsHtml;
-
-        // Render Pending Follow-ups Today
-        var today = getFormattedToday();
-        var pendingLeads = leads.filter(function(l) {
-          return l.status !== "Won" && l.status !== "Lost";
+          if (selectedVertical !== 'All') {
+            var rawV = l.vertical || 'Sales';
+            if (selectedVertical === 'Sales' && rawV !== 'Sales') return false;
+            if (selectedVertical === 'Projects' && rawV.indexOf('Projects') === -1) return false;
+            if (selectedVertical === 'Service/Parts' && rawV.indexOf('Service') === -1 && rawV.indexOf('Parts') === -1) return false;
+          }
+          if (selectedEmpId !== 'All' && l.employeeId !== selectedEmpId) return false;
+          return true;
         });
 
-        var pendingHtml = "";
-        if (pendingLeads.length === 0) {
-          pendingHtml = `<div class="p-4 text-center text-xs text-slate-400">No pending lead follow-ups for today.</div>`;
-        } else {
-          pendingLeads.forEach(function(l) {
-            pendingHtml += `
-              <div class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors flex items-center justify-between">
-                <div>
-                  <div class="font-semibold text-xs text-slate-900">${l.customerName}</div>
-                  <div class="text-[11px] text-slate-500">${l.vertical} &bull; Expected: ${formatINR(l.expectedValue)}</div>
-                </div>
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-800">${l.status}</span>
-              </div>
-            `;
-          });
-        }
-        document.getElementById('pending-followups-list').innerHTML = pendingHtml;
+        // Render Pending Follow-ups Today Widget
+        renderPendingFollowups(filteredLeads);
 
-        // Render Leaderboard
+        // Render Leaderboard Rows
         window.currentLeaderboardEmps = employees;
-        window.currentAchievedMap = employeeAchievedMap;
-        renderLeaderboardRows(employees, employeeAchievedMap);
+        window.currentAchievedMap = currRev.employees;
+        window.currentPeriodRatio = periodRatio;
+        window.currentPeriodInfo = periodInfo;
+        renderLeaderboardRows(employees, currRev.employees, selectedFy, periodRatio, periodInfo);
+
+        // RENDER CHARTS
+        renderTimelineChart(rawOrders, selectedFy, selectedVertical, selectedEmpId, periodCompanyTarget, periodInfo);
+        renderVerticalDonutChart(currRev.verticals);
+        renderPipelineFunnelChart(filteredLeads);
+        renderTeamContributionChart(employees, currRev.employees, selectedFy, periodRatio, periodInfo);
       }
 
-      function renderLeaderboardRows(employees, achievedMap) {
+      function calculateTrendBadge(currentVal, prevVal, label) {
+        if (!prevVal || prevVal === 0) {
+          if (currentVal > 0) return `<span class="inline-flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">▲ New vs ${label}</span>`;
+          return `<span class="inline-flex items-center text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">-- vs ${label}</span>`;
+        }
+
+        var diff = currentVal - prevVal;
+        var pct = ((diff / prevVal) * 100).toFixed(1);
+
+        if (diff >= 0) {
+          return `<span class="inline-flex items-center text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">▲ +${pct}% vs ${label}</span>`;
+        } else {
+          return `<span class="inline-flex items-center text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">▼ ${pct}% vs ${label}</span>`;
+        }
+      }
+
+      function renderKpiScorecards(currRev, prevRev, companyTarget, salesTarget, serviceTarget, projectsTarget, periodInfo) {
+        var prevLabel = periodInfo.prevLabel || 'Prev';
+        var shortLabel = periodInfo.shortLabel || 'Period';
+
+        var compAchPct = companyTarget > 0 ? Math.round((currRev.total / companyTarget) * 100) : 0;
+        var salesAchPct = salesTarget > 0 ? Math.round(((currRev.verticals["Sales"] || 0) / salesTarget) * 100) : 0;
+        var serviceAchPct = serviceTarget > 0 ? Math.round(((currRev.verticals["Service/Parts"] || 0) / serviceTarget) * 100) : 0;
+        var projAchPct = projectsTarget > 0 ? Math.round(((currRev.verticals["Projects"] || 0) / projectsTarget) * 100) : 0;
+
+        var compTrend = calculateTrendBadge(currRev.total, prevRev.total, prevLabel);
+        var salesTrend = calculateTrendBadge(currRev.verticals["Sales"] || 0, prevRev.verticals["Sales"] || 0, prevLabel);
+        var serviceTrend = calculateTrendBadge(currRev.verticals["Service/Parts"] || 0, prevRev.verticals["Service/Parts"] || 0, prevLabel);
+        var projTrend = calculateTrendBadge(currRev.verticals["Projects"] || 0, prevRev.verticals["Projects"] || 0, prevLabel);
+
+        var grid = document.getElementById('kpi-scorecards-grid');
+        grid.innerHTML = `
+          <!-- Card 1: Total Revenue -->
+          <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 relative overflow-hidden flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Revenue Booked</span>
+                ${compTrend}
+              </div>
+              <div class="text-2xl font-black text-slate-900 tracking-tight">${formatINR(currRev.total)}</div>
+              <div class="text-xs text-slate-500 mt-1">Target (${shortLabel}): <span class="font-semibold text-slate-700">${formatINR(companyTarget)}</span></div>
+            </div>
+            <div class="mt-4">
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: ${Math.min(100, compAchPct)}%"></div>
+              </div>
+              <div class="flex justify-between items-center text-[10px] font-bold text-slate-500 mt-1.5">
+                <span>${shortLabel} Achievement</span>
+                <span class="text-indigo-600">${compAchPct}%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Equipment Sales -->
+          <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 relative overflow-hidden flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Equipment Sales</span>
+                ${salesTrend}
+              </div>
+              <div class="text-2xl font-black text-slate-900 tracking-tight">${formatINR(currRev.verticals["Sales"] || 0)}</div>
+              <div class="text-xs text-slate-500 mt-1">Target (${shortLabel}): <span class="font-semibold text-slate-700">${formatINR(salesTarget)}</span></div>
+            </div>
+            <div class="mt-4">
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: ${Math.min(100, salesAchPct)}%"></div>
+              </div>
+              <div class="flex justify-between items-center text-[10px] font-bold text-slate-500 mt-1.5">
+                <span>${shortLabel} Achievement</span>
+                <span class="text-blue-600">${salesAchPct}%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Service & Spares -->
+          <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 relative overflow-hidden flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Service & Spares</span>
+                ${serviceTrend}
+              </div>
+              <div class="text-2xl font-black text-slate-900 tracking-tight">${formatINR(currRev.verticals["Service/Parts"] || 0)}</div>
+              <div class="text-xs text-slate-500 mt-1">Target (${shortLabel}): <span class="font-semibold text-slate-700">${formatINR(serviceTarget)}</span></div>
+            </div>
+            <div class="mt-4">
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-emerald-600 h-2 rounded-full transition-all duration-500" style="width: ${Math.min(100, serviceAchPct)}%"></div>
+              </div>
+              <div class="flex justify-between items-center text-[10px] font-bold text-slate-500 mt-1.5">
+                <span>${shortLabel} Achievement</span>
+                <span class="text-emerald-600">${serviceAchPct}%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: Steel Plant Projects -->
+          <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 relative overflow-hidden flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Steel Plant Projects</span>
+                ${projTrend}
+              </div>
+              <div class="text-2xl font-black text-slate-900 tracking-tight">${formatINR(currRev.verticals["Projects"] || 0)}</div>
+              <div class="text-xs text-slate-500 mt-1">Target (${shortLabel}): <span class="font-semibold text-slate-700">${formatINR(projectsTarget)}</span></div>
+            </div>
+            <div class="mt-4">
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-purple-600 h-2 rounded-full transition-all duration-500" style="width: ${Math.min(100, projAchPct)}%"></div>
+              </div>
+              <div class="flex justify-between items-center text-[10px] font-bold text-slate-500 mt-1.5">
+                <span>${shortLabel} Achievement</span>
+                <span class="text-purple-600">${projAchPct}%</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderVerticalProgress(vMap, salesTarget, serviceTarget, projectsTarget, periodInfo) {
+        var salesAch = vMap["Sales"] || 0;
+        var serviceAch = vMap["Service/Parts"] || 0;
+        var projAch = vMap["Projects"] || 0;
+
+        var salesPct = salesTarget > 0 ? Math.round((salesAch / salesTarget) * 100) : 0;
+        var servicePct = serviceTarget > 0 ? Math.round((serviceAch / serviceTarget) * 100) : 0;
+        var projPct = projectsTarget > 0 ? Math.round((projAch / projectsTarget) * 100) : 0;
+
+        var html = `
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs font-semibold text-slate-700">
+              <span class="flex items-center space-x-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                <span>Equipment Sales Vertical</span>
+              </span>
+              <span>${formatINR(salesAch)} / ${formatINR(salesTarget)} Target (${salesPct}%)</span>
+            </div>
+            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+              <div class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: ${Math.min(100, salesPct)}%"></div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs font-semibold text-slate-700">
+              <span class="flex items-center space-x-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                <span>Service & Maintenance AMC Vertical</span>
+              </span>
+              <span>${formatINR(serviceAch)} / ${formatINR(serviceTarget)} Target (${servicePct}%)</span>
+            </div>
+            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+              <div class="bg-emerald-600 h-3 rounded-full transition-all duration-500" style="width: ${Math.min(100, servicePct)}%"></div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex justify-between text-xs font-semibold text-slate-700">
+              <span class="flex items-center space-x-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                <span>Steel Plant Turnkey Projects Vertical</span>
+              </span>
+              <span>${formatINR(projAch)} / ${formatINR(projectsTarget)} Target (${projPct}%)</span>
+            </div>
+            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+              <div class="bg-purple-600 h-3 rounded-full transition-all duration-500" style="width: ${Math.min(100, projPct)}%"></div>
+            </div>
+          </div>
+        `;
+        document.getElementById('vertical-progress-bars').innerHTML = html;
+      }
+
+      function renderPendingFollowups(leads) {
+        var pendingLeads = leads.filter(l => l.status !== "Won" && l.status !== "Lost");
+        var container = document.getElementById('pending-followups-list');
+        if (pendingLeads.length === 0) {
+          container.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No active pending leads matching current filter.</div>`;
+          return;
+        }
+
+        var html = "";
+        pendingLeads.slice(0, 7).forEach(function(l) {
+          var val = l.estimatedValue || l.expectedValue || l.dealValue || 0;
+          html += `
+            <div class="p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors flex items-center justify-between">
+              <div>
+                <div class="font-semibold text-xs text-slate-900">${l.customerName}</div>
+                <div class="text-[11px] text-slate-500">${l.vertical || 'Sales'} &bull; Est: ${formatINR(val)}</div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-800">${l.status || 'New'}</span>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
+      }
+
+      function getEmployeeTarget(emp, fy, kraList) {
+        var empId = typeof emp === 'object' ? emp.employeeId : emp;
+        var empKras = (kraList || []).filter(function(k) {
+          if (k.employeeId !== empId) return false;
+          var isAmt = (k.kpiType === "Amount" || (k.kraName || "").toLowerCase().indexOf("order") !== -1 || (k.kraName || "").toLowerCase().indexOf("spares") !== -1);
+          if (!isAmt) return false;
+          if (!k.financialYear) return true;
+          return fy === 'All' || k.financialYear === fy;
+        });
+
+        if (empKras.length > 0) {
+          var tot = 0;
+          empKras.forEach(function(k) {
+            tot += (Number(k.annualTarget) || Number(k.targetValue) || 0);
+          });
+          if (tot > 0) return tot;
+        }
+
+        var raw = typeof emp === 'object' ? (Number(emp.primaryAopTarget) || 0) : 0;
+        if (!raw) return 0;
+        if (fy === '2024-25') return Math.round(raw * 0.4);
+        if (fy === '2025-26') return Math.round(raw * 0.5);
+        if (fy === '2026-27') return Math.round(raw * 0.333333);
+        if (fy === 'All') return Math.round(raw * 1.233333);
+        return raw;
+      }
+
+      function renderLeaderboardRows(employees, achievedMap, selectedFy, periodRatio, periodInfo) {
         var tbody = document.getElementById('leaderboard-tbody');
         tbody.innerHTML = "";
-        var selectedFy = document.getElementById('dashboard-fy-select') ? document.getElementById('dashboard-fy-select').value : 'All';
         var kras = window.RevOpsStore.getCollection('kraTargets') || [];
 
-        function getEmployeeTarget(emp, fy, kraList) {
-          var empId = typeof emp === 'object' ? emp.employeeId : emp;
-          var empKras = kraList.filter(function(k) {
-            if (k.employeeId !== empId) return false;
-            var isAmt = (k.kpiType === "Amount" || (k.kraName || "").toLowerCase().indexOf("order") !== -1 || (k.kraName || "").toLowerCase().indexOf("spares") !== -1);
-            if (!isAmt) return false;
-            if (!k.financialYear) return true;
-            return fy === 'All' || k.financialYear === fy;
-          });
-
-          if (empKras.length > 0) {
-            var tot = 0;
-            empKras.forEach(function(k) {
-              tot += (Number(k.annualTarget) || Number(k.targetValue) || 0);
-            });
-            if (tot > 0) return tot;
-          }
-
-          var raw = typeof emp === 'object' ? (Number(emp.primaryAopTarget) || 0) : 0;
-          if (!raw) return 0;
-          if (fy === '2024-25') return Math.round(raw * 0.4);
-          if (fy === '2025-26') return Math.round(raw * 0.5);
-          if (fy === '2026-27') return Math.round(raw * 0.333333);
-          if (fy === 'All') return Math.round(raw * 1.233333);
-          return raw;
+        var shortLabel = (periodInfo && periodInfo.shortLabel) ? periodInfo.shortLabel : 'Period';
+        var thTarget = document.getElementById('th-leaderboard-target');
+        if (thTarget) {
+          thTarget.innerText = shortLabel + ' Target';
         }
 
         employees.forEach(function(emp) {
-          if (emp.employeeId === 'E-001') return; // Business Head leads everyone, excluded from individual leaderboard
-          var target = getEmployeeTarget(emp, selectedFy, kras);
+          if (emp.employeeId === 'E-001') return; // Business Head excluded
+          var annualTarget = getEmployeeTarget(emp, selectedFy, kras);
+          var target = Math.round(annualTarget * (periodRatio || 1.0));
           var achieved = Number(achievedMap[emp.employeeId]) || 0;
           var pct = target > 0 ? Math.round((achieved / target) * 100) : 0;
 
@@ -426,7 +1018,7 @@
             </td>
             <td class="py-3 px-4 text-center">
               <a href="my-scorecard.html?employeeId=${emp.employeeId}" class="text-indigo-600 hover:text-indigo-800 font-semibold text-xs hover:underline">
-                View Scorecard &rarr;
+                Scorecard &rarr;
               </a>
             </td>
           `;
@@ -440,7 +1032,365 @@
         var filtered = window.currentLeaderboardEmps.filter(function(e) {
           return e.fullName.toLowerCase().includes(query) || e.employeeId.toLowerCase().includes(query) || e.vertical.toLowerCase().includes(query);
         });
-        renderLeaderboardRows(filtered, window.currentAchievedMap);
+        var selectedFy = document.getElementById('dash-fy-select').value;
+        renderLeaderboardRows(filtered, window.currentAchievedMap, selectedFy, window.currentPeriodRatio, window.currentPeriodInfo);
+      }
+
+      // CHART 1: TIMELINE TRAJECTORY & MONTHLY REVENUE (Combo Bar + Line)
+      function renderTimelineChart(rawOrders, selectedFy, selectedVertical, selectedEmpId, periodCompanyTarget, periodInfo) {
+        var ctx = document.getElementById('timelineChart').getContext('2d');
+        if (chartTimeline) chartTimeline.destroy();
+
+        var preset = currentPreset;
+        var allMonths = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
+        var activeMonthIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // default Full Year
+
+        if (preset === 'Q1') activeMonthIndices = [0, 1, 2];
+        else if (preset === 'Q2') activeMonthIndices = [3, 4, 5];
+        else if (preset === 'Q3') activeMonthIndices = [6, 7, 8];
+        else if (preset === 'Q4') activeMonthIndices = [9, 10, 11];
+        else if (preset === 'H1') activeMonthIndices = [0, 1, 2, 3, 4, 5];
+        else if (preset === 'H2') activeMonthIndices = [6, 7, 8, 9, 10, 11];
+        else if (preset === 'QTD') {
+          var now = new Date();
+          var m = now.getMonth();
+          var qStartMonth = Math.floor(m / 3) * 3;
+          var fyStartM = (qStartMonth >= 3) ? (qStartMonth - 3) : (qStartMonth + 9);
+          activeMonthIndices = [fyStartM, fyStartM + 1, fyStartM + 2];
+        } else if (preset === 'MTD' || preset === 'WTD') {
+          var now = new Date();
+          var m = now.getMonth();
+          var fyM = (m >= 3) ? (m - 3) : (m + 9);
+          activeMonthIndices = [fyM];
+        }
+
+        var monthLabels = activeMonthIndices.map(idx => allMonths[idx]);
+        var monthlyValues = activeMonthIndices.map(() => 0);
+
+        var currStart = periodInfo.current ? periodInfo.current.start : null;
+        var currEnd = periodInfo.current ? periodInfo.current.end : null;
+
+        rawOrders.forEach(function(ord) {
+          if (ord.status !== "Won") return;
+
+          // FY Filter
+          if (selectedFy !== 'All') {
+            var ordFy = typeof getFinancialYear === 'function' ? getFinancialYear(ord.orderDate) : '2025-26';
+            if (ordFy !== selectedFy) return;
+          }
+
+          if (currStart || currEnd) {
+            var d = parseAppDate(ord.orderDate);
+            if (d) {
+              if (currStart && d < currStart) return;
+              if (currEnd && d > currEnd) return;
+            }
+          }
+
+          // Vertical Filter
+          if (selectedVertical !== 'All') {
+            var rawV = ord.vertical || 'Sales';
+            var normV = 'Sales';
+            if (rawV.indexOf('Projects') !== -1 && rawV.indexOf('Service') === -1) normV = 'Projects';
+            else if (rawV !== 'Sales') normV = 'Service/Parts';
+            if (normV !== selectedVertical) return;
+          }
+
+          // Employee Filter
+          if (selectedEmpId !== 'All') {
+            var contribs = ord.contributors || [];
+            if (contribs.length > 0) {
+              if (!contribs.some(c => c.employeeId === selectedEmpId)) return;
+            } else {
+              if (ord.employeeId !== selectedEmpId) return;
+            }
+          }
+
+          var d = parseAppDate(ord.orderDate);
+          if (!d) return;
+
+          var m = d.getMonth(); // 0=Jan..11=Dec
+          var fyIndex = (m >= 3) ? (m - 3) : (m + 9); // Apr=0..Mar=11
+          var slotIndex = activeMonthIndices.indexOf(fyIndex);
+
+          var val = Number(ord.orderValue) || 0;
+
+          // If employee filter active, calculate share
+          if (selectedEmpId !== 'All') {
+            var contribs = ord.contributors || [];
+            if (contribs.length > 0) {
+              var c = contribs.find(item => item.employeeId === selectedEmpId);
+              if (c) val = (val * (Number(c.contributionPct) || 0)) / 100;
+            }
+          }
+
+          if (slotIndex !== -1) {
+            monthlyValues[slotIndex] += val;
+          }
+        });
+
+        // Cumulative Trajectory
+        var cumulativeValues = [];
+        var running = 0;
+        monthlyValues.forEach(v => {
+          running += v;
+          cumulativeValues.push(running);
+        });
+
+        var stepTarget = periodCompanyTarget / activeMonthIndices.length;
+        var targetTrajectoryLine = activeMonthIndices.map((_, i) => Math.round((i + 1) * stepTarget));
+
+        var shortLabel = periodInfo ? periodInfo.shortLabel : 'Period';
+        document.getElementById('timeline-stat-badge').innerText = shortLabel + ' Booked: ' + formatINR(running) + ' / Target: ' + formatINR(periodCompanyTarget);
+
+        chartTimeline = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: monthLabels,
+            datasets: [
+              {
+                type: 'bar',
+                label: 'Revenue (₹)',
+                data: monthlyValues,
+                backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                borderColor: '#4f46e5',
+                borderWidth: 1,
+                borderRadius: 6,
+                yAxisID: 'y'
+              },
+              {
+                type: 'line',
+                label: 'Cumulative Revenue (₹)',
+                data: cumulativeValues,
+                borderColor: '#059669',
+                backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.3,
+                yAxisID: 'y'
+              },
+              {
+                type: 'line',
+                label: shortLabel + ' Target Trajectory (₹)',
+                data: targetTrajectoryLine,
+                borderColor: '#cbd5e1',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                yAxisID: 'y'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11, weight: 'bold' } } },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return ctx.dataset.label + ': ' + formatINR(ctx.raw);
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  font: { size: 10 },
+                  callback: function(val) { return '₹' + (val / 1e5).toFixed(0) + 'L'; }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // CHART 2: VERTICAL DONUT CHART
+      function renderVerticalDonutChart(vMap) {
+        var ctx = document.getElementById('verticalDonutChart').getContext('2d');
+        if (chartVerticalDonut) chartVerticalDonut.destroy();
+
+        var sales = vMap["Sales"] || 0;
+        var service = vMap["Service/Parts"] || 0;
+        var proj = vMap["Projects"] || 0;
+        var total = sales + service + proj;
+
+        var legendEl = document.getElementById('vertical-share-legend');
+        if (total > 0) {
+          legendEl.innerHTML = `
+            <div><span class="font-bold text-blue-600 block">Equipment</span>${Math.round((sales/total)*100)}%</div>
+            <div><span class="font-bold text-emerald-600 block">Service</span>${Math.round((service/total)*100)}%</div>
+            <div><span class="font-bold text-purple-600 block">Projects</span>${Math.round((proj/total)*100)}%</div>
+          `;
+        } else {
+          legendEl.innerHTML = `<div class="col-span-3 text-slate-400">No revenue data</div>`;
+        }
+
+        chartVerticalDonut = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Equipment Sales', 'Service & Spares', 'Steel Plant Projects'],
+            datasets: [{
+              data: [sales, service, proj],
+              backgroundColor: ['#2563eb', '#059669', '#9333ea'],
+              borderWidth: 2,
+              borderColor: '#ffffff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return ctx.label + ': ' + formatINR(ctx.raw);
+                  }
+                }
+              }
+            },
+            cutout: '68%'
+          }
+        });
+      }
+
+      // CHART 3: PIPELINE STAGE FUNNEL CHART
+      function renderPipelineFunnelChart(leads) {
+        var ctx = document.getElementById('pipelineFunnelChart').getContext('2d');
+        if (chartPipelineFunnel) chartPipelineFunnel.destroy();
+
+        var stages = ['New Enquiry', 'Qualified', 'Quoted', 'Negotiation', 'Won'];
+        var stageCounts = [0, 0, 0, 0, 0];
+        var stageValues = [0, 0, 0, 0, 0];
+
+        leads.forEach(function(l) {
+          var st = l.status || l.stage || 'New Enquiry';
+          var idx = stages.indexOf(st);
+          if (idx === -1) {
+            if (st === 'In Discussion') idx = 1;
+            else if (st === 'Quote Sent') idx = 2;
+            else idx = 0;
+          }
+          var val = l.estimatedValue || l.expectedValue || l.dealValue || 0;
+          stageCounts[idx]++;
+          stageValues[idx] += val;
+        });
+
+        chartPipelineFunnel = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: stages,
+            datasets: [
+              {
+                label: 'Pipeline Value (₹)',
+                data: stageValues,
+                backgroundColor: ['#94a3b8', '#3b82f6', '#0284c7', '#f59e0b', '#10b981'],
+                borderRadius: 8
+              }
+            ]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    var idx = ctx.dataIndex;
+                    return 'Value: ' + formatINR(ctx.raw) + ' (' + stageCounts[idx] + ' deals)';
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                beginAtZero: true,
+                ticks: {
+                  font: { size: 10 },
+                  callback: function(v) { return '₹' + (v / 1e5).toFixed(0) + 'L'; }
+                }
+              },
+              y: { ticks: { font: { size: 11, weight: 'bold' } } }
+            }
+          }
+        });
+      }
+
+      // CHART 4: TEAM MEMBER CONTRIBUTION
+      function renderTeamContributionChart(employees, empAchievedMap, selectedFy, periodRatio, periodInfo) {
+        var ctx = document.getElementById('teamContributionChart').getContext('2d');
+        if (chartTeamContribution) chartTeamContribution.destroy();
+
+        var kras = window.RevOpsStore.getCollection('kraTargets') || [];
+
+        var labels = [];
+        var achievedData = [];
+        var targetData = [];
+
+        employees.forEach(function(emp) {
+          if (emp.employeeId === 'E-001') return; // Exclude MD E-001
+
+          labels.push(emp.fullName.split(' ')[0] + ' (' + emp.employeeId + ')');
+
+          var ach = Number(empAchievedMap[emp.employeeId]) || 0;
+          achievedData.push(ach);
+
+          // Calculate Target for selected FY & period ratio
+          var annualTgt = getEmployeeTarget(emp, selectedFy, kras);
+          var periodTgt = Math.round(annualTgt * (periodRatio || 1.0));
+          targetData.push(periodTgt);
+        });
+
+        var shortLabel = (periodInfo && periodInfo.shortLabel) ? periodInfo.shortLabel : 'Period';
+
+        chartTeamContribution = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: shortLabel + ' Achieved (₹)',
+                data: achievedData,
+                backgroundColor: '#4f46e5',
+                borderRadius: 6
+              },
+              {
+                label: shortLabel + ' Target (₹)',
+                data: targetData,
+                backgroundColor: '#cbd5e1',
+                borderRadius: 6
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) { return ctx.dataset.label + ': ' + formatINR(ctx.raw); }
+                }
+              }
+            },
+            scales: {
+              x: { ticks: { font: { size: 10 } } },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  font: { size: 10 },
+                  callback: function(v) { return '₹' + (v / 1e5).toFixed(0) + 'L'; }
+                }
+              }
+            }
+          }
+        });
       }
     </script>
   </body>

@@ -17,8 +17,8 @@ end_2026 = datetime.date(2026, 7, 31)
 
 # Employees reference
 employees = [
-    {"employeeId": "E-001", "fullName": "Ravichandran", "designation": "Managing Director", "role": "admin"},
-    {"employeeId": "E-002", "fullName": "Murugan", "designation": "Sales & Marketing Head", "role": "manager"},
+    {"employeeId": "E-001", "fullName": "Ravichandran", "designation": "Managing Director", "role": "super_admin"},
+    {"employeeId": "E-002", "fullName": "Murugan", "designation": "Sales & Marketing Head", "role": "admin"},
     {"employeeId": "E-003", "fullName": "Subhashini", "designation": "Onboard vertical head", "role": "manager"},
     {"employeeId": "E-004", "fullName": "Dipanwita", "designation": "Service Revenue & Crane weighing", "role": "staff"},
     {"employeeId": "E-005", "fullName": "Balaram", "designation": "Sr. Business Manager - Steel Industry", "role": "staff"},

@@ -190,7 +190,7 @@
 
         document.getElementById('date-badge').innerText = getFormattedToday();
 
-        if (userRole === 'admin' || userRole === 'manager') {
+        if (userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') {
           var selectorWrapper = document.getElementById('dwm-employee-selector');
           var dropdown = document.getElementById('dwm-select-emp');
           selectorWrapper.classList.remove('hidden');

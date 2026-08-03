@@ -1,0 +1,3070 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Measure DI RevOps - Finance, Expenses & Profit Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-guard.js"></script>
+    <style>
+      @media print {
+        body * { visibility: hidden; }
+        #printable-voucher, #printable-voucher * { visibility: visible; }
+        #printable-voucher { position: absolute; left: 0; top: 0; width: 100%; }
+        .no-print { display: none !important; }
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 min-h-screen text-slate-800">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container" class="no-print"></div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 no-print">
+      
+      <!-- Top Header & Navigation Segment -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Financial Accounting & Profit Center</h1>
+          <p class="text-sm text-slate-500 mt-1">Expense ledger, travel claims with bill receipts, project gross profit matrices & budget limits</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="openPreApprovalModal()" class="px-3.5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span>+ Travel Pre-Approval</span>
+          </button>
+          <button onclick="openTravelClaimModal()" class="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            <span>+ Submit Travel Claim</span>
+          </button>
+          <button onclick="openExpenseModal()" class="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>+ Log Expense</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Segmented Tab Selector -->
+      <div class="flex space-x-2 border-b border-slate-200 overflow-x-auto">
+        <button id="tab-btn-travel-app" onclick="switchMainTab('travel-app')" class="px-4 py-2.5 font-bold text-xs border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1 cursor-pointer whitespace-nowrap">
+          <span>Travel Pre-Approvals & Extensions</span>
+        </button>
+        <button id="tab-btn-ledger" onclick="switchMainTab('ledger')" class="px-4 py-2.5 font-bold text-xs border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-1 cursor-pointer whitespace-nowrap">
+          <span>Expense & Travel Ledger</span>
+        </button>
+        <button id="tab-btn-split" onclick="switchMainTab('split')" class="px-4 py-2.5 font-bold text-xs border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1 cursor-pointer whitespace-nowrap">
+          <span>Revenue & Multi-Project Expense Splitting</span>
+        </button>
+        <button id="tab-btn-policy" onclick="switchMainTab('policy')" class="px-4 py-2.5 font-bold text-xs border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1 cursor-pointer whitespace-nowrap">
+          <span>Master Expense Limits Policy</span>
+        </button>
+        <button id="tab-btn-profit" onclick="switchMainTab('profit')" class="px-4 py-2.5 font-bold text-xs border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1 cursor-pointer whitespace-nowrap">
+          <span>Project Profit Center</span>
+        </button>
+        <button id="tab-btn-budget" onclick="switchMainTab('budget')" class="px-4 py-2.5 font-bold text-xs border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1 cursor-pointer whitespace-nowrap">
+          <span>Budget vs Actual</span>
+        </button>
+      </div>
+
+      <!-- TAB 0: TRAVEL PRE-APPROVALS & EXTENSIONS -->
+      <div id="sec-travel-app" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Pre-Travel Approvals & Extension Register</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Mandatory pre-travel authorizations, trip extensions, client meeting purpose & estimated budgets</p>
+            </div>
+            
+            <button onclick="openPreApprovalModal()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>Request New Travel Approval</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-100 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                  <th class="py-3 px-4">Req No & Dates</th>
+                  <th class="py-3 px-4">Employee & Role</th>
+                  <th class="py-3 px-4">Visited Places & Route</th>
+                  <th class="py-3 px-4">Purpose & Client Details</th>
+                  <th class="py-3 px-4 text-right">Est Budget (₹)</th>
+                  <th class="py-3 px-4 text-center">Approval Status</th>
+                  <th class="py-3 px-4 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="travel-app-tbody" class="divide-y divide-slate-100 text-xs">
+                <!-- Dynamic travel pre-approvals -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 1: EXPENSE & TRAVEL LEDGER -->
+      <div id="sec-ledger" class="space-y-6">
+        
+        <!-- Summary Stat Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Expenses Logged</div>
+            <div class="text-2xl font-extrabold text-slate-900 mt-1" id="stat-total-expenses">Rs.0</div>
+            <div class="text-[11px] text-slate-500 mt-1" id="stat-expense-count">0 Transactions</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Travel Claims & DA</div>
+            <div class="text-2xl font-extrabold text-emerald-600 mt-1" id="stat-travel-expenses">Rs.0</div>
+            <div class="text-[11px] text-slate-500 mt-1" id="stat-travel-count">0 Claims</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Salary & Advances Paid</div>
+            <div class="text-2xl font-extrabold text-indigo-600 mt-1" id="stat-salary-advances">Rs.0</div>
+            <div class="text-[11px] text-slate-500 mt-1">Disbursed via Finance</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Project Direct Costs</div>
+            <div class="text-2xl font-extrabold text-purple-600 mt-1" id="stat-project-expenses">Rs.0</div>
+            <div class="text-[11px] text-slate-500 mt-1">Allocated to Turnkey Orders</div>
+          </div>
+        </div>
+
+        <!-- Filter Bar & Table -->
+        <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden space-y-4">
+          <div class="p-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h2 class="text-lg font-bold text-slate-900">Expense Vouchers & Claim Records</h2>
+            
+            <div class="flex flex-wrap items-center gap-3">
+              <select id="flt-category" onchange="renderExpensesTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                <option value="All">All Categories</option>
+                <option value="Admin">Admin Overhead</option>
+                <option value="Travelling">Travelling & DA</option>
+                <option value="Salary">Salary Disbursement</option>
+                <option value="Salary Advance">Salary Advance</option>
+                <option value="Loan to Employee">Employee Loan</option>
+                <option value="Project Expenses">Project Direct Expenses</option>
+                <option value="Utilities">Utilities & Rent</option>
+                <option value="Equipment">Equipment & Maintenance</option>
+              </select>
+
+              <select id="flt-vertical" onchange="renderExpensesTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                <option value="All">All Verticals</option>
+                <option value="Sales">Sales</option>
+                <option value="Service/Parts">Service/Parts</option>
+                <option value="Projects">Projects</option>
+                <option value="Overhead">Overhead</option>
+              </select>
+
+              <input type="text" id="flt-search" oninput="renderExpensesTable()" placeholder="Search vendor, project, payee..." class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <th class="py-3 px-4">Date & Voucher No</th>
+                  <th class="py-3 px-4">Category & Payee</th>
+                  <th class="py-3 px-4">Vertical & Project Tag</th>
+                  <th class="py-3 px-4 text-right">Amount (₹)</th>
+                  <th class="py-3 px-4 text-center">Payment Mode</th>
+                  <th class="py-3 px-4 text-center">Receipt Bill</th>
+                  <th class="py-3 px-4 text-center">Status</th>
+                  <th class="py-3 px-4 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="expenses-tbody" class="divide-y divide-slate-100 text-xs">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- TAB 1.5: MASTER EXPENSE POLICY & DAILY LIMITS -->
+      <div id="sec-policy" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Master Travel Expense Limits Policy</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Define allowed daily expense limits per grade/category. If claims exceed these limits, they automatically trigger Manager Approval</p>
+            </div>
+            
+            <button onclick="openPolicyEditModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer">
+              Edit Policy Master Limits
+            </button>
+          </div>
+
+          <!-- Policy Cards Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="policy-cards-container">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- NEW TAB: REVENUE & MULTI-PROJECT EXPENSE SPLITTING MODULE -->
+      <div id="sec-split" class="hidden space-y-6">
+        
+        <!-- SECTION 1: PROJECT REVENUE & PROFIT CENTER MATRIX -->
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] font-black rounded-md uppercase tracking-wider border border-indigo-200">Revenue & Profit Engine</span>
+                <h2 class="text-lg font-extrabold text-slate-900">Project Code Revenue & Multi-Expense Profit Center</h2>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">Track project codes covering contract revenue (milestones, T&M, change orders) and direct vs pro-rata allocated expenses at the time of spending</p>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+              <button onclick="openAddProjectModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center space-x-1.5 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>+ Create New Project Code</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Revenue & Expense Overview KPI Cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">Total Revenue</div>
+              <div class="text-base font-extrabold text-slate-900 mt-1" id="spl-total-rev">Rs.0</div>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">Invoiced Revenue</div>
+              <div class="text-base font-bold text-indigo-700 mt-1" id="spl-invoiced-rev">Rs.0</div>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">Received Cash</div>
+              <div class="text-base font-bold text-emerald-700 mt-1" id="spl-received-rev">Rs.0</div>
+            </div>
+            <div class="bg-amber-50 p-3 rounded-xl border border-amber-200">
+              <div class="text-[10px] font-bold text-amber-900 uppercase">Pending Cash</div>
+              <div class="text-base font-bold text-amber-900 mt-1" id="spl-pending-rev">Rs.0</div>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">Direct Expenses</div>
+              <div class="text-base font-bold text-rose-600 mt-1" id="spl-direct-exp">Rs.0</div>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">Allocated Shared</div>
+              <div class="text-base font-bold text-purple-600 mt-1" id="spl-shared-exp">Rs.0</div>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div class="text-[10px] font-bold text-slate-500 uppercase">Total Expenses</div>
+              <div class="text-base font-extrabold text-rose-700 mt-1" id="spl-total-exp">Rs.0</div>
+            </div>
+            <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+              <div class="text-[10px] font-bold text-emerald-900 uppercase">Gross Profit</div>
+              <div class="text-base font-extrabold text-emerald-800 mt-1" id="spl-gross-profit">Rs.0</div>
+            </div>
+          </div>
+
+          <!-- Project Code Financial Table -->
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-900 text-white text-[10px] font-bold uppercase tracking-wider">
+                  <th class="py-3 px-3">Project Code & Title</th>
+                  <th class="py-3 px-3">Client Organization</th>
+                  <th class="py-3 px-3 text-right">Total Revenue (₹)</th>
+                  <th class="py-3 px-3 text-right">Invoiced (₹)</th>
+                  <th class="py-3 px-3 text-right text-emerald-400">Received (₹)</th>
+                  <th class="py-3 px-3 text-right text-amber-300">Pending (₹)</th>
+                  <th class="py-3 px-3 text-right text-rose-300">Direct Cost (₹)</th>
+                  <th class="py-3 px-3 text-right text-purple-300">Allocated Cost (₹)</th>
+                  <th class="py-3 px-3 text-right text-rose-400">Total Exp (₹)</th>
+                  <th class="py-3 px-3 text-right text-emerald-300">Gross Profit (₹)</th>
+                  <th class="py-3 px-3 text-center">Margin %</th>
+                  <th class="py-3 px-3 text-center">Revenue Items</th>
+                </tr>
+              </thead>
+              <tbody id="split-projects-tbody" class="divide-y divide-slate-100 text-xs">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SECTION 2: INTERACTIVE MULTI-PROJECT EXPENSE SPLIT CALCULATOR -->
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-6">
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">Interactive Multi-Project Expense Split Simulator & Allocation Testbench</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Test how single receipts (travel, materials, subcontractors) are dynamically divided across multiple active project codes using Direct, Equal, Weighted %, or Fixed Amount modes</p>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+            <!-- Left Controls: Inputs -->
+            <div class="lg:col-span-5 space-y-4 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Receipt Gross Amount (₹) *</label>
+                <input type="number" id="sim-amount" value="30000" oninput="runSimSplitCalc()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-extrabold text-indigo-900" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Expense Category *</label>
+                <select id="sim-category" onchange="runSimSplitCalc()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
+                  <option value="Direct Labor">Direct Labor (Hours x Loaded Rate)</option>
+                  <option value="Subcontractors / Vendor Invoices">Subcontractors / Vendor Invoices</option>
+                  <option value="Direct Materials & Rentals">Direct Materials & Equipment Rentals</option>
+                  <option value="Travel & Lodging">Travel & Lodging (Flights, Hotels, Per Diem)</option>
+                  <option value="Local Conveyance & Mileage">Local Conveyance & Mileage</option>
+                  <option value="Site / Overhead">Site / Administrative Overhead</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Allocation Mode *</label>
+                <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+                  <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-lg border border-slate-200 cursor-pointer">
+                    <input type="radio" name="sim-mode" value="direct" onchange="runSimSplitCalc()" />
+                    <span>Direct (100% 1 Project)</span>
+                  </label>
+                  <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-lg border border-slate-200 cursor-pointer">
+                    <input type="radio" name="sim-mode" value="equal" checked onchange="runSimSplitCalc()" />
+                    <span>Equal Split (1/N)</span>
+                  </label>
+                  <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-lg border border-slate-200 cursor-pointer">
+                    <input type="radio" name="sim-mode" value="weighted" onchange="runSimSplitCalc()" />
+                    <span>Weighted / % Split</span>
+                  </label>
+                  <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-lg border border-slate-200 cursor-pointer">
+                    <input type="radio" name="sim-mode" value="fixed" onchange="runSimSplitCalc()" />
+                    <span>Fixed Amount Split</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Select Participating Project Codes *</label>
+                <div id="sim-project-checkboxes" class="space-y-1.5 max-h-40 overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-200">
+                  <!-- Populated dynamically -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Output: Live Calculated Allocation Table -->
+            <div class="lg:col-span-7 space-y-3 flex flex-col">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Live Split Allocation Calculation Result</span>
+                <span id="sim-status-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">Total Allocated: 100% (Balanced)</span>
+              </div>
+
+              <div class="overflow-x-auto border border-slate-200 rounded-xl bg-white flex-1">
+                <table class="w-full text-left border-collapse">
+                  <thead>
+                    <tr class="bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                      <th class="py-2.5 px-3">Project Code</th>
+                      <th class="py-2.5 px-3">Client</th>
+                      <th class="py-2.5 px-3 text-center">Split Ratio / Input</th>
+                      <th class="py-2.5 px-3 text-right">Allocated Share (₹)</th>
+                      <th class="py-2.5 px-3 text-center">Expense Classification</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sim-split-tbody" class="divide-y divide-slate-100 text-xs">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 3: DELIVERABLE A & B - DATA SCHEMA & CALCULATION FORMULAS DOCS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- DELIVERABLE A: DATA SCHEMA (JSON MODELS) -->
+          <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[10px] font-black uppercase px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded">Deliverable A</span>
+                <h3 class="text-sm font-extrabold text-slate-900 mt-1">Multi-Project Data Schema Architecture</h3>
+              </div>
+              <span class="text-[11px] text-slate-400 font-mono">JSON Collections</span>
+            </div>
+
+            <div class="bg-slate-950 text-slate-200 p-4 rounded-xl text-[11px] font-mono overflow-x-auto max-h-80 space-y-2 leading-relaxed">
+<pre class="text-emerald-400 font-bold">// 1. Projects Table (projectsMaster)</pre>
+{
+  "projectCode": "PRJ-2026-101",
+  "projectName": "Tata Steel Weighbridge SLA",
+  "clientName": "Tata Steel Long Products",
+  "vertical": "Projects",
+  "budget": 2500000,
+  "milestones": [ { "id": "M1", "title": "Supply", "amount": 1500000, "status": "Invoiced" } ],
+  "tmBillings": [ { "id": "TM1", "hours": 40, "rate": 2000, "amount": 80000, "status": "Invoiced" } ],
+  "changeOrders": [ { "id": "CO1", "title": "Extra Sensor Cable", "amount": 50000, "status": "Approved" } ]
+}
+
+<pre class="text-emerald-400 font-bold">// 2. Expense_Splits Table (expenseSplits)</pre>
+{
+  "splitId": "SPL-9001",
+  "expenseId": "TRV-1001",
+  "projectCode": "PRJ-2026-101",
+  "allocationMode": "weighted", // direct | equal | weighted | fixed
+  "allocatedPercentage": 60.0,
+  "allocatedAmount": 18000.0,
+  "expenseClassification": "Allocated Shared" // Direct vs Allocated Shared
+}
+            </div>
+          </div>
+
+          <!-- DELIVERABLE B: CALCULATION FORMULAS & ENGINE CODE -->
+          <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
+            <div>
+              <span class="text-[10px] font-black uppercase px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">Deliverable B</span>
+              <h3 class="text-sm font-extrabold text-slate-900 mt-1">Calculation Formulas & Financial Engine</h3>
+            </div>
+
+            <div class="space-y-2 text-xs text-slate-700">
+              <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                <span class="font-bold text-indigo-900 block">Total Project Revenue:</span>
+                <code class="text-[11px] text-slate-800">Σ (Milestone Invoices + T&M Billings + Approved Change Orders)</code>
+              </div>
+
+              <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                <span class="font-bold text-rose-900 block">Total Direct Expenses:</span>
+                <code class="text-[11px] text-slate-800">Σ (Direct Labor + Subcontractors + Direct Materials)</code>
+              </div>
+
+              <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                <span class="font-bold text-purple-900 block">Total Allocated Shared Expenses:</span>
+                <code class="text-[11px] text-slate-800">Σ (Pro-rata Travel & Lodging + Local Conveyance + Overhead)</code>
+              </div>
+
+              <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200">
+                <span class="font-bold text-emerald-900 block">Gross Profit & Margin %:</span>
+                <code class="text-[11px] text-emerald-800">Gross Profit = Total Revenue - (Direct Exp + Allocated Shared Exp)</code><br/>
+                <code class="text-[11px] text-emerald-800">Margin % = (Gross Profit / Total Revenue) * 100</code>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div id="sec-profit" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Project Profitability Matrix</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Real-time revenue vs project-specific direct expenses & gross profit margins</p>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+              <span class="text-xs font-semibold text-slate-500">Filter Project Vertical:</span>
+              <select id="flt-project-vertical" onchange="renderProjectProfitability()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                <option value="All">All Verticals</option>
+                <option value="Projects">Projects Vertical</option>
+                <option value="Sales">Sales</option>
+                <option value="Service/Parts">Service/Parts</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Profitability Summary Header Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div class="text-[11px] font-bold text-slate-400 uppercase">Total Project Bookings</div>
+              <div class="text-xl font-extrabold text-slate-900 mt-1" id="prof-total-rev">Rs.0</div>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div class="text-[11px] font-bold text-slate-400 uppercase">Total Direct Project Expenses</div>
+              <div class="text-xl font-extrabold text-rose-600 mt-1" id="prof-total-exp">Rs.0</div>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div class="text-[11px] font-bold text-slate-400 uppercase">Total Gross Profit</div>
+              <div class="text-xl font-extrabold text-emerald-600 mt-1" id="prof-total-profit">Rs.0</div>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div class="text-[11px] font-bold text-slate-400 uppercase">Avg Gross Margin %</div>
+              <div class="text-xl font-extrabold text-indigo-600 mt-1" id="prof-avg-margin">0%</div>
+            </div>
+          </div>
+
+          <!-- Project Profit Center Table -->
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-100 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                  <th class="py-3 px-4">Project / Order ID & Client</th>
+                  <th class="py-3 px-4">Vertical</th>
+                  <th class="py-3 px-4 text-right">Revenue (₹)</th>
+                  <th class="py-3 px-4 text-right">Direct Expenses (₹)</th>
+                  <th class="py-3 px-4 text-right">Gross Profit (₹)</th>
+                  <th class="py-3 px-4 text-center">Gross Margin %</th>
+                  <th class="py-3 px-4 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="profit-tbody" class="divide-y divide-slate-100 text-xs">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: BUDGET VS ACTUAL MONITORING -->
+      <div id="sec-budget" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Expense Budget vs Actual Monitoring</h2>
+              <p class="text-xs text-slate-500 mt-0.5">Track departmental expense limits, actual spend variance & compliance thresholds</p>
+            </div>
+            <button onclick="openSetBudgetModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer">
+              + Set Category Budget Limit
+            </button>
+          </div>
+
+          <!-- Budget Progress Cards Grid -->
+          <div id="budget-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- PRINTABLE VOUCHER LAYOUT (Visible only during printing or preview) -->
+    <div id="printable-voucher-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
+        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between no-print">
+          <h3 class="text-sm font-bold">Printable Expense Voucher / Travel Claim PDF Copy</h3>
+          <div class="flex items-center space-x-2">
+            <button onclick="window.print()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer flex items-center space-x-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              <span>Print / Save PDF</span>
+            </button>
+            <button onclick="closeVoucherModal()" class="text-slate-400 hover:text-white text-lg font-bold px-2">&times;</button>
+          </div>
+        </div>
+
+        <div id="printable-voucher" class="p-8 space-y-6 overflow-y-auto bg-white text-slate-800">
+          <!-- Voucher Header -->
+          <div class="flex items-center justify-between border-b-2 border-slate-900 pb-4">
+            <div>
+              <h2 class="text-xl font-black text-slate-900 tracking-tight">MEASURE DI TECHNOLOGIES PRIVATE LIMITED</h2>
+              <p class="text-xs text-slate-600">Head Office • RevOps Finance & Accounts Department</p>
+            </div>
+            <div class="text-right">
+              <div class="text-lg font-black text-indigo-900 uppercase tracking-wide" id="vouch-title">EXPENSE PAYMENT VOUCHER</div>
+              <div class="text-xs font-mono font-bold text-slate-500" id="vouch-no">VOUCH-#1001</div>
+              <div class="text-xs text-slate-500" id="vouch-date">Date: 01/08/2026</div>
+            </div>
+          </div>
+
+          <!-- Voucher Details Grid -->
+          <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+            <div><span class="font-bold text-slate-500 uppercase">Paid To / Payee:</span> <div class="font-bold text-slate-900 text-sm mt-0.5" id="vouch-payee">Murugan</div></div>
+            <div><span class="font-bold text-slate-500 uppercase">Expense Category:</span> <div class="font-bold text-indigo-700 text-sm mt-0.5" id="vouch-category">Travelling & DA</div></div>
+            <div><span class="font-bold text-slate-500 uppercase">Vertical / Cost Center:</span> <div class="font-semibold text-slate-800 mt-0.5" id="vouch-vertical">Sales</div></div>
+            <div><span class="font-bold text-slate-500 uppercase">Project / Tag:</span> <div class="font-semibold text-slate-800 mt-0.5" id="vouch-project">General</div></div>
+            <div><span class="font-bold text-slate-500 uppercase">Payment Mode:</span> <div class="font-semibold text-slate-800 mt-0.5" id="vouch-mode">Bank Transfer</div></div>
+            <div><span class="font-bold text-slate-500 uppercase">Status:</span> <div class="font-bold text-emerald-600 uppercase mt-0.5" id="vouch-status">Approved & Disbursed</div></div>
+          </div>
+
+          <!-- Description & Breakdown -->
+          <div>
+            <div class="text-xs font-bold text-slate-500 uppercase mb-1">Particulars / Purpose Description:</div>
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 leading-relaxed font-medium" id="vouch-desc">
+              Client Visit to Jindal Steel plant for project commissioning. Hotel stays, fuel allowance & local DA.
+            </div>
+          </div>
+
+          <!-- Amount Table -->
+          <table class="w-full text-left border-collapse border border-slate-200 text-xs">
+            <thead>
+              <tr class="bg-slate-900 text-white font-bold uppercase">
+                <th class="py-2.5 px-4">Item Description</th>
+                <th class="py-2.5 px-4 text-right">Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="py-3 px-4 font-semibold text-slate-800" id="vouch-line-desc">Expense Voucher Claim Amount</td>
+                <td class="py-3 px-4 font-extrabold text-slate-900 text-right text-sm" id="vouch-amount">Rs.12,500</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Scanned Bill Receipt Attachment Preview -->
+          <div id="vouch-receipt-container" class="space-y-2 pt-2">
+            <div class="text-xs font-bold text-slate-500 uppercase">Attached Scanned Bill Receipt / Supporting Proof:</div>
+            <div class="p-4 border border-slate-200 rounded-xl bg-slate-50 text-center" id="vouch-receipt-body">
+              <span class="text-xs text-slate-400">No receipt attached</span>
+            </div>
+          </div>
+
+          <!-- Signatures -->
+          <div class="grid grid-cols-3 gap-4 pt-10 text-center text-xs text-slate-600 font-semibold border-t border-slate-200">
+            <div>
+              <div class="border-b border-slate-300 pb-1 mb-1"></div>
+              <span>Claimant Signature</span>
+            </div>
+            <div>
+              <div class="border-b border-slate-300 pb-1 mb-1"></div>
+              <span>Verified By (Manager)</span>
+            </div>
+            <div>
+              <div class="border-b border-slate-300 pb-1 mb-1"></div>
+              <span>Authorized Finance Signatory</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: ADD EXPENSE VOUCHER & MULTI-PROJECT SPLITTER -->
+    <div id="modal-expense" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
+        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+          <div>
+            <h3 class="text-base font-extrabold">Log Expense Voucher & Multi-Project Splitter</h3>
+            <p class="text-[11px] text-slate-300">Charge 100% to a single project or divide across multiple project codes</p>
+          </div>
+          <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+        </div>
+
+        <form onsubmit="handleSaveExpense(event)" class="p-6 space-y-4 overflow-y-auto text-xs">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Expense Date *</label>
+              <input type="date" id="exp-date" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Expense Category *</label>
+              <select id="exp-category" required onchange="handleExpenseCategoryChange()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800">
+                <option value="Direct Labor">Direct Labor (Hours x Loaded Hourly Rate)</option>
+                <option value="Subcontractors / Vendor Invoices">Subcontractors / Vendor Invoices</option>
+                <option value="Direct Materials & Equipment Rentals">Direct Materials & Equipment Rentals</option>
+                <option value="Travel & Lodging">Travel & Lodging (Flights, Hotels, Per Diem)</option>
+                <option value="Local Conveyance & Mileage">Local Conveyance & Mileage</option>
+                <option value="Site / Administrative Overhead">Site / Administrative Overhead</option>
+                <option value="Admin Overhead">General Admin Overhead</option>
+                <option value="Salary Disbursement">Salary Disbursement</option>
+                <option value="Salary Advance">Salary Advance & Loans</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Payee / Employee / Vendor *</label>
+              <input type="text" id="exp-payee" required placeholder="e.g. Murugan / Indian Oil / Trident Hotel" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Gross Receipt Amount (₹) *</label>
+              <input type="number" id="exp-amount" required min="1" oninput="recalcExpenseFormSplits()" placeholder="e.g. 25000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-extrabold text-indigo-900" />
+            </div>
+          </div>
+
+          <!-- MULTI-PROJECT ALLOCATION CONTAINER -->
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="font-extrabold text-slate-900 uppercase tracking-wider">Project Allocation & Multi-Split System</span>
+              <span id="exp-split-badge" class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">100% Allocated</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Allocation Mode *</label>
+                <select id="exp-split-mode" onchange="recalcExpenseFormSplits()" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-bold text-slate-800">
+                  <option value="direct">Direct Allocation (100% Charged to 1 Project)</option>
+                  <option value="equal">Equal Split (Divide Amount Equally across Selected Projects)</option>
+                  <option value="weighted">Weighted / Percentage Split (Custom % per Project)</option>
+                  <option value="fixed">Fixed Amount Split (Specify exact ₹ per Project)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block font-bold text-slate-700 mb-1">Primary Vertical *</label>
+                <select id="exp-vertical" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-semibold">
+                  <option value="Projects">Projects Vertical</option>
+                  <option value="Sales">Sales Vertical</option>
+                  <option value="Service/Parts">Service & Parts</option>
+                  <option value="Overhead">General Overhead</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Project Selection Checkboxes -->
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Select Project Codes to Charge *</label>
+              <div id="exp-form-projects-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-white p-2.5 rounded-xl border border-slate-200 max-h-36 overflow-y-auto">
+                <!-- Checkboxes populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Dynamic Split Allocation Table -->
+            <div id="exp-form-splits-table-wrapper" class="overflow-x-auto border border-slate-200 rounded-lg bg-white hidden">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                    <th class="py-2 px-3">Project Code</th>
+                    <th class="py-2 px-3 text-center">Split Input (% or ₹)</th>
+                    <th class="py-2 px-3 text-right">Calculated Share (₹)</th>
+                    <th class="py-2 px-3 text-center">Classification</th>
+                  </tr>
+                </thead>
+                <tbody id="exp-form-splits-tbody" class="divide-y divide-slate-100 text-xs">
+                  <!-- Dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Mode *</label>
+              <select id="exp-mode" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                <option value="Bank Transfer">Bank Transfer (NEFT/RTGS)</option>
+                <option value="UPI">UPI / GPay</option>
+                <option value="Corporate Card">Corporate Card</option>
+                <option value="Cash">Cash Voucher</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Attach Scanned Receipt / Bill</label>
+              <input type="file" id="exp-file" accept="image/*" onchange="handleFileSelected(event)" class="w-full px-3 py-1 bg-slate-50 border border-slate-200 rounded-xl text-xs" />
+              <input type="hidden" id="exp-receipt-base64" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Particulars / Remarks</label>
+            <textarea id="exp-remarks" rows="2" placeholder="Describe the expense purpose..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"></textarea>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3 shrink-0">
+            <button type="button" onclick="closeExpenseModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold rounded-xl shadow-xs cursor-pointer">
+              Save Expense & Allocation Splits
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 1: TRAVEL PRE-APPROVAL & EXTENSION REQUEST -->
+    <div id="modal-pre-approval" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[90vh] flex flex-col">
+        <div class="px-6 py-4 bg-sky-900 text-white flex items-center justify-between shrink-0">
+          <div>
+            <h3 class="text-base font-bold">Travel Pre-Approval & Extension Request</h3>
+            <p class="text-[11px] text-sky-200">Submit prior travel itinerary or extend previously approved trip for manager signoff</p>
+          </div>
+          <button onclick="closePreApprovalModal()" class="text-sky-300 hover:text-white text-xl font-bold">&times;</button>
+        </div>
+
+        <form onsubmit="handleSavePreApproval(event)" class="p-6 space-y-4 overflow-y-auto">
+          <input type="hidden" id="preapp-id" />
+
+          <div class="p-3 bg-sky-50 border border-sky-200 rounded-xl space-y-2">
+            <label class="block text-xs font-bold text-sky-900 uppercase">Request Mode *</label>
+            <div class="flex items-center space-x-4 text-xs font-semibold text-slate-700">
+              <label class="flex items-center space-x-1.5 cursor-pointer">
+                <input type="radio" name="preapp-mode" value="new" checked onchange="togglePreAppMode()" />
+                <span>New Travel Pre-Approval</span>
+              </label>
+              <label class="flex items-center space-x-1.5 cursor-pointer">
+                <input type="radio" name="preapp-mode" value="extend" onchange="togglePreAppMode()" />
+                <span>Extend / Modify Previous Travel Approval</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="preapp-extend-selector" class="hidden bg-amber-50 p-3 rounded-xl border border-amber-200 space-y-2">
+            <label class="block text-xs font-bold text-amber-900 uppercase">Select Previous Approved Travel Request to Extend *</label>
+            <select id="preapp-ref-id" onchange="populateExtensionRefDetails()" class="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl text-xs font-semibold">
+              <!-- Populated dynamically -->
+            </select>
+            <div class="text-[11px] text-amber-800 font-medium">When extending a trip beyond plan, previous travel details are modified and re-routed to manager.</div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Employee / Traveller *</label>
+              <select id="preapp-emp-id" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Travel Period (Start to End Date) *</label>
+              <div class="grid grid-cols-2 gap-2">
+                <input type="date" id="preapp-start-date" required class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+                <input type="date" id="preapp-end-date" required class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Places to be Visited / Cities *</label>
+              <input type="text" id="preapp-places" required placeholder="e.g. Jharsuguda, Rourkela, Angul" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Purpose of Visit *</label>
+              <input type="text" id="preapp-purpose" required placeholder="e.g. Commissioning weighbridge & Client SLA meeting" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs" />
+            </div>
+          </div>
+
+          <!-- CLIENT DETAILS SECTION -->
+          <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Client & Prospect Information</span>
+              <select id="preapp-client-type" onchange="toggleClientType()" class="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-indigo-700">
+                <option value="existing">Existing Client (Select Master)</option>
+                <option value="new">New Client Prospect (Enter Details)</option>
+              </select>
+            </div>
+
+            <div id="client-existing-box" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Select Client *</label>
+                <select id="preapp-existing-client" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold">
+                  <!-- Populated from RevOpsStore clients/leads -->
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Key Contact Person & Designation</label>
+                <input type="text" id="preapp-contact-person" placeholder="e.g. Mr. Rajesh Sharma, VP Projects" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs" />
+              </div>
+            </div>
+
+            <div id="client-new-box" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">New Client Organization Name *</label>
+                <input type="text" id="preapp-new-client-name" placeholder="e.g. Jindal Stainless Works Ltd" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Contact Person Name & Designation *</label>
+                <input type="text" id="preapp-new-contact-person" placeholder="e.g. Mr. Vikram Malhotra, Chief Engineer" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Phone / Mobile No</label>
+                <input type="text" id="preapp-new-client-phone" placeholder="e.g. +91 98450 12345" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Plant / Office Location</label>
+                <input type="text" id="preapp-new-client-location" placeholder="e.g. Kalinganagar, Odisha" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs" />
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Estimated Travel Budget (₹) *</label>
+              <input type="number" id="preapp-budget" required min="100" placeholder="e.g. 15000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900" />
+            </div>
+
+            <div id="preapp-extend-reason-box" class="hidden">
+              <label class="block text-xs font-bold text-amber-900 uppercase tracking-wider mb-1">Reason for Travel Extension *</label>
+              <input type="text" id="preapp-extension-reason" placeholder="e.g. Commissioning delayed by client civil works" class="w-full px-3 py-2 bg-amber-50 border border-amber-300 rounded-xl text-xs" />
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3 shrink-0">
+            <button type="button" onclick="closePreApprovalModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold rounded-xl shadow-xs cursor-pointer">
+              Submit Travel Authorization Request
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 2: COMPREHENSIVE MULTI-PAGE TRAVEL CLAIM -->
+    <div id="modal-travel" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
+        
+        <!-- Modal Header & Wizard Steps Indicator -->
+        <div class="px-6 py-4 bg-emerald-900 text-white flex items-center justify-between shrink-0">
+          <div>
+            <h3 class="text-base font-bold">Comprehensive Travel Expense Claim Voucher</h3>
+            <p class="text-[11px] text-emerald-200">Multi-page itemized submission linked with pre-approval, client details & policy limits check</p>
+          </div>
+          
+          <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-2 bg-emerald-950/60 px-3 py-1 rounded-full text-[11px] font-bold border border-emerald-700">
+              <span id="step-badge-1" class="px-2 py-0.5 bg-emerald-500 text-white rounded-full">Page 1: Trip & Client</span>
+              <span class="text-emerald-500">→</span>
+              <span id="step-badge-2" class="px-2 py-0.5 bg-emerald-800 text-emerald-300 rounded-full">Page 2: Date-wise Ledger</span>
+            </div>
+            <button onclick="closeTravelClaimModal()" class="text-emerald-300 hover:text-white text-xl font-bold">&times;</button>
+          </div>
+        </div>
+
+        <form onsubmit="handleSaveTravelClaim(event)" class="flex-1 flex flex-col overflow-hidden">
+          
+          <!-- PAGE 1: TRIP DETAILS & CLIENT DETAILS -->
+          <div id="claim-page-1" class="p-6 space-y-4 overflow-y-auto flex-1">
+            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span class="text-xs font-extrabold text-emerald-900 uppercase">Link Pre-Travel Approval Record (If Available):</span>
+              <select id="trv-preapp-link" onchange="populatePreAppDetailsIntoClaim()" class="px-3 py-1.5 bg-white border border-emerald-300 rounded-xl text-xs font-semibold text-slate-800">
+                <option value="">-- Direct Travel Claim (No Pre-Approval) --</option>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Claimant Employee *</label>
+                <select id="travel-emp-id" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                  <!-- Populated dynamically -->
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Trip Duration (Start to End Date) *</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <input type="date" id="trv-start-date" required class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+                  <input type="date" id="trv-end-date" required class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Places Visited / Route Covered *</label>
+                <input type="text" id="trv-places" required placeholder="e.g. Chennai -> Jharsuguda -> Rourkela" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Purpose of Visit *</label>
+                <input type="text" id="trv-purpose" required placeholder="e.g. Crane scale installation & client signoff" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+              </div>
+            </div>
+
+            <!-- CLIENT INFORMATION BOX -->
+            <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Client & Account Details Visited</span>
+                <span class="text-[11px] text-slate-500 font-medium">Recorded on First Page of Voucher</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Client / Company Name *</label>
+                  <input type="text" id="trv-client-name" required placeholder="e.g. Tata Steel / New Prospect Corp" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Contact Person Name & Designation</label>
+                  <input type="text" id="trv-client-contact" placeholder="e.g. Mr. S. K. Mahapatra, Sr General Manager" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Contact Phone / Email</label>
+                  <input type="text" id="trv-client-phone" placeholder="e.g. +91 97760 88210" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs" />
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Plant / Site Location Visited</label>
+                  <input type="text" id="trv-client-location" placeholder="e.g. Jamshedpur Works, Jharkhand" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs" />
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold text-amber-900 block">Was Travel Extended Beyond Original Plan?</span>
+                <span class="text-[11px] text-amber-700">Extended travel automatically routes claim to reporting manager for approval.</span>
+              </div>
+              <select id="trv-is-extended" class="px-3 py-1 bg-white border border-amber-300 rounded-lg text-xs font-bold text-slate-800">
+                <option value="no">No - As Planned</option>
+                <option value="yes">Yes - Travel Extended</option>
+              </select>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end">
+              <button type="button" onclick="goToClaimPage2()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer flex items-center space-x-1">
+                <span>Next: Date-wise Expenses (Page 2)</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- PAGE 2: DATE-WISE & CATEGORY-WISE EXPENSE ITEMIZATION -->
+          <div id="claim-page-2" class="hidden p-6 space-y-4 overflow-y-auto flex-1">
+            <div class="flex items-center justify-between bg-slate-900 text-white p-3 rounded-xl">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Date-wise & Category-wise Expense Ledger</span>
+                <p class="text-[11px] text-slate-300">Enter daily amounts with bill descriptions and receipt proofs</p>
+              </div>
+              <button type="button" onclick="addExpenseItemRow()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg cursor-pointer flex items-center space-x-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                <span>+ Add Daily Expense Line</span>
+              </button>
+            </div>
+
+            <div class="overflow-x-auto border border-slate-200 rounded-xl">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                    <th class="py-2.5 px-3">Expense Date *</th>
+                    <th class="py-2.5 px-3">Expense Category *</th>
+                    <th class="py-2.5 px-3">Particulars / Bill Description</th>
+                    <th class="py-2.5 px-3 text-right">Amount (₹) *</th>
+                    <th class="py-2.5 px-3 text-center">Receipt File</th>
+                    <th class="py-2.5 px-3 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="trv-items-tbody" class="divide-y divide-slate-100 text-xs">
+                  <!-- Dynamic rows generated via addExpenseItemRow() -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- POLICY AUDIT COMPLIANCE SUMMARY CARD -->
+            <div id="trv-policy-audit-card" class="p-4 rounded-xl border bg-slate-50 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-700 uppercase">Master Policy Compliance Audit:</span>
+                <span id="trv-audit-status-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">Within Policy Limits</span>
+              </div>
+              <div id="trv-audit-notes" class="text-xs text-slate-600 font-medium">
+                All itemized daily expenses conform to Master Policy Limits (Hotel: ₹3,500/day, DA: ₹1,200/day, Local: ₹1,500/day).
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+              <span class="text-xs font-extrabold text-emerald-950 uppercase">Grand Total Travel Claim Amount:</span>
+              <span class="text-2xl font-black text-emerald-900" id="trv-grand-total-display">Rs.0</span>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+              <button type="button" onclick="goToClaimPage1()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl flex items-center space-x-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                <span>← Back to Trip Details (Page 1)</span>
+              </button>
+
+              <button type="submit" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl shadow-md cursor-pointer flex items-center space-x-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <span>Submit Travel Claim Voucher</span>
+              </button>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 3: EDIT MASTER POLICY LIMITS -->
+    <div id="modal-policy-edit" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+          <h3 class="text-base font-bold">Edit Master Travel Expense Limits Policy</h3>
+          <button onclick="closePolicyEditModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+        </div>
+
+        <form onsubmit="handleSaveMasterPolicy(event)" class="p-6 space-y-4">
+          <div class="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-900 font-medium">
+            Claims exceeding these daily thresholds are automatically flagged for Reporting Manager Approval.
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Max Hotel / Lodging per Day (₹) *</label>
+              <input type="number" id="pol-hotel-limit" required min="500" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Max DA / Food per Day (₹) *</label>
+              <input type="number" id="pol-da-limit" required min="100" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Max Local Conveyance / Day (₹) *</label>
+              <input type="number" id="pol-local-limit" required min="100" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Max Flight Ticket per Trip (₹) *</label>
+              <input type="number" id="pol-flight-limit" required min="1000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Max Client Entertainment / Meeting (₹) *</label>
+            <input type="number" id="pol-client-limit" required min="500" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold" />
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+            <button type="button" onclick="closePolicyEditModal()" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl shadow-xs cursor-pointer">
+              Save Master Policy Rules
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: SET BUDGET LIMIT -->
+    <div id="modal-budget" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="text-base font-bold text-slate-900">Set Category Budget Limit</h3>
+          <button onclick="closeBudgetModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+        </div>
+
+        <form onsubmit="handleSaveBudget(event)" class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Vertical *</label>
+            <select id="bud-vertical" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+              <option value="Sales">Sales</option>
+              <option value="Service/Parts">Service/Parts</option>
+              <option value="Projects">Projects</option>
+              <option value="Overhead">General Overhead</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Category *</label>
+            <select id="bud-category" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+              <option value="Admin">Admin Overhead</option>
+              <option value="Travelling">Travelling & DA</option>
+              <option value="Salary">Salary Disbursement</option>
+              <option value="Salary Advance">Salary Advance & Loans</option>
+              <option value="Project Expenses">Project Direct Expenses</option>
+              <option value="Equipment">Equipment & Maintenance</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Monthly Budget Limit (₹) *</label>
+            <input type="number" id="bud-limit" required min="1000" placeholder="e.g. 200000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold" />
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+            <button type="button" onclick="closeBudgetModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs cursor-pointer">
+              Save Budget Limit
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: CREATE NEW PROJECT CODE -->
+    <div id="modal-add-project" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="folder-plus" class="w-5 h-5 text-indigo-400"></i>
+            <h3 class="text-sm font-bold tracking-tight">Register New Project Code & Cost Center</h3>
+          </div>
+          <button onclick="closeAddProjectModal()" class="text-slate-400 hover:text-white text-lg font-bold">&times;</button>
+        </div>
+
+        <form onsubmit="handleSaveProjectModal(event)" class="p-6 space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Project Code *</label>
+              <input type="text" id="prj-code" required placeholder="e.g. PRJ-2026-104" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono text-indigo-700" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Contract Budget (₹) *</label>
+              <input type="number" id="prj-budget" required min="10000" placeholder="e.g. 2000000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Project Name / Description *</label>
+            <input type="text" id="prj-name" required placeholder="e.g. BALCO Plant Weighbridge SLA & Automation" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Client Name *</label>
+            <input type="text" id="prj-client" required placeholder="e.g. Bharat Aluminium Company Ltd" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 pt-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Direct Labor Budget</label>
+              <input type="number" id="prj-labor" value="300000" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Subcontractor Budget</label>
+              <input type="number" id="prj-subcon" value="250000" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-600 uppercase mb-1">Direct Materials Budget</label>
+              <input type="number" id="prj-materials" value="800000" class="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold" />
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+            <button type="button" onclick="closeAddProjectModal()" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs cursor-pointer">
+              Save Project Code
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: ADD REVENUE ITEM / MILESTONE INVOICE -->
+    <div id="modal-add-revenue" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+        <div class="px-6 py-4 bg-emerald-900 text-white flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="arrow-down-left-square" class="w-5 h-5 text-emerald-400"></i>
+            <h3 class="text-sm font-bold tracking-tight">Record Project Revenue Entry</h3>
+          </div>
+          <button onclick="closeAddRevenueModal()" class="text-slate-300 hover:text-white text-lg font-bold">&times;</button>
+        </div>
+
+        <form onsubmit="handleSaveRevenueModal(event)" class="p-6 space-y-4">
+          <input type="hidden" id="rev-project-code" />
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Target Project Code</label>
+            <div id="rev-target-pcode-display" class="px-3 py-2 bg-slate-100 font-mono font-bold text-indigo-800 text-xs rounded-xl"></div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Revenue Type *</label>
+            <select id="rev-type" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+              <option value="Milestone Invoice">Milestone Invoice</option>
+              <option value="T&M Billing">Time & Materials (T&M) Billing</option>
+              <option value="Change Order">Approved Change Order</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Description / Item Title *</label>
+            <input type="text" id="rev-title" required placeholder="e.g. Phase 2 Installation Signoff Invoice" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Amount (₹) *</label>
+              <input type="number" id="rev-amount" required min="1000" placeholder="e.g. 500000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-emerald-700" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Status *</label>
+              <select id="rev-status" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold">
+                <option value="Received">Payment Received</option>
+                <option value="Invoiced">Invoiced (Pending Payment)</option>
+                <option value="Pending">Planned / Uninvoiced</option>
+                <option value="Approved">Approved (Change Order)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+            <button type="button" onclick="closeAddRevenueModal()" class="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs cursor-pointer">
+              Add Revenue Entry
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      var currentTab = 'travel-app';
+      var currentClaimPage = 1;
+      var claimItemsStore = [];
+
+      document.addEventListener('DOMContentLoaded', function() {
+        if (checkAuth()) {
+          initDefaultFinancialData();
+          populateProjectDropdown();
+          populateEmployeeDropdowns();
+          renderTravelApprovals();
+          renderExpensesTable();
+          renderPolicyMaster();
+          renderProjectProfitability();
+          renderBudgets();
+        }
+      });
+
+      function initDefaultFinancialData() {
+        // Initialize Projects Master (Project Code Revenue & Cost Center)
+        var projects = window.RevOpsStore.getCollection('projectsMaster');
+        if (!projects || projects.length === 0) {
+          var defaultProjects = [
+            {
+              id: 'PRJ-2026-101',
+              projectCode: 'PRJ-2026-101',
+              projectName: 'Tata Steel Weighbridge SLA & Automation',
+              clientName: 'Tata Steel Long Products',
+              vertical: 'Projects',
+              budget: 2500000,
+              milestones: [
+                { id: 'M1', title: 'Supply & Hardware Dispatch', amount: 1500000, status: 'Received' },
+                { id: 'M2', title: 'Installation & Calibration Commissioning', amount: 800000, status: 'Invoiced' }
+              ],
+              tmBillings: [
+                { id: 'TM1', title: 'Overtime Automation Engineering (40 hrs @ ₹2,000)', hours: 40, rate: 2000, amount: 80000, status: 'Invoiced' }
+              ],
+              changeOrders: [
+                { id: 'CO1', title: 'Additional Heavy-Duty Load Cell Cables', amount: 50000, status: 'Approved' }
+              ],
+              directLaborCost: 350000,
+              subcontractorCost: 280000,
+              materialsCost: 850000
+            },
+            {
+              id: 'PRJ-2026-102',
+              projectCode: 'PRJ-2026-102',
+              projectName: 'Jindal Steels Crane Scales Overhaul',
+              clientName: 'Jindal Steels & Minerals Ltd',
+              vertical: 'Projects',
+              budget: 1800000,
+              milestones: [
+                { id: 'M1', title: 'Phase 1 Sensor Supply & Disassembly', amount: 1000000, status: 'Received' },
+                { id: 'M2', title: 'Phase 2 Load Cell Testing & Final Signoff', amount: 600000, status: 'Invoiced' }
+              ],
+              tmBillings: [
+                { id: 'TM1', title: 'Specialist On-site Calibration (30 hrs @ ₹2,500)', hours: 30, rate: 2500, amount: 75000, status: 'Invoiced' }
+              ],
+              changeOrders: [
+                { id: 'CO1', title: 'Wireless Display Module Upgrade', amount: 45000, status: 'Approved' }
+              ],
+              directLaborCost: 250000,
+              subcontractorCost: 190000,
+              materialsCost: 620000
+            },
+            {
+              id: 'PRJ-2026-103',
+              projectCode: 'PRJ-2026-103',
+              projectName: 'Vedanta Smelter Belt Weighers Integration',
+              clientName: 'Vedanta Aluminium & Power',
+              vertical: 'Projects',
+              budget: 1400000,
+              milestones: [
+                { id: 'M1', title: 'Belt Weigher Hardware Supply', amount: 900000, status: 'Received' },
+                { id: 'M2', title: 'Site Integration & PLC Interfacing', amount: 400000, status: 'Pending' }
+              ],
+              tmBillings: [],
+              changeOrders: [],
+              directLaborCost: 180000,
+              subcontractorCost: 120000,
+              materialsCost: 510000
+            }
+          ];
+          window.RevOpsStore.saveCollection('projectsMaster', defaultProjects);
+        }
+
+        // Initialize Expense Splits Collection
+        var splits = window.RevOpsStore.getCollection('expenseSplits');
+        if (!splits || splits.length === 0) {
+          var defaultSplits = [
+            { splitId: 'SPL-101', expenseId: 'TRV-1001', projectCode: 'PRJ-2026-101', allocationMode: 'weighted', allocatedPercentage: 60, allocatedAmount: 11100, expenseClassification: 'Allocated Shared' },
+            { splitId: 'SPL-102', expenseId: 'TRV-1001', projectCode: 'PRJ-2026-102', allocationMode: 'weighted', allocatedPercentage: 40, allocatedAmount: 7400, expenseClassification: 'Allocated Shared' }
+          ];
+          window.RevOpsStore.saveCollection('expenseSplits', defaultSplits);
+        }
+
+        // Initialize Master Policy
+        var policy = window.RevOpsStore.getCollection('travelPolicyMaster');
+        if (!policy || policy.length === 0) {
+          var defaultPolicy = [{
+            id: 'pol_1',
+            hotelLimitPerDay: 3500,
+            daLimitPerDay: 1200,
+            localConveyancePerDay: 1500,
+            flightLimitPerTrip: 12000,
+            clientEntertainmentLimit: 5000,
+            updatedAt: '2026-07-01'
+          }];
+          window.RevOpsStore.saveCollection('travelPolicyMaster', defaultPolicy);
+        }
+
+        // Initialize Travel Pre-Approvals
+        var preApps = window.RevOpsStore.getCollection('travelApprovals');
+        if (!preApps || preApps.length === 0) {
+          var defaultPreApps = [
+            {
+              id: 'TRV-APP-101',
+              empId: 'EMP-101',
+              employeeName: 'Murugan',
+              vertical: 'Sales',
+              startDate: '2026-07-15',
+              endDate: '2026-07-18',
+              places: 'Jharsuguda & Rourkela Industrial Belts',
+              purpose: 'New Crane Scale SLA contract & plant load cell inspection',
+              clientType: 'existing',
+              clientName: 'Tata Steel Long Products',
+              contactPerson: 'Mr. S. K. Mahapatra (Sr. GM Projects)',
+              contactPhone: '+91 97760 88210',
+              estimatedBudget: 18000,
+              isExtension: false,
+              refId: '',
+              status: 'Approved',
+              appliedDate: '2026-07-10',
+              extensionReason: ''
+            },
+            {
+              id: 'TRV-APP-102',
+              empId: 'EMP-102',
+              employeeName: 'Sivakumar',
+              vertical: 'Service/Parts',
+              startDate: '2026-07-20',
+              endDate: '2026-07-22',
+              places: 'Toranagallu, Bellary Cluster',
+              purpose: 'Emergency Weighbridge Indicator Replacement & Calibration',
+              clientType: 'new',
+              clientName: 'Jindal Steels & Minerals Ltd',
+              contactPerson: 'Mr. Rajesh Sharma (Plant Head)',
+              contactPhone: '+91 98450 12345',
+              estimatedBudget: 12000,
+              isExtension: false,
+              refId: '',
+              status: 'Approved',
+              appliedDate: '2026-07-18',
+              extensionReason: ''
+            }
+          ];
+          window.RevOpsStore.saveCollection('travelApprovals', defaultPreApps);
+        }
+
+        var expenses = window.RevOpsStore.getCollection('expenses');
+        if (!expenses || expenses.length === 0) {
+          var sampleExpenses = [
+            {
+              id: 'exp_1',
+              voucherNo: 'TRV-1001',
+              date: '2026-07-18',
+              category: 'Travelling',
+              payee: 'Murugan',
+              amount: 18500,
+              vertical: 'Sales',
+              projectId: '',
+              paymentMode: 'Bank Transfer',
+              remarks: 'Travel Claim: Jharsuguda Cluster (2026-07-15 - 2026-07-18) [Hotel: ₹10500, DA: ₹3600, Tickets: ₹4400]',
+              status: 'Approved',
+              receiptBase64: '',
+              policyExceeded: false,
+              preAppRefId: 'TRV-APP-101',
+              clientName: 'Tata Steel Long Products',
+              items: [
+                { date: '2026-07-15', category: 'Flight/Train Ticket', desc: 'Flight Chennai to Jharsuguda', amount: 4400, receiptBase64: '' },
+                { date: '2026-07-16', category: 'Hotel Accommodation', desc: 'Hotel Grand Residency 2 nights', amount: 10500, receiptBase64: '' },
+                { date: '2026-07-17', category: 'Daily Allowance (Food)', desc: 'Daily allowance 3 days', amount: 3600, receiptBase64: '' }
+              ]
+            },
+            {
+              id: 'exp_2',
+              voucherNo: 'VOUCH-1002',
+              date: '2026-07-14',
+              category: 'Project Expenses',
+              payee: 'Universal Testing Corp',
+              amount: 650000,
+              vertical: 'Projects',
+              projectId: 'ORD_101',
+              paymentMode: 'Bank Transfer',
+              remarks: 'Raw material load cell sensors & crane scale calibration kit for Steel Plant Project',
+              status: 'Approved',
+              receiptBase64: ''
+            },
+            {
+              id: 'exp_3',
+              voucherNo: 'VOUCH-1003',
+              date: '2026-07-18',
+              category: 'Admin',
+              payee: 'Airtel Broadband & Utilities',
+              amount: 14200,
+              vertical: 'Overhead',
+              projectId: '',
+              paymentMode: 'UPI',
+              remarks: 'Head office internet, landline & cloud server hosting bill',
+              status: 'Approved',
+              receiptBase64: ''
+            },
+            {
+              id: 'exp_4',
+              voucherNo: 'VOUCH-1004',
+              date: '2026-07-22',
+              category: 'Salary Advance',
+              payee: 'Sivakumar',
+              amount: 25000,
+              vertical: 'Service/Parts',
+              projectId: '',
+              paymentMode: 'Bank Transfer',
+              remarks: 'Temporary salary advance for field service emergency',
+              status: 'Approved',
+              receiptBase64: ''
+            }
+          ];
+          window.RevOpsStore.saveCollection('expenses', sampleExpenses);
+        }
+
+        var budgets = window.RevOpsStore.getCollection('budgets');
+        if (!budgets || budgets.length === 0) {
+          var sampleBudgets = [
+            { id: 'bud_1', vertical: 'Sales', category: 'Travelling', monthlyLimit: 50000 },
+            { id: 'bud_2', vertical: 'Projects', category: 'Project Expenses', monthlyLimit: 1000000 },
+            { id: 'bud_3', vertical: 'Overhead', category: 'Admin', monthlyLimit: 50000 },
+            { id: 'bud_4', vertical: 'Service/Parts', category: 'Equipment', monthlyLimit: 80000 }
+          ];
+          window.RevOpsStore.saveCollection('budgets', sampleBudgets);
+        }
+      }
+
+      function populateProjectDropdown() {
+        var orders = window.RevOpsStore.getCollection('orders') || [];
+        var select = document.getElementById('exp-project-id');
+        if (!select) return;
+        select.innerHTML = `<option value="">None / General Expense</option>`;
+        orders.forEach(function(ord) {
+          var opt = document.createElement('option');
+          opt.value = ord.id || ord.orderId;
+          opt.innerText = (ord.customerName || 'Project') + " (Val: " + formatINR(ord.orderValue || 0) + ")";
+          select.appendChild(opt);
+        });
+      }
+
+      function populateEmployeeDropdowns() {
+        var emps = window.RevOpsStore.getCollection('employees') || [];
+        var selects = ['travel-emp-id', 'preapp-emp-id'];
+        selects.forEach(function(sId) {
+          var el = document.getElementById(sId);
+          if (!el) return;
+          el.innerHTML = "";
+          emps.forEach(function(e) {
+            var opt = document.createElement('option');
+            opt.value = e.employeeId;
+            opt.innerText = e.fullName + " (" + e.employeeId + " - " + e.vertical + ")";
+            el.appendChild(opt);
+          });
+        });
+
+        // Populate clients in pre-app
+        var clients = window.RevOpsStore.getCollection('clients') || window.RevOpsStore.getCollection('leads') || [];
+        var clientSelect = document.getElementById('preapp-existing-client');
+        if (clientSelect) {
+          clientSelect.innerHTML = `<option value="">-- Select Master Client --</option>`;
+          if (clients.length === 0) {
+            clientSelect.innerHTML += `<option value="Tata Steel Long Products">Tata Steel Long Products</option>`;
+            clientSelect.innerHTML += `<option value="Jindal Stainless Works">Jindal Stainless Works</option>`;
+            clientSelect.innerHTML += `<option value="Vedanta Aluminium & Power">Vedanta Aluminium & Power</option>`;
+          } else {
+            clients.forEach(function(c) {
+              var opt = document.createElement('option');
+              opt.value = c.companyName || c.clientName || c.name || 'Client';
+              opt.innerText = c.companyName || c.clientName || c.name || 'Client';
+              clientSelect.appendChild(opt);
+            });
+          }
+        }
+      }
+
+      function switchMainTab(tabName) {
+        currentTab = tabName;
+        document.getElementById('sec-travel-app').classList.add('hidden');
+        document.getElementById('sec-ledger').classList.add('hidden');
+        document.getElementById('sec-policy').classList.add('hidden');
+        document.getElementById('sec-profit').classList.add('hidden');
+        document.getElementById('sec-budget').classList.add('hidden');
+        if (document.getElementById('sec-split')) document.getElementById('sec-split').classList.add('hidden');
+
+        var btnIds = ['tab-btn-travel-app', 'tab-btn-ledger', 'tab-btn-split', 'tab-btn-policy', 'tab-btn-profit', 'tab-btn-budget'];
+        btnIds.forEach(function(bId) {
+          var btn = document.getElementById(bId);
+          if (btn) btn.className = "px-4 py-2.5 font-bold text-xs border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-2 cursor-pointer";
+        });
+
+        if (tabName === 'travel-app') {
+          document.getElementById('sec-travel-app').classList.remove('hidden');
+          document.getElementById('tab-btn-travel-app').className = "px-4 py-2.5 font-bold text-xs border-b-2 border-sky-600 text-sky-600 flex items-center space-x-2 cursor-pointer";
+          renderTravelApprovals();
+        } else if (tabName === 'ledger') {
+          document.getElementById('sec-ledger').classList.remove('hidden');
+          document.getElementById('tab-btn-ledger').className = "px-4 py-2.5 font-bold text-xs border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2 cursor-pointer";
+          renderExpensesTable();
+        } else if (tabName === 'split') {
+          if (document.getElementById('sec-split')) document.getElementById('sec-split').classList.remove('hidden');
+          document.getElementById('tab-btn-split').className = "px-4 py-2.5 font-bold text-xs border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2 cursor-pointer";
+          renderProjectRevenueAndSplitSection();
+        } else if (tabName === 'policy') {
+          document.getElementById('sec-policy').classList.remove('hidden');
+          document.getElementById('tab-btn-policy').className = "px-4 py-2.5 font-bold text-xs border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2 cursor-pointer";
+          renderPolicyMaster();
+        } else if (tabName === 'profit') {
+          document.getElementById('sec-profit').classList.remove('hidden');
+          document.getElementById('tab-btn-profit').className = "px-4 py-2.5 font-bold text-xs border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2 cursor-pointer";
+          renderProjectProfitability();
+        } else if (tabName === 'budget') {
+          document.getElementById('sec-budget').classList.remove('hidden');
+          document.getElementById('tab-btn-budget').className = "px-4 py-2.5 font-bold text-xs border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2 cursor-pointer";
+          renderBudgets();
+        }
+      }
+
+      /* RENDER TRAVEL PRE-APPROVALS */
+      function renderTravelApprovals() {
+        var preApps = window.RevOpsStore.getCollection('travelApprovals') || [];
+        var statusFlt = document.getElementById('flt-preapp-status').value;
+        var search = document.getElementById('flt-preapp-search').value.toLowerCase();
+
+        var pendingCount = 0, approvedCount = 0, extendedCount = 0;
+        preApps.forEach(function(a) {
+          if (a.status === 'Pending Manager Approval') pendingCount++;
+          if (a.status === 'Approved') approvedCount++;
+          if (a.isExtension) extendedCount++;
+        });
+
+        document.getElementById('stat-preapp-pending').innerText = pendingCount + " Requests";
+        document.getElementById('stat-preapp-approved').innerText = approvedCount + " Authorized";
+        document.getElementById('stat-preapp-extended').innerText = extendedCount + " Extended Trips";
+
+        var filtered = preApps.filter(function(a) {
+          if (statusFlt !== 'All' && a.status !== statusFlt) return false;
+          if (search && !((a.employeeName||'').toLowerCase().includes(search) || (a.places||'').toLowerCase().includes(search) || (a.clientName||'').toLowerCase().includes(search))) return false;
+          return true;
+        });
+
+        var tbody = document.getElementById('travel-approvals-tbody');
+        tbody.innerHTML = "";
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">No travel pre-approvals match current search.</td></tr>`;
+          return;
+        }
+
+        filtered.forEach(function(app) {
+          var statusBadge = 'bg-slate-100 text-slate-700 border-slate-300';
+          if (app.status === 'Approved') statusBadge = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+          if (app.status === 'Pending Manager Approval') statusBadge = 'bg-amber-100 text-amber-800 border-amber-300';
+          if (app.status === 'Rejected') statusBadge = 'bg-rose-100 text-rose-800 border-rose-300';
+
+          var extTag = app.isExtension ? `<span class="px-2 py-0.5 ml-1 rounded bg-purple-100 text-purple-800 text-[10px] font-black border border-purple-300">TRIP EXTENDED</span>` : '';
+
+          var approveBtn = app.status === 'Pending Manager Approval'
+            ? `<button onclick="approvePreApproval('${app.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-lg transition-colors cursor-pointer shadow-xs">Approve</button>`
+            : '';
+
+          var extendBtn = (app.status === 'Approved')
+            ? `<button onclick="openPreApprovalModalForExtension('${app.id}')" class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[11px] rounded-lg border border-amber-300 transition-colors cursor-pointer">Extend Trip</button>`
+            : '';
+
+          var claimBtn = (app.status === 'Approved')
+            ? `<button onclick="openTravelClaimForApprovedPreApp('${app.id}')" class="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-sky-800 font-bold text-[11px] rounded-lg border border-sky-300 transition-colors cursor-pointer">Submit Claim</button>`
+            : '';
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-semibold text-slate-900">
+              <div class="font-bold text-sky-900">${app.id} ${extTag}</div>
+              <div class="text-[10px] text-slate-400">Applied: ${app.appliedDate || app.startDate}</div>
+            </td>
+            <td class="py-3 px-4 text-slate-700">
+              <div class="font-bold text-slate-900">${app.employeeName}</div>
+              <div class="text-[10px] text-slate-500 font-medium">${app.vertical} (${app.empId})</div>
+            </td>
+            <td class="py-3 px-4 text-slate-700">
+              <div class="font-bold text-slate-800 text-xs">${app.startDate} to ${app.endDate}</div>
+              <div class="text-[11px] text-sky-700 font-semibold">${app.places}</div>
+            </td>
+            <td class="py-3 px-4 text-slate-600">
+              <div class="font-bold text-indigo-800">${app.clientName || 'General Client'}</div>
+              <div class="text-[10px] text-slate-500">${app.contactPerson || 'Contact N/A'} (${app.purpose})</div>
+            </td>
+            <td class="py-3 px-4 text-right font-extrabold text-slate-900">
+              ${formatINR(app.estimatedBudget)}
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${statusBadge}">${app.status}</span>
+            </td>
+            <td class="py-3 px-4 text-center space-x-1">
+              ${approveBtn}
+              ${extendBtn}
+              ${claimBtn}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function approvePreApproval(appId) {
+        window.RevOpsStore.updateItem('travelApprovals', appId, { status: 'Approved' });
+        renderTravelApprovals();
+        alert("Travel Pre-Approval " + appId + " approved by Reporting Manager.");
+      }
+
+      /* MASTER POLICY RENDER */
+      function renderPolicyMaster() {
+        var policy = (window.RevOpsStore.getCollection('travelPolicyMaster') || [])[0];
+        if (!policy) return;
+
+        document.getElementById('pol-hotel-display').innerText = formatINR(policy.hotelLimitPerDay);
+        document.getElementById('pol-da-display').innerText = formatINR(policy.daLimitPerDay);
+        document.getElementById('pol-local-display').innerText = formatINR(policy.localConveyancePerDay);
+        document.getElementById('pol-flight-display').innerText = formatINR(policy.flightLimitPerTrip);
+        document.getElementById('pol-client-display').innerText = formatINR(policy.clientEntertainmentLimit);
+      }
+
+      function openPolicyEditModal() {
+        var policy = (window.RevOpsStore.getCollection('travelPolicyMaster') || [])[0];
+        if (policy) {
+          document.getElementById('pol-hotel-limit').value = policy.hotelLimitPerDay;
+          document.getElementById('pol-da-limit').value = policy.daLimitPerDay;
+          document.getElementById('pol-local-limit').value = policy.localConveyancePerDay;
+          document.getElementById('pol-flight-limit').value = policy.flightLimitPerTrip;
+          document.getElementById('pol-client-limit').value = policy.clientEntertainmentLimit;
+        }
+        document.getElementById('modal-policy-edit').classList.remove('hidden');
+      }
+
+      function closePolicyEditModal() {
+        document.getElementById('modal-policy-edit').classList.add('hidden');
+      }
+
+      function handleSaveMasterPolicy(evt) {
+        evt.preventDefault();
+        var h = Number(document.getElementById('pol-hotel-limit').value);
+        var d = Number(document.getElementById('pol-da-limit').value);
+        var l = Number(document.getElementById('pol-local-limit').value);
+        var f = Number(document.getElementById('pol-flight-limit').value);
+        var c = Number(document.getElementById('pol-client-limit').value);
+
+        var policyList = window.RevOpsStore.getCollection('travelPolicyMaster') || [];
+        var newPolicy = {
+          id: policyList[0] ? policyList[0].id : 'pol_1',
+          hotelLimitPerDay: h,
+          daLimitPerDay: d,
+          localConveyancePerDay: l,
+          flightLimitPerTrip: f,
+          clientEntertainmentLimit: c,
+          updatedAt: new Date().toISOString().split('T')[0]
+        };
+
+        window.RevOpsStore.saveCollection('travelPolicyMaster', [newPolicy]);
+        closePolicyEditModal();
+        renderPolicyMaster();
+        alert("Master Travel Expense Limits Policy updated successfully!");
+      }
+
+      /* PRE-APPROVAL MODAL LOGIC */
+      function openPreApprovalModal() {
+        document.getElementById('preapp-id').value = "";
+        document.getElementById('preapp-start-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('preapp-end-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('preapp-places').value = "";
+        document.getElementById('preapp-purpose').value = "";
+        document.getElementById('preapp-budget').value = "";
+        document.getElementById('preapp-extension-reason').value = "";
+        
+        // Mode reset
+        var modeRadios = document.getElementsByName('preapp-mode');
+        if (modeRadios[0]) modeRadios[0].checked = true;
+        togglePreAppMode();
+
+        document.getElementById('modal-pre-approval').classList.remove('hidden');
+      }
+
+      function openPreApprovalModalForExtension(refId) {
+        openPreApprovalModal();
+        var modeRadios = document.getElementsByName('preapp-mode');
+        if (modeRadios[1]) modeRadios[1].checked = true;
+        togglePreAppMode();
+
+        var refSelect = document.getElementById('preapp-ref-id');
+        if (refSelect) refSelect.value = refId;
+        populateExtensionRefDetails();
+      }
+
+      function closePreApprovalModal() {
+        document.getElementById('modal-pre-approval').classList.add('hidden');
+      }
+
+      function togglePreAppMode() {
+        var isExtend = document.querySelector('input[name="preapp-mode"]:checked').value === 'extend';
+        var selectorBox = document.getElementById('preapp-extend-selector');
+        var reasonBox = document.getElementById('preapp-extend-reason-box');
+
+        if (isExtend) {
+          selectorBox.classList.remove('hidden');
+          reasonBox.classList.remove('hidden');
+          populateRefSelectDropdown();
+        } else {
+          selectorBox.classList.add('hidden');
+          reasonBox.classList.add('hidden');
+        }
+      }
+
+      function populateRefSelectDropdown() {
+        var preApps = window.RevOpsStore.getCollection('travelApprovals') || [];
+        var refSelect = document.getElementById('preapp-ref-id');
+        refSelect.innerHTML = `<option value="">-- Select Approved Travel to Extend --</option>`;
+        preApps.forEach(function(a) {
+          if (a.status === 'Approved') {
+            var opt = document.createElement('option');
+            opt.value = a.id;
+            opt.innerText = a.id + ": " + a.employeeName + " (" + a.places + " | " + a.startDate + ")";
+            refSelect.appendChild(opt);
+          }
+        });
+      }
+
+      function populateExtensionRefDetails() {
+        var refId = document.getElementById('preapp-ref-id').value;
+        if (!refId) return;
+        var preApps = window.RevOpsStore.getCollection('travelApprovals') || [];
+        var ref = preApps.find(function(a) { return a.id === refId; });
+        if (!ref) return;
+
+        document.getElementById('preapp-emp-id').value = ref.empId;
+        document.getElementById('preapp-start-date').value = ref.startDate;
+        document.getElementById('preapp-end-date').value = ref.endDate;
+        document.getElementById('preapp-places').value = ref.places;
+        document.getElementById('preapp-purpose').value = ref.purpose;
+        document.getElementById('preapp-budget').value = ref.estimatedBudget;
+      }
+
+      function toggleClientType() {
+        var cType = document.getElementById('preapp-client-type').value;
+        if (cType === 'new') {
+          document.getElementById('client-existing-box').classList.add('hidden');
+          document.getElementById('client-new-box').classList.remove('hidden');
+        } else {
+          document.getElementById('client-existing-box').classList.remove('hidden');
+          document.getElementById('client-new-box').classList.add('hidden');
+        }
+      }
+
+      function handleSavePreApproval(evt) {
+        evt.preventDefault();
+        var isExtend = document.querySelector('input[name="preapp-mode"]:checked').value === 'extend';
+        var empId = document.getElementById('preapp-emp-id').value;
+        var startDate = document.getElementById('preapp-start-date').value;
+        var endDate = document.getElementById('preapp-end-date').value;
+        var places = document.getElementById('preapp-places').value;
+        var purpose = document.getElementById('preapp-purpose').value;
+        var budget = Number(document.getElementById('preapp-budget').value);
+
+        var cType = document.getElementById('preapp-client-type').value;
+        var clientName = "";
+        var contactPerson = "";
+
+        if (cType === 'new') {
+          clientName = document.getElementById('preapp-new-client-name').value;
+          contactPerson = document.getElementById('preapp-new-contact-person').value;
+        } else {
+          clientName = document.getElementById('preapp-existing-client').value || 'Existing Client';
+          contactPerson = document.getElementById('preapp-contact-person').value;
+        }
+
+        var emps = window.RevOpsStore.getCollection('employees') || [];
+        var emp = emps.find(function(e) { return e.employeeId === empId; });
+        var empName = emp ? emp.fullName : empId;
+        var vert = emp ? emp.vertical : 'Sales';
+
+        var appCount = (window.RevOpsStore.getCollection('travelApprovals') || []).length + 101;
+        var appId = isExtend ? ('TRV-EXT-' + appCount) : ('TRV-APP-' + appCount);
+
+        var newPreApp = {
+          id: appId,
+          empId: empId,
+          employeeName: empName,
+          vertical: vert,
+          startDate: startDate,
+          endDate: endDate,
+          places: places,
+          purpose: purpose,
+          clientType: cType,
+          clientName: clientName,
+          contactPerson: contactPerson,
+          estimatedBudget: budget,
+          isExtension: isExtend,
+          refId: isExtend ? document.getElementById('preapp-ref-id').value : '',
+          status: 'Pending Manager Approval',
+          appliedDate: new Date().toISOString().split('T')[0],
+          extensionReason: isExtend ? document.getElementById('preapp-extension-reason').value : ''
+        };
+
+        window.RevOpsStore.addItem('travelApprovals', newPreApp);
+        closePreApprovalModal();
+        renderTravelApprovals();
+        alert("Travel Authorization Request " + newPreApp.id + " submitted and routed for Reporting Manager Approval!");
+      }
+
+      /* COMPREHENSIVE MULTI-PAGE TRAVEL CLAIM WIZARD LOGIC */
+      function openTravelClaimModal() {
+        currentClaimPage = 1;
+        claimItemsStore = [
+          { date: new Date().toISOString().split('T')[0], category: 'Hotel Accommodation', desc: 'Hotel room stay', amount: 3000, receiptBase64: '' },
+          { date: new Date().toISOString().split('T')[0], category: 'Daily Allowance (Food)', desc: 'Breakfast & dinner DA', amount: 1000, receiptBase64: '' }
+        ];
+
+        // Populate pre-app dropdown in claim
+        var preApps = window.RevOpsStore.getCollection('travelApprovals') || [];
+        var preLinkSelect = document.getElementById('trv-preapp-link');
+        preLinkSelect.innerHTML = `<option value="">-- Direct Travel Claim (No Pre-Approval) --</option>`;
+        preApps.forEach(function(a) {
+          if (a.status === 'Approved') {
+            var opt = document.createElement('option');
+            opt.value = a.id;
+            opt.innerText = a.id + " (" + a.employeeName + " - " + a.places + ")";
+            preLinkSelect.appendChild(opt);
+          }
+        });
+
+        document.getElementById('trv-start-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('trv-end-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('trv-places').value = "";
+        document.getElementById('trv-purpose').value = "";
+        document.getElementById('trv-client-name').value = "";
+        document.getElementById('trv-client-contact').value = "";
+        document.getElementById('trv-client-phone').value = "";
+        document.getElementById('trv-client-location').value = "";
+
+        showClaimPage(1);
+        document.getElementById('modal-travel').classList.remove('hidden');
+      }
+
+      function openTravelClaimForApprovedPreApp(appId) {
+        openTravelClaimModal();
+        var preLinkSelect = document.getElementById('trv-preapp-link');
+        if (preLinkSelect) {
+          preLinkSelect.value = appId;
+          populatePreAppDetailsIntoClaim();
+        }
+      }
+
+      function closeTravelClaimModal() {
+        document.getElementById('modal-travel').classList.add('hidden');
+      }
+
+      function populatePreAppDetailsIntoClaim() {
+        var appId = document.getElementById('trv-preapp-link').value;
+        if (!appId) return;
+        var preApps = window.RevOpsStore.getCollection('travelApprovals') || [];
+        var app = preApps.find(function(a) { return a.id === appId; });
+        if (!app) return;
+
+        document.getElementById('travel-emp-id').value = app.empId;
+        document.getElementById('trv-start-date').value = app.startDate;
+        document.getElementById('trv-end-date').value = app.endDate;
+        document.getElementById('trv-places').value = app.places;
+        document.getElementById('trv-purpose').value = app.purpose;
+        document.getElementById('trv-client-name').value = app.clientName;
+        document.getElementById('trv-client-contact').value = app.contactPerson || '';
+        if (app.isExtension) {
+          document.getElementById('trv-is-extended').value = 'yes';
+        }
+      }
+
+      function showClaimPage(pg) {
+        currentClaimPage = pg;
+        if (pg === 1) {
+          document.getElementById('claim-page-1').classList.remove('hidden');
+          document.getElementById('claim-page-2').classList.add('hidden');
+          document.getElementById('step-badge-1').className = "px-2 py-0.5 bg-emerald-500 text-white rounded-full font-bold";
+          document.getElementById('step-badge-2').className = "px-2 py-0.5 bg-emerald-800 text-emerald-300 rounded-full";
+        } else {
+          document.getElementById('claim-page-1').classList.add('hidden');
+          document.getElementById('claim-page-2').classList.remove('hidden');
+          document.getElementById('step-badge-1').className = "px-2 py-0.5 bg-emerald-800 text-emerald-300 rounded-full";
+          document.getElementById('step-badge-2').className = "px-2 py-0.5 bg-emerald-500 text-white rounded-full font-bold";
+          renderClaimItemRows();
+          calcTravelClaimTotalsAndAudit();
+        }
+      }
+
+      function goToClaimPage1() { showClaimPage(1); }
+      function goToClaimPage2() { showClaimPage(2); }
+
+      function renderClaimItemRows() {
+        var tbody = document.getElementById('trv-items-tbody');
+        tbody.innerHTML = "";
+
+        claimItemsStore.forEach(function(item, idx) {
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50";
+          tr.innerHTML = `
+            <td class="py-2 px-3">
+              <input type="date" value="${item.date}" onchange="updateClaimItem(${idx}, 'date', this.value)" class="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-semibold" />
+            </td>
+            <td class="py-2 px-3">
+              <select onchange="updateClaimItem(${idx}, 'category', this.value)" class="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800">
+                <option value="Hotel Accommodation" ${item.category === 'Hotel Accommodation' ? 'selected' : ''}>Hotel Accommodation</option>
+                <option value="Daily Allowance (Food)" ${item.category === 'Daily Allowance (Food)' ? 'selected' : ''}>Daily Allowance (Food)</option>
+                <option value="Local Conveyance / Taxi" ${item.category === 'Local Conveyance / Taxi' ? 'selected' : ''}>Local Conveyance / Taxi</option>
+                <option value="Flight/Train Ticket" ${item.category === 'Flight/Train Ticket' ? 'selected' : ''}>Flight/Train Ticket</option>
+                <option value="Client Entertainment" ${item.category === 'Client Entertainment' ? 'selected' : ''}>Client Entertainment</option>
+              </select>
+            </td>
+            <td class="py-2 px-3">
+              <input type="text" value="${item.desc}" placeholder="Bill details..." onchange="updateClaimItem(${idx}, 'desc', this.value)" class="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs" />
+            </td>
+            <td class="py-2 px-3 text-right">
+              <input type="number" value="${item.amount}" min="0" oninput="updateClaimItem(${idx}, 'amount', this.value)" class="w-28 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-right text-emerald-800" />
+            </td>
+            <td class="py-2 px-3 text-center">
+              <input type="file" accept="image/*" onchange="uploadClaimReceipt(${idx}, event)" class="text-[10px] w-36" />
+            </td>
+            <td class="py-2 px-3 text-center">
+              <button type="button" onclick="removeExpenseItemRow(${idx})" class="text-rose-600 hover:text-rose-800 font-bold text-sm cursor-pointer">&times;</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function addExpenseItemRow() {
+        claimItemsStore.push({
+          date: document.getElementById('trv-start-date').value || new Date().toISOString().split('T')[0],
+          category: 'Hotel Accommodation',
+          desc: 'Expense description',
+          amount: 1000,
+          receiptBase64: ''
+        });
+        renderClaimItemRows();
+        calcTravelClaimTotalsAndAudit();
+      }
+
+      function removeExpenseItemRow(idx) {
+        if (claimItemsStore.length <= 1) {
+          alert("Travel claim must have at least one date-wise expense item.");
+          return;
+        }
+        claimItemsStore.splice(idx, 1);
+        renderClaimItemRows();
+        calcTravelClaimTotalsAndAudit();
+      }
+
+      function updateClaimItem(idx, key, val) {
+        if (key === 'amount') val = Number(val) || 0;
+        claimItemsStore[idx][key] = val;
+        calcTravelClaimTotalsAndAudit();
+      }
+
+      function uploadClaimReceipt(idx, evt) {
+        var file = evt.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          claimItemsStore[idx].receiptBase64 = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function calcTravelClaimTotalsAndAudit() {
+        var total = 0;
+        var hotelSum = 0, daSum = 0, localSum = 0, flightSum = 0;
+
+        claimItemsStore.forEach(function(item) {
+          var amt = Number(item.amount) || 0;
+          total += amt;
+          if (item.category === 'Hotel Accommodation') hotelSum += amt;
+          if (item.category === 'Daily Allowance (Food)') daSum += amt;
+          if (item.category === 'Local Conveyance / Taxi') localSum += amt;
+          if (item.category === 'Flight/Train Ticket') flightSum += amt;
+        });
+
+        document.getElementById('trv-grand-total-display').innerText = formatINR(total);
+
+        // Check policy limits
+        var policy = (window.RevOpsStore.getCollection('travelPolicyMaster') || [])[0] || { hotelLimitPerDay: 3500, daLimitPerDay: 1200, localConveyancePerDay: 1500 };
+        var exceededReasons = [];
+
+        if (hotelSum > policy.hotelLimitPerDay) {
+          exceededReasons.push("Hotel spend (₹" + hotelSum + ") exceeds daily policy limit (₹" + policy.hotelLimitPerDay + ")");
+        }
+        if (daSum > policy.daLimitPerDay) {
+          exceededReasons.push("Food/DA spend (₹" + daSum + ") exceeds daily policy limit (₹" + policy.daLimitPerDay + ")");
+        }
+
+        var badge = document.getElementById('trv-audit-status-badge');
+        var notes = document.getElementById('trv-audit-notes');
+
+        if (exceededReasons.length > 0) {
+          badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300";
+          badge.innerText = "EXCEEDS POLICY LIMIT - REQUIRES MANAGER APPROVAL";
+          notes.innerHTML = `<span class="text-rose-700 font-bold">Policy Violations:</span> ` + exceededReasons.join(" | ");
+        } else {
+          badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300";
+          badge.innerText = "Within Policy Limits";
+          notes.innerText = "All itemized daily expenses conform to Master Policy Limits.";
+        }
+      }
+
+      function handleSaveTravelClaim(evt) {
+        evt.preventDefault();
+        var empId = document.getElementById('travel-emp-id').value;
+        var startDate = document.getElementById('trv-start-date').value;
+        var endDate = document.getElementById('trv-end-date').value;
+        var places = document.getElementById('trv-places').value;
+        var purpose = document.getElementById('trv-purpose').value;
+        var clientName = document.getElementById('trv-client-name').value;
+        var preAppLink = document.getElementById('trv-preapp-link').value;
+        var isExtended = document.getElementById('trv-is-extended').value === 'yes';
+
+        var grandTotal = 0;
+        claimItemsStore.forEach(function(i) { grandTotal += Number(i.amount) || 0; });
+
+        var emps = window.RevOpsStore.getCollection('employees') || [];
+        var emp = emps.find(function(e) { return e.employeeId === empId; });
+        var empName = emp ? emp.fullName : empId;
+        var vert = emp ? emp.vertical : 'Sales';
+
+        var policy = (window.RevOpsStore.getCollection('travelPolicyMaster') || [])[0] || { hotelLimitPerDay: 3500, daLimitPerDay: 1200 };
+        var isPolicyExceeded = grandTotal > 15000 || isExtended;
+
+        var vCount = (window.RevOpsStore.getCollection('expenses') || []).length + 1001;
+        var claimStatus = isPolicyExceeded ? 'Pending Manager Approval' : 'Approved';
+
+        var newClaim = {
+          voucherNo: 'TRV-' + vCount,
+          date: new Date().toISOString().split('T')[0],
+          category: 'Travelling',
+          payee: empName,
+          amount: grandTotal,
+          vertical: vert,
+          projectId: '',
+          paymentMode: 'Bank Transfer',
+          remarks: 'Travel Claim: ' + places + ' (' + startDate + ' to ' + endDate + ') - Client: ' + clientName + ' [Purpose: ' + purpose + ']',
+          status: claimStatus,
+          policyExceeded: isPolicyExceeded,
+          preAppRefId: preAppLink,
+          clientName: clientName,
+          items: claimItemsStore
+        };
+
+        window.RevOpsStore.addItem('expenses', newClaim);
+        closeTravelClaimModal();
+        renderExpensesTable();
+        renderBudgets();
+
+        if (isPolicyExceeded) {
+          alert("Travel Expense Claim Voucher " + newClaim.voucherNo + " created! Note: Amount or extended travel exceeds threshold and has been submitted for Reporting Manager Approval.");
+        } else {
+          alert("Travel Expense Claim Voucher " + newClaim.voucherNo + " for " + formatINR(grandTotal) + " successfully processed and approved!");
+        }
+      }
+
+      function approveExpenseVoucher(expId) {
+        window.RevOpsStore.updateItem('expenses', expId, { status: 'Approved' });
+        renderExpensesTable();
+        alert("Expense Voucher " + expId + " approved by Reporting Manager.");
+      }
+
+      function renderExpensesTable() {
+        var expenses = window.RevOpsStore.getCollection('expenses') || [];
+        var catFilter = document.getElementById('flt-category').value;
+        var vertFilter = document.getElementById('flt-vertical').value;
+        var search = document.getElementById('flt-search').value.toLowerCase();
+
+        var totalExp = 0, travelExp = 0, salaryExp = 0, projExp = 0;
+        var travelCount = 0;
+
+        expenses.forEach(function(e) {
+          var amt = Number(e.amount) || 0;
+          totalExp += amt;
+          if (e.category === 'Travelling') { travelExp += amt; travelCount++; }
+          if (e.category === 'Salary' || e.category === 'Salary Advance' || e.category === 'Loan to Employee') salaryExp += amt;
+          if (e.category === 'Project Expenses') projExp += amt;
+        });
+
+        document.getElementById('stat-total-expenses').innerText = formatINR(totalExp);
+        document.getElementById('stat-expense-count').innerText = expenses.length + " Transactions";
+        document.getElementById('stat-travel-expenses').innerText = formatINR(travelExp);
+        document.getElementById('stat-travel-count').innerText = travelCount + " Travel Claims";
+        document.getElementById('stat-salary-advances').innerText = formatINR(salaryExp);
+        document.getElementById('stat-project-expenses').innerText = formatINR(projExp);
+
+        var filtered = expenses.filter(function(e) {
+          if (catFilter !== 'All' && e.category !== catFilter) return false;
+          if (vertFilter !== 'All' && e.vertical !== vertFilter) return false;
+          if (search && !( (e.payee||'').toLowerCase().includes(search) || (e.voucherNo||'').toLowerCase().includes(search) || (e.remarks||'').toLowerCase().includes(search) || (e.clientName||'').toLowerCase().includes(search) )) return false;
+          return true;
+        });
+
+        var tbody = document.getElementById('expenses-tbody');
+        tbody.innerHTML = "";
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-slate-400">No matching expense vouchers logged.</td></tr>`;
+          return;
+        }
+
+        filtered.forEach(function(exp) {
+          var hasReceipt = (exp.receiptBase64 && exp.receiptBase64.length > 50) || (exp.items && exp.items.some(function(i){ return i.receiptBase64; }));
+          var receiptHtml = hasReceipt 
+            ? `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-md border border-emerald-300">Bill Attached</span>`
+            : `<span class="text-slate-400 text-[10px]">No Bill</span>`;
+
+          var statusBadge = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+          if (exp.status === 'Pending Manager Approval') statusBadge = 'bg-amber-100 text-amber-800 border-amber-300';
+
+          var approveBtn = (exp.status === 'Pending Manager Approval')
+            ? `<button onclick="approveExpenseVoucher('${exp.id}')" class="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] rounded transition-colors cursor-pointer">Approve</button>`
+            : '';
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-semibold text-slate-900">
+              <div class="font-bold text-slate-900">${exp.voucherNo || 'VOUCH-SYS'}</div>
+              <div class="text-[10px] text-slate-400">${exp.date}</div>
+            </td>
+            <td class="py-3 px-4 text-slate-700">
+              <div class="font-bold text-indigo-700">${exp.category}</div>
+              <div class="text-[11px] text-slate-600 font-semibold">${exp.payee}</div>
+            </td>
+            <td class="py-3 px-4 text-slate-600">
+              <div class="font-medium text-slate-800">${exp.vertical}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${exp.projectId ? ('Proj: ' + exp.projectId) : 'General Overhead'}</div>
+            </td>
+            <td class="py-3 px-4 text-right font-extrabold text-slate-900 text-sm">
+              ${formatINR(exp.amount)}
+            </td>
+            <td class="py-3 px-4 text-center text-slate-600 font-medium">
+              ${exp.paymentMode || 'Bank Transfer'}
+            </td>
+            <td class="py-3 px-4 text-center">
+              ${receiptHtml}
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border ${statusBadge}">${exp.status || 'Approved'}</span>
+            </td>
+            <td class="py-3 px-4 text-center space-x-1">
+              ${approveBtn}
+              <button onclick="previewVoucher('${exp.id}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] rounded-lg transition-colors cursor-pointer border border-indigo-200">
+                Print Voucher
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function renderProjectProfitability() {
+        var orders = window.RevOpsStore.getCollection('orders') || [];
+        var expenses = window.RevOpsStore.getCollection('expenses') || [];
+        var vertFilter = document.getElementById('flt-project-vertical').value;
+
+        var totalRev = 0, totalExp = 0, totalProfit = 0;
+        var tbody = document.getElementById('profit-tbody');
+        tbody.innerHTML = "";
+
+        var projectRows = [];
+
+        orders.forEach(function(ord) {
+          if (ord.status !== 'Won' && ord.status !== 'Closed') return;
+          var vert = ord.vertical || 'Projects';
+          if (vertFilter !== 'All' && vert !== vertFilter) return;
+
+          var rev = Number(ord.orderValue) || 0;
+          var ordId = ord.id || ord.orderId;
+
+          // Sum matching project expenses
+          var projExpenses = expenses.filter(function(e) {
+            return e.projectId === ordId || e.projectId === ord.orderId || (e.remarks && e.remarks.indexOf(ord.customerName) !== -1);
+          });
+
+          var expSum = 0;
+          projExpenses.forEach(function(pe) { expSum += Number(pe.amount) || 0; });
+
+          // If no direct logged expense, estimate baseline direct costs (65% typical industry baseline for turnkey projects)
+          if (expSum === 0 && vert === 'Projects') {
+            expSum = Math.round(rev * 0.65);
+          }
+
+          var profit = rev - expSum;
+          var marginPct = rev > 0 ? Math.round((profit / rev) * 100) : 0;
+
+          totalRev += rev;
+          totalExp += expSum;
+          totalProfit += profit;
+
+          projectRows.push({
+            id: ordId,
+            customer: ord.customerName || 'Project Client',
+            vertical: vert,
+            revenue: rev,
+            expense: expSum,
+            profit: profit,
+            margin: marginPct
+          });
+        });
+
+        document.getElementById('prof-total-rev').innerText = formatINR(totalRev);
+        document.getElementById('prof-total-exp').innerText = formatINR(totalExp);
+        document.getElementById('prof-total-profit').innerText = formatINR(totalProfit);
+        var overallMargin = totalRev > 0 ? Math.round((totalProfit / totalRev) * 100) : 0;
+        document.getElementById('prof-avg-margin').innerText = overallMargin + "%";
+
+        if (projectRows.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">No project orders found for analysis.</td></tr>`;
+          return;
+        }
+
+        projectRows.forEach(function(p) {
+          var marginBadge = p.margin >= 30 
+            ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+            : (p.margin >= 15 ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-rose-100 text-rose-800 border-rose-300');
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-bold text-slate-900">
+              <div>${p.customer}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${p.id}</div>
+            </td>
+            <td class="py-3 px-4 font-semibold text-slate-700">${p.vertical}</td>
+            <td class="py-3 px-4 text-right font-extrabold text-slate-900 text-sm">${formatINR(p.revenue)}</td>
+            <td class="py-3 px-4 text-right font-bold text-rose-600">${formatINR(p.expense)}</td>
+            <td class="py-3 px-4 text-right font-extrabold text-emerald-600 text-sm">${formatINR(p.profit)}</td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-1 rounded-full text-xs font-black border ${marginBadge}">${p.margin}% Gross Margin</span>
+            </td>
+            <td class="py-3 px-4 text-center font-semibold text-slate-600">
+              ${p.profit > 0 ? 'Profitable' : 'Break-Even'}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function renderBudgets() {
+        var budgets = window.RevOpsStore.getCollection('budgets') || [];
+        var expenses = window.RevOpsStore.getCollection('expenses') || [];
+        var container = document.getElementById('budget-cards-container');
+        container.innerHTML = "";
+
+        if (budgets.length === 0) {
+          container.innerHTML = `<div class="col-span-3 py-6 text-center text-slate-400">No budget limits defined yet. Click above to add budget allocations.</div>`;
+          return;
+        }
+
+        budgets.forEach(function(b) {
+          // Sum actual spend for category and vertical
+          var actualSpent = 0;
+          expenses.forEach(function(e) {
+            if (e.vertical === b.vertical && e.category === b.category) {
+              actualSpent += Number(e.amount) || 0;
+            }
+          });
+
+          var limit = Number(b.monthlyLimit) || 1;
+          var utilPct = Math.min(100, Math.round((actualSpent / limit) * 100));
+          var remaining = limit - actualSpent;
+
+          var barColor = "bg-emerald-500";
+          var statusText = "Healthy";
+          var statusBadge = "bg-emerald-100 text-emerald-800 border-emerald-300";
+
+          if (utilPct >= 85 && utilPct < 100) {
+            barColor = "bg-amber-500";
+            statusText = "Near Budget Limit";
+            statusBadge = "bg-amber-100 text-amber-800 border-amber-300";
+          } else if (actualSpent > limit) {
+            barColor = "bg-rose-500";
+            statusText = "Over Budget Exceeded";
+            statusBadge = "bg-rose-100 text-rose-800 border-rose-300";
+          }
+
+          var card = document.createElement('div');
+          card.className = "bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4";
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-[10px] uppercase font-extrabold text-indigo-600 tracking-wider block">${b.vertical} Vertical</span>
+                <h3 class="text-base font-bold text-slate-900">${b.category}</h3>
+              </div>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${statusBadge}">${statusText}</span>
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-500">Actual Spend: <strong class="text-slate-900">${formatINR(actualSpent)}</strong></span>
+                <span class="text-slate-500">Budget Limit: <strong class="text-slate-900">${formatINR(limit)}</strong></span>
+              </div>
+              <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+                <div class="h-full ${barColor} transition-all duration-300" style="width: ${utilPct}%"></div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs font-semibold pt-2 border-t border-slate-200">
+              <span class="text-slate-600">Utilization: <strong class="text-slate-900">${utilPct}%</strong></span>
+              <span class="${remaining >= 0 ? 'text-emerald-700' : 'text-rose-700'}">${remaining >= 0 ? ('Remaining: ' + formatINR(remaining)) : ('Exceeded by: ' + formatINR(Math.abs(remaining)))}</span>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      function openExpenseModal() {
+        document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+        document.getElementById('exp-payee').value = "";
+        document.getElementById('exp-amount').value = "";
+        document.getElementById('exp-remarks').value = "";
+        document.getElementById('exp-receipt-base64').value = "";
+        document.getElementById('exp-file').value = "";
+        document.getElementById('modal-expense').classList.remove('hidden');
+      }
+
+      function closeExpenseModal() {
+        document.getElementById('modal-expense').classList.add('hidden');
+      }
+
+      function handleExpenseCategoryChange() {
+        var cat = document.getElementById('exp-category').value;
+        if (cat === 'Project Expenses') {
+          document.getElementById('exp-vertical').value = 'Projects';
+        }
+      }
+
+      function handleFileSelected(evt) {
+        var file = evt.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('exp-receipt-base64').value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function handleSaveExpense(evt) {
+        evt.preventDefault();
+        var date = document.getElementById('exp-date').value;
+        var category = document.getElementById('exp-category').value;
+        var payee = document.getElementById('exp-payee').value;
+        var amount = Number(document.getElementById('exp-amount').value);
+        var vertical = document.getElementById('exp-vertical').value;
+        var projectId = document.getElementById('exp-project-id').value;
+        var paymentMode = document.getElementById('exp-mode').value;
+        var remarks = document.getElementById('exp-remarks').value;
+        var receiptBase64 = document.getElementById('exp-receipt-base64').value;
+        var splitMode = document.getElementById('exp-split-mode').value;
+
+        var vCount = (window.RevOpsStore.getCollection('expenses') || []).length + 1001;
+        var voucherNo = 'VOUCH-' + vCount;
+
+        var newExp = {
+          voucherNo: voucherNo,
+          date: date,
+          category: category,
+          payee: payee,
+          amount: amount,
+          vertical: vertical,
+          projectId: projectId,
+          paymentMode: paymentMode,
+          remarks: remarks,
+          status: 'Approved',
+          receiptBase64: receiptBase64,
+          splitMode: splitMode
+        };
+
+        var savedExp = window.RevOpsStore.addItem('expenses', newExp);
+        var expId = savedExp ? savedExp.id : voucherNo;
+
+        // Save Multi-Project Splits if enabled
+        if (splitMode !== 'direct') {
+          var checkedCbs = Array.from(document.querySelectorAll('#exp-form-projects-container input:checked'));
+          var selectedCodes = checkedCbs.map(function(cb) { return cb.value; });
+
+          var pctInputs = Array.from(document.querySelectorAll('.exp-split-pct-input'));
+          var amtInputs = Array.from(document.querySelectorAll('.exp-split-amt-input'));
+
+          selectedCodes.forEach(function(pCode, i) {
+            var pct = Number(pctInputs[i] ? pctInputs[i].value : 0) || 0;
+            var allocAmt = Number(amtInputs[i] ? amtInputs[i].value : 0) || 0;
+
+            window.RevOpsStore.addItem('expenseSplits', {
+              splitId: 'SPL-' + Date.now() + '-' + i,
+              expenseId: expId,
+              voucherNo: voucherNo,
+              projectCode: pCode,
+              allocationMode: splitMode,
+              allocatedPercentage: pct,
+              allocatedAmount: allocAmt,
+              expenseClassification: 'Allocated Shared'
+            });
+          });
+        } else if (projectId) {
+          // Direct Allocation
+          window.RevOpsStore.addItem('expenseSplits', {
+            splitId: 'SPL-' + Date.now(),
+            expenseId: expId,
+            voucherNo: voucherNo,
+            projectCode: projectId,
+            allocationMode: 'direct',
+            allocatedPercentage: 100,
+            allocatedAmount: amount,
+            expenseClassification: 'Direct Allocation'
+          });
+        }
+
+        closeExpenseModal();
+        renderExpensesTable();
+        renderProjectProfitability();
+        renderProjectRevenueAndSplitSection();
+        renderBudgets();
+        alert("Expense Voucher " + voucherNo + " successfully logged with " + splitMode.toUpperCase() + " allocation!");
+      }
+
+      function openTravelClaimModal() {
+        document.getElementById('trv-hotel').value = 0;
+        document.getElementById('trv-da').value = 0;
+        document.getElementById('trv-tickets').value = 0;
+        document.getElementById('trv-local').value = 0;
+        document.getElementById('trv-total-display').innerText = "Rs.0";
+        document.getElementById('trv-receipt-base64').value = "";
+        document.getElementById('trv-file').value = "";
+        document.getElementById('modal-travel').classList.remove('hidden');
+      }
+
+      function closeTravelClaimModal() {
+        document.getElementById('modal-travel').classList.add('hidden');
+      }
+
+      function calcTravelTotal() {
+        var h = Number(document.getElementById('trv-hotel').value) || 0;
+        var d = Number(document.getElementById('trv-da').value) || 0;
+        var t = Number(document.getElementById('trv-tickets').value) || 0;
+        var l = Number(document.getElementById('trv-local').value) || 0;
+        var sum = h + d + t + l;
+        document.getElementById('trv-total-display').innerText = formatINR(sum);
+      }
+
+      function handleTravelFileSelected(evt) {
+        var file = evt.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('trv-receipt-base64').value = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function handleSaveTravelClaim(evt) {
+        evt.preventDefault();
+        var empId = document.getElementById('travel-emp-id').value;
+        var dates = document.getElementById('travel-dates').value;
+        var route = document.getElementById('travel-route').value;
+        var purpose = document.getElementById('travel-purpose').value;
+
+        var h = Number(document.getElementById('trv-hotel').value) || 0;
+        var d = Number(document.getElementById('trv-da').value) || 0;
+        var t = Number(document.getElementById('trv-tickets').value) || 0;
+        var l = Number(document.getElementById('trv-local').value) || 0;
+        var total = h + d + t + l;
+        var receiptBase64 = document.getElementById('trv-receipt-base64').value;
+
+        var emps = window.RevOpsStore.getCollection('employees') || [];
+        var emp = emps.find(function(e) { return e.employeeId === empId; });
+        var empName = emp ? emp.fullName : empId;
+        var vert = emp ? emp.vertical : 'Sales';
+
+        var vCount = (window.RevOpsStore.getCollection('expenses') || []).length + 1001;
+
+        var newClaim = {
+          voucherNo: 'TRV-' + vCount,
+          date: new Date().toISOString().split('T')[0],
+          category: 'Travelling',
+          payee: empName,
+          amount: total,
+          vertical: vert,
+          projectId: '',
+          paymentMode: 'Bank Transfer',
+          remarks: 'Travel Claim: ' + route + ' (' + dates + ') - Purpose: ' + purpose + ' [Hotel: ₹' + h + ', DA: ₹' + d + ', Tickets: ₹' + t + ', Fuel: ₹' + l + ']',
+          status: 'Approved',
+          receiptBase64: receiptBase64
+        };
+
+        window.RevOpsStore.addItem('expenses', newClaim);
+        closeTravelClaimModal();
+        renderExpensesTable();
+        renderBudgets();
+        alert("Travel Expense Claim " + newClaim.voucherNo + " for " + formatINR(total) + " successfully created!");
+      }
+
+      function openSetBudgetModal() {
+        document.getElementById('modal-budget').classList.remove('hidden');
+      }
+
+      function closeBudgetModal() {
+        document.getElementById('modal-budget').classList.add('hidden');
+      }
+
+      function handleSaveBudget(evt) {
+        evt.preventDefault();
+        var vert = document.getElementById('bud-vertical').value;
+        var cat = document.getElementById('bud-category').value;
+        var limit = Number(document.getElementById('bud-limit').value);
+
+        var budgets = window.RevOpsStore.getCollection('budgets') || [];
+        var existing = budgets.find(function(b) { return b.vertical === vert && b.category === cat; });
+
+        if (existing) {
+          window.RevOpsStore.updateItem('budgets', existing.id, { monthlyLimit: limit });
+        } else {
+          window.RevOpsStore.addItem('budgets', { vertical: vert, category: cat, monthlyLimit: limit });
+        }
+
+        closeBudgetModal();
+        renderBudgets();
+        alert("Budget allocation for " + vert + " - " + cat + " updated to " + formatINR(limit));
+      }
+
+      function previewVoucher(expId) {
+        var expenses = window.RevOpsStore.getCollection('expenses') || [];
+        var exp = expenses.find(function(e) { return e.id === expId; });
+        if (!exp) return;
+
+        document.getElementById('vouch-no').innerText = exp.voucherNo || 'VOUCH-1001';
+        document.getElementById('vouch-date').innerText = "Date: " + exp.date;
+        document.getElementById('vouch-payee').innerText = exp.payee;
+        document.getElementById('vouch-category').innerText = exp.category;
+        document.getElementById('vouch-vertical').innerText = exp.vertical;
+        document.getElementById('vouch-project').innerText = exp.projectId ? ('Project ID: ' + exp.projectId) : 'General Overhead';
+        document.getElementById('vouch-mode').innerText = exp.paymentMode || 'Bank Transfer';
+        document.getElementById('vouch-status').innerText = exp.status || 'Approved & Disbursed';
+        document.getElementById('vouch-desc').innerText = exp.remarks || 'Official expense voucher transaction.';
+        document.getElementById('vouch-amount').innerText = formatINR(exp.amount);
+
+        var receiptBody = document.getElementById('vouch-receipt-body');
+        if (exp.receiptBase64 && exp.receiptBase64.length > 50) {
+          receiptBody.innerHTML = `<img src="${exp.receiptBase64}" class="max-h-64 mx-auto rounded-lg border border-slate-300 shadow-xs" alt="Scanned Receipt Proof" />`;
+        } else {
+          receiptBody.innerHTML = `<span class="text-xs text-slate-400">No scanned bill image attached. Original physical bill attached with voucher printout.</span>`;
+        }
+
+        document.getElementById('printable-voucher-modal').classList.remove('hidden');
+      }
+
+      function closeVoucherModal() {
+        document.getElementById('printable-voucher-modal').classList.add('hidden');
+      }
+
+      /* ========================================================================
+         REVENUE & MULTI-PROJECT EXPENSE SPLITTING ENGINE
+         ======================================================================== */
+
+      function renderProjectRevenueAndSplitSection() {
+        var projects = window.RevOpsStore.getCollection('projectsMaster') || [];
+        var expenseSplits = window.RevOpsStore.getCollection('expenseSplits') || [];
+
+        var aggregateRev = 0, aggregateInvoiced = 0, aggregateReceived = 0, aggregatePending = 0;
+        var aggregateDirectExp = 0, aggregateAllocatedExp = 0, aggregateTotalExp = 0, aggregateProfit = 0;
+
+        var tbody = document.getElementById('split-projects-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = "";
+
+        if (projects.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="10" class="py-6 text-center text-slate-400">No project codes registered yet. Click "New Project Code" to begin.</td></tr>`;
+          return;
+        }
+
+        projects.forEach(function(p) {
+          // Calculate Revenue Breakdown
+          var milestoneRev = 0, tmRev = 0, coRev = 0;
+          var invoiced = 0, received = 0;
+
+          (p.milestones || []).forEach(function(m) {
+            var amt = Number(m.amount) || 0;
+            milestoneRev += amt;
+            if (m.status === 'Received') { received += amt; invoiced += amt; }
+            else if (m.status === 'Invoiced') { invoiced += amt; }
+          });
+
+          (p.tmBillings || []).forEach(function(tm) {
+            var amt = Number(tm.amount) || 0;
+            tmRev += amt;
+            if (tm.status === 'Invoiced' || tm.status === 'Received') invoiced += amt;
+            if (tm.status === 'Received') received += amt;
+          });
+
+          (p.changeOrders || []).forEach(function(co) {
+            if (co.status === 'Approved') {
+              var amt = Number(co.amount) || 0;
+              coRev += amt;
+              invoiced += amt;
+            }
+          });
+
+          var totalRev = milestoneRev + tmRev + coRev;
+          var pendingRev = Math.max(0, totalRev - received);
+
+          // Calculate Cost & Expense Breakdown
+          var directLabor = Number(p.directLaborCost) || 0;
+          var subcon = Number(p.subcontractorCost) || 0;
+          var materials = Number(p.materialsCost) || 0;
+          var directExpenses = directLabor + subcon + materials;
+
+          // Calculate Shared Allocated Expenses from Expense_Splits
+          var allocatedShared = 0;
+          expenseSplits.forEach(function(sp) {
+            if (sp.projectCode === p.projectCode) {
+              allocatedShared += Number(sp.allocatedAmount) || 0;
+            }
+          });
+
+          var totalExpenses = directExpenses + allocatedShared;
+          var grossProfit = totalRev - totalExpenses;
+          var marginPct = totalRev > 0 ? Math.round((grossProfit / totalRev) * 100) : 0;
+
+          // Accumulate Aggregates
+          aggregateRev += totalRev;
+          aggregateInvoiced += invoiced;
+          aggregateReceived += received;
+          aggregatePending += pendingRev;
+          aggregateDirectExp += directExpenses;
+          aggregateAllocatedExp += allocatedShared;
+          aggregateTotalExp += totalExpenses;
+          aggregateProfit += grossProfit;
+
+          // Render Row
+          var marginBadge = marginPct >= 30 
+            ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+            : (marginPct >= 15 ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-rose-100 text-rose-800 border-rose-300');
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-bold">
+              <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 font-mono text-xs rounded border border-indigo-200 block w-fit mb-0.5">${p.projectCode}</span>
+              <div class="text-xs font-bold text-slate-900">${p.projectName}</div>
+            </td>
+            <td class="py-3 px-4 text-xs font-semibold text-slate-700">${p.clientName}</td>
+            <td class="py-3 px-4 text-right font-extrabold text-slate-900 text-sm">${formatINR(totalRev)}</td>
+            <td class="py-3 px-4 text-right text-xs">
+              <div class="font-bold text-emerald-700">Rec: ${formatINR(received)}</div>
+              <div class="text-[10px] text-amber-600 font-semibold">Pend: ${formatINR(pendingRev)}</div>
+            </td>
+            <td class="py-3 px-4 text-right font-semibold text-slate-700 text-xs">${formatINR(directExpenses)}</td>
+            <td class="py-3 px-4 text-right font-bold text-indigo-700 text-xs">${formatINR(allocatedShared)}</td>
+            <td class="py-3 px-4 text-right font-extrabold text-rose-700 text-sm">${formatINR(totalExpenses)}</td>
+            <td class="py-3 px-4 text-right font-extrabold ${grossProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'} text-sm">${formatINR(grossProfit)}</td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${marginBadge}">${marginPct}%</span>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <button onclick="openAddRevenueModal('${p.projectCode}')" class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded border border-emerald-300 transition-colors cursor-pointer">
+                + Revenue
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // Update Aggregate Summary Cards
+        var overallMargin = aggregateRev > 0 ? Math.round((aggregateProfit / aggregateRev) * 100) : 0;
+        document.getElementById('split-total-rev').innerText = formatINR(aggregateRev);
+        document.getElementById('split-total-exp').innerText = formatINR(aggregateTotalExp);
+        document.getElementById('split-total-profit').innerText = formatINR(aggregateProfit);
+        document.getElementById('split-avg-margin').innerText = overallMargin + "%";
+        document.getElementById('split-pending-rev').innerText = formatINR(aggregatePending);
+
+        // Populate Checkboxes for Simulator and Expense Modal
+        populateSimulatorProjectCheckboxes();
+        populateExpenseFormProjectCheckboxes();
+      }
+
+      function populateSimulatorProjectCheckboxes() {
+        var projects = window.RevOpsStore.getCollection('projectsMaster') || [];
+        var container = document.getElementById('sim-project-checkboxes');
+        if (!container) return;
+        container.innerHTML = "";
+
+        projects.forEach(function(p, idx) {
+          var isChecked = idx < 2 ? 'checked' : '';
+          var label = document.createElement('label');
+          label.className = "flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs cursor-pointer hover:bg-indigo-50/50 transition-colors";
+          label.innerHTML = `
+            <input type="checkbox" value="${p.projectCode}" ${isChecked} onchange="runSimSplitCalc()" class="sim-prj-cb text-indigo-600 rounded focus:ring-indigo-500" />
+            <span class="font-mono text-indigo-700 text-[11px] font-bold">${p.projectCode}</span>
+            <span class="text-[10px] text-slate-500 truncate max-w-[120px]">(${p.clientName})</span>
+          `;
+          container.appendChild(label);
+        });
+
+        runSimSplitCalc();
+      }
+
+      function populateExpenseFormProjectCheckboxes() {
+        var projects = window.RevOpsStore.getCollection('projectsMaster') || [];
+        var container = document.getElementById('exp-form-projects-container');
+        if (!container) return;
+        container.innerHTML = "";
+
+        projects.forEach(function(p, idx) {
+          var isChecked = idx < 2 ? 'checked' : '';
+          var label = document.createElement('label');
+          label.className = "flex items-center space-x-1.5 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs cursor-pointer hover:bg-indigo-50/50 transition-colors";
+          label.innerHTML = `
+            <input type="checkbox" value="${p.projectCode}" ${isChecked} onchange="recalcExpenseFormSplits()" class="exp-prj-cb text-indigo-600 rounded focus:ring-indigo-500" />
+            <span class="font-mono text-indigo-700 text-[11px] font-bold">${p.projectCode}</span>
+            <span class="text-[10px] text-slate-500 truncate max-w-[120px]">(${p.clientName})</span>
+          `;
+          container.appendChild(label);
+        });
+
+        recalcExpenseFormSplits();
+      }
+
+      /* SIMULATOR CALCULATION ENGINE */
+      function runSimSplitCalc() {
+        var amount = Number(document.getElementById('sim-amount').value) || 0;
+        var mode = document.getElementById('sim-mode').value;
+        var checkedCbs = Array.from(document.querySelectorAll('#sim-project-checkboxes input:checked'));
+        var selectedCodes = checkedCbs.map(function(cb) { return cb.value; });
+
+        var projects = window.RevOpsStore.getCollection('projectsMaster') || [];
+        var selectedProjects = projects.filter(function(p) { return selectedCodes.includes(p.projectCode); });
+
+        var tbody = document.getElementById('sim-split-tbody');
+        var badge = document.getElementById('sim-status-badge');
+        if (!tbody || !badge) return;
+        tbody.innerHTML = "";
+
+        if (selectedProjects.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-slate-400">Select at least one project code above to split expenses.</td></tr>`;
+          badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-600 border border-slate-300";
+          badge.innerText = "No Projects Selected";
+          return;
+        }
+
+        var sumAllocated = 0;
+        var rowsData = [];
+
+        if (mode === 'direct') {
+          // 100% to first selected project
+          selectedProjects.forEach(function(p, idx) {
+            var pct = idx === 0 ? 100 : 0;
+            var allocAmt = idx === 0 ? amount : 0;
+            sumAllocated += allocAmt;
+            rowsData.push({ p: p, pct: pct, amt: allocAmt });
+          });
+        } else if (mode === 'equal') {
+          // Equal split among N projects
+          var count = selectedProjects.length;
+          var baseAmt = Math.floor(amount / count);
+          var remainder = amount - (baseAmt * count);
+
+          selectedProjects.forEach(function(p, idx) {
+            var allocAmt = baseAmt + (idx === 0 ? remainder : 0);
+            var pct = amount > 0 ? ((allocAmt / amount) * 100).toFixed(1) : (100 / count).toFixed(1);
+            sumAllocated += allocAmt;
+            rowsData.push({ p: p, pct: pct, amt: allocAmt });
+          });
+        } else if (mode === 'weighted') {
+          // Sample weighted split: 60% / 40% or balanced distribution
+          var weightMap = [60, 40, 20, 10];
+          var rawPcts = selectedProjects.map(function(p, i) { return weightMap[i] || 10; });
+          var rawSum = rawPcts.reduce(function(a, b) { return a + b; }, 0);
+
+          selectedProjects.forEach(function(p, idx) {
+            var pct = Math.round((rawPcts[idx] / rawSum) * 100);
+            var allocAmt = Math.round((pct / 100) * amount);
+            sumAllocated += allocAmt;
+            rowsData.push({ p: p, pct: pct, amt: allocAmt });
+          });
+        } else if (mode === 'fixed') {
+          // Fixed Amount Split
+          var fixedBase = Math.floor(amount / selectedProjects.length);
+          selectedProjects.forEach(function(p, idx) {
+            var allocAmt = fixedBase;
+            var pct = amount > 0 ? ((allocAmt / amount) * 100).toFixed(1) : 0;
+            sumAllocated += allocAmt;
+            rowsData.push({ p: p, pct: pct, amt: allocAmt });
+          });
+        }
+
+        rowsData.forEach(function(rd) {
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-indigo-50/40 transition-colors";
+          tr.innerHTML = `
+            <td class="py-2.5 px-3 font-mono font-bold text-indigo-700">${rd.p.projectCode}</td>
+            <td class="py-2.5 px-3 font-semibold text-slate-800">${rd.p.clientName}</td>
+            <td class="py-2.5 px-3 uppercase font-extrabold text-slate-500 text-[10px]">${mode}</td>
+            <td class="py-2.5 px-3 text-right font-bold text-slate-700">${rd.pct}%</td>
+            <td class="py-2.5 px-3 text-right font-extrabold text-indigo-900">${formatINR(rd.amt)}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        if (Math.abs(sumAllocated - amount) <= 5) {
+          badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300";
+          badge.innerText = "ALLOCATION BALANCED (100% COVERED)";
+        } else {
+          badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300";
+          badge.innerText = "VARIANCE DETECTED (₹" + Math.abs(sumAllocated - amount) + ")";
+        }
+      }
+
+      /* FORM EXPENSE MULTI-SPLIT CALCULATOR */
+      function recalcExpenseFormSplits() {
+        var mode = document.getElementById('exp-split-mode').value;
+        var amount = Number(document.getElementById('exp-amount').value) || 0;
+        var checkedCbs = Array.from(document.querySelectorAll('#exp-form-projects-container input:checked'));
+        var selectedCodes = checkedCbs.map(function(cb) { return cb.value; });
+
+        var container = document.getElementById('exp-split-config-container');
+        var tbody = document.getElementById('exp-form-splits-tbody');
+        var badge = document.getElementById('exp-split-validation-badge');
+        if (!tbody || !container) return;
+
+        if (mode === 'direct' || selectedCodes.length === 0) {
+          container.classList.add('hidden');
+          return;
+        }
+
+        container.classList.remove('hidden');
+        tbody.innerHTML = "";
+
+        var count = selectedCodes.length;
+        var baseAmt = Math.floor(amount / count);
+
+        selectedCodes.forEach(function(pCode, idx) {
+          var defaultPct = (100 / count).toFixed(1);
+          var defaultAmt = baseAmt + (idx === 0 ? (amount - (baseAmt * count)) : 0);
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50";
+          tr.innerHTML = `
+            <td class="py-2 px-3 font-mono font-bold text-indigo-700 text-xs">${pCode}</td>
+            <td class="py-2 px-3">
+              <input type="number" step="0.1" value="${defaultPct}" oninput="updateExpFormSplitRow()" class="exp-split-pct-input w-20 px-2 py-1 bg-white border border-slate-200 rounded text-xs font-bold text-right" /> %
+            </td>
+            <td class="py-2 px-3 text-right">
+              ₹ <input type="number" value="${defaultAmt}" oninput="updateExpFormSplitRow()" class="exp-split-amt-input w-28 px-2 py-1 bg-white border border-slate-200 rounded text-xs font-extrabold text-right text-indigo-800" />
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        updateExpFormSplitRow();
+      }
+
+      function updateExpFormSplitRow() {
+        var amount = Number(document.getElementById('exp-amount').value) || 0;
+        var pctInputs = Array.from(document.querySelectorAll('.exp-split-pct-input'));
+        var amtInputs = Array.from(document.querySelectorAll('.exp-split-amt-input'));
+        var badge = document.getElementById('exp-split-validation-badge');
+
+        var totalAllocated = 0;
+        amtInputs.forEach(function(inp) { totalAllocated += Number(inp.value) || 0; });
+
+        if (Math.abs(totalAllocated - amount) <= 1) {
+          badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300";
+          badge.innerText = "BALANCED (₹" + totalAllocated + " / ₹" + amount + ")";
+        } else {
+          badge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300";
+          badge.innerText = "UNBALANCED (Allocated ₹" + totalAllocated + " vs Receipt ₹" + amount + ")";
+        }
+      }
+
+      /* PROJECT CODE MODAL HANDLERS */
+      function openAddProjectModal() {
+        document.getElementById('prj-code').value = 'PRJ-2026-' + (Math.floor(Math.random() * 800) + 100);
+        document.getElementById('prj-name').value = '';
+        document.getElementById('prj-client').value = '';
+        document.getElementById('prj-budget').value = '2000000';
+        document.getElementById('modal-add-project').classList.remove('hidden');
+      }
+
+      function closeAddProjectModal() {
+        document.getElementById('modal-add-project').classList.add('hidden');
+      }
+
+      function handleSaveProjectModal(evt) {
+        evt.preventDefault();
+        var code = document.getElementById('prj-code').value;
+        var name = document.getElementById('prj-name').value;
+        var client = document.getElementById('prj-client').value;
+        var budget = Number(document.getElementById('prj-budget').value);
+        var labor = Number(document.getElementById('prj-labor').value) || 0;
+        var subcon = Number(document.getElementById('prj-subcon').value) || 0;
+        var materials = Number(document.getElementById('prj-materials').value) || 0;
+
+        var projects = window.RevOpsStore.getCollection('projectsMaster') || [];
+        if (projects.some(function(p) { return p.projectCode === code; })) {
+          alert("Project Code " + code + " already exists!");
+          return;
+        }
+
+        var newProj = {
+          id: code,
+          projectCode: code,
+          projectName: name,
+          clientName: client,
+          vertical: 'Projects',
+          budget: budget,
+          milestones: [
+            { id: 'M1', title: 'Initial Project Advance & Mobilization', amount: Math.round(budget * 0.4), status: 'Received' }
+          ],
+          tmBillings: [],
+          changeOrders: [],
+          directLaborCost: labor,
+          subcontractorCost: subcon,
+          materialsCost: materials
+        };
+
+        window.RevOpsStore.addItem('projectsMaster', newProj);
+        closeAddProjectModal();
+        renderProjectRevenueAndSplitSection();
+        populateProjectDropdown();
+        alert("Project Code " + code + " registered successfully as a Profit & Expense Center!");
+      }
+
+      /* REVENUE ITEM MODAL HANDLERS */
+      function openAddRevenueModal(projectCode) {
+        document.getElementById('rev-project-code').value = projectCode;
+        document.getElementById('rev-target-pcode-display').innerText = projectCode;
+        document.getElementById('rev-title').value = '';
+        document.getElementById('rev-amount').value = '';
+        document.getElementById('modal-add-revenue').classList.remove('hidden');
+      }
+
+      function closeAddRevenueModal() {
+        document.getElementById('modal-add-revenue').classList.add('hidden');
+      }
+
+      function handleSaveRevenueModal(evt) {
+        evt.preventDefault();
+        var pCode = document.getElementById('rev-project-code').value;
+        var type = document.getElementById('rev-type').value;
+        var title = document.getElementById('rev-title').value;
+        var amount = Number(document.getElementById('rev-amount').value);
+        var status = document.getElementById('rev-status').value;
+
+        var projects = window.RevOpsStore.getCollection('projectsMaster') || [];
+        var projIndex = projects.findIndex(function(p) { return p.projectCode === pCode; });
+        if (projIndex === -1) return;
+
+        var proj = projects[projIndex];
+        var item = { id: 'REV-' + Date.now(), title: title, amount: amount, status: status };
+
+        if (type === 'Milestone Invoice') {
+          proj.milestones = proj.milestones || [];
+          proj.milestones.push(item);
+        } else if (type === 'T&M Billing') {
+          proj.tmBillings = proj.tmBillings || [];
+          proj.tmBillings.push(item);
+        } else if (type === 'Change Order') {
+          proj.changeOrders = proj.changeOrders || [];
+          proj.changeOrders.push(item);
+        }
+
+        projects[projIndex] = proj;
+        window.RevOpsStore.saveCollection('projectsMaster', projects);
+        closeAddRevenueModal();
+        renderProjectRevenueAndSplitSection();
+        alert("Revenue entry (" + type + ") of " + formatINR(amount) + " recorded under Project Code " + pCode);
+      }
+
+      /* UPDATE OPEN EXPENSE MODAL TO RECALC SPLITS */
+      var originalOpenExpenseModal = openExpenseModal;
+      openExpenseModal = function() {
+        originalOpenExpenseModal();
+        populateExpenseFormProjectCheckboxes();
+      };
+    </script>
+  </body>
+</html>

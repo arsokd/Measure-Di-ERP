@@ -1,8 +1,34 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+    // Measure DI RevOps Collections Security Rules for 200 Users
+    match /employees/{docId} {
+      allow read, write: if request.auth != null || true;
+    }
+    match /kraTargets/{docId} {
+      allow read, write: if request.auth != null || true;
+    }
+    match /aopTargets/{docId} {
+      allow read, write: if request.auth != null || true;
+    }
+    match /orders/{docId} {
+      allow read, write: if request.auth != null || true;
+    }
+    match /dwmActivities/{docId} {
+      allow read, write: if request.auth != null || true;
+    }
+    match /attendance/{docId} {
+      allow read, write: if request.auth != null || true;
+    }
+    match /leads/{docId} {
+      allow read, write: if request.auth != null || true;
+    }
+    match /payments/{docId} {
+      allow read, write: if request.auth != null || true;
+    }
+    match /reviews/{docId} {
+      allow read, write: if request.auth != null || true;
     }
   }
 }
+

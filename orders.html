@@ -256,7 +256,7 @@
         var myEmpId = localStorage.getItem('employeeId');
         var employees = window.RevOpsStore.getCollection('employees') || [];
 
-        if (userRole === 'admin' || userRole === 'manager') {
+        if (userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') {
           var wrapper = document.getElementById('order-filter-wrapper');
           var select = document.getElementById('order-emp-filter');
           wrapper.classList.remove('hidden');
@@ -280,7 +280,7 @@
         
         var selectedFilterEmp = "All";
         var filterElem = document.getElementById('order-emp-filter');
-        if (filterElem) selectedFilterEmp = filterElem.value;
+        if (filterElem && filterElem.value) selectedFilterEmp = filterElem.value;
 
         var orders = window.RevOpsStore.getCollection('orders') || [];
 

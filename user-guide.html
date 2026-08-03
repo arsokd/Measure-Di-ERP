@@ -520,6 +520,64 @@
         </div>
       </section>
 
+      <!-- SECTION 10: COMMERCIAL OPERATING GUIDE FOR 200 CONCURRENT USERS -->
+      <section id="sec-200-users" class="bg-slate-900 border border-fuchsia-900/60 rounded-2xl p-6 shadow-xl space-y-4 print-card">
+        <div class="flex items-center space-x-3 pb-3 border-b border-slate-800">
+          <div class="w-8 h-8 rounded-xl bg-fuchsia-500/20 text-fuchsia-400 font-black flex items-center justify-center text-sm border border-fuchsia-500/30">10</div>
+          <div>
+            <h3 class="text-lg font-black text-white flex items-center gap-2">
+              <span>🚀 Commercial Readiness & 200 Daily User Operating SOP</span>
+              <span class="px-2 py-0.5 rounded-full bg-fuchsia-500/20 text-fuchsia-300 text-[10px] uppercase font-bold tracking-wider border border-fuchsia-500/30">Commercial Edition</span>
+            </h3>
+            <p class="text-xs text-slate-400">Guidelines for 200 staff accessing, uploading data, and digitally logging daily activities</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div class="p-4 bg-slate-800/60 rounded-xl border border-slate-700/80 space-y-2">
+            <h4 class="font-bold text-fuchsia-300 text-sm flex items-center space-x-1.5">
+              <span>⚡ Step 1: Real-Time Sync & Multi-User DB</span>
+            </h4>
+            <p class="text-slate-300 leading-relaxed">
+              Every employee write action (DWM activities, Attendance punch-in, Lead updates, Expenses) generates a collision-resistant unique ID and immediately syncs across all 200 connected devices via Firestore.
+            </p>
+            <ul class="list-disc list-inside text-slate-400 space-y-1 pt-1">
+              <li>Instant real-time snapshot listeners active across 9 collections.</li>
+              <li>Collision-resistant document IDs prevent data overwrites.</li>
+              <li>Automatic local storage fallback ensures offline work is preserved.</li>
+            </ul>
+          </div>
+
+          <div class="p-4 bg-slate-800/60 rounded-xl border border-slate-700/80 space-y-2">
+            <h4 class="font-bold text-fuchsia-300 text-sm flex items-center space-x-1.5">
+              <span>🛡️ Step 2: Firestore Security & Access Rules</span>
+            </h4>
+            <p class="text-slate-300 leading-relaxed">
+              Security rules are deployed directly to the production cloud project to protect all 9 RevOps collections against unauthorized access and ensure compliance.
+            </p>
+            <ul class="list-disc list-inside text-slate-400 space-y-1 pt-1">
+              <li>Strict collection-level access rules enabled on Cloud Firestore.</li>
+              <li>Hierarchy permissions enforced for MD, Dept Heads, and Staff.</li>
+              <li>Audit logging for all modifications to financial ledgers.</li>
+            </ul>
+          </div>
+
+          <div class="p-4 bg-slate-800/60 rounded-xl border border-slate-700/80 space-y-2">
+            <h4 class="font-bold text-fuchsia-300 text-sm flex items-center space-x-1.5">
+              <span>📊 Step 3: Bulk Uploads & Activity Entry SOP</span>
+            </h4>
+            <p class="text-slate-300 leading-relaxed">
+              When 200 staff enter daily work logs or import Excel/CSV files, automatic input sanitization strips invalid script tags and processes records in chunks.
+            </p>
+            <ul class="list-disc list-inside text-slate-400 space-y-1 pt-1">
+              <li>Automatic input sanitization & date format validation.</li>
+              <li>Batch chunking uploads up to 500 records smoothly without timeout.</li>
+              <li>Daily activity submission window: 9:00 AM to 6:30 PM daily.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       <!-- DOCUMENT FOOTER -->
       <div class="text-center pt-8 border-t border-slate-800 text-[11px] text-slate-500 space-y-1">
         <p>Measure DI Technologies RevOps Platform &copy; 2026. Confidential - Internal Business Operations Guide.</p>

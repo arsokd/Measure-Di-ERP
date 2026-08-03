@@ -176,7 +176,7 @@
         var userRole = localStorage.getItem('userRole');
         var employees = window.RevOpsStore.getCollection('employees') || [];
 
-        if (userRole === 'admin' || userRole === 'manager') {
+        if (userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') {
           var wrapper = document.getElementById('lead-filter-wrapper');
           var select = document.getElementById('lead-emp-filter');
           wrapper.classList.remove('hidden');
@@ -200,7 +200,7 @@
         
         var selectedFilterEmp = "All";
         var filterElem = document.getElementById('lead-emp-filter');
-        if (filterElem) selectedFilterEmp = filterElem.value;
+        if (filterElem && filterElem.value) selectedFilterEmp = filterElem.value;
 
         var leads = window.RevOpsStore.getCollection('leads') || [];
 

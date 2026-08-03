@@ -38,20 +38,20 @@ window.RevOpsStore = {
   // Seed default data if LocalStorage is uninitialized
   reseedAllData: function() {
     console.log("Force re-seeding complete 2-year RevOps dataset...");
-    var collections = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews'];
+    var collections = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews', 'expenses', 'projectsMaster', 'expenseSplits', 'travelPolicyMaster', 'travelApprovals', 'budgets'];
     collections.forEach(function(c) { localStorage.removeItem(c); });
     localStorage.removeItem('revops_seeded_v17');
     window.RevOpsStore.initSeedData();
     if (window.RevOpsStore.isFirebaseAvailable()) {
       window.RevOpsStore.syncAllToFirestore();
     }
-    alert("Success! Cleaned and re-seeded 24 full months (2024-2026) of RevOps data across all 9 collections (Employees, KRAs, AOP, Orders, DWM, Attendance, Leads, Payments, Reviews).");
+    alert("Success! Cleaned and re-seeded 24 full months (2024-2026) of RevOps data across all 15 collections.");
     window.location.reload();
   },
   syncAllToFirestore: function() {
     if (!db) return;
     console.log("Syncing seeded 24-month data to Firebase Firestore...");
-    var collections = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews'];
+    var collections = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews', 'expenses', 'projectsMaster', 'expenseSplits', 'travelPolicyMaster', 'travelApprovals', 'budgets'];
     collections.forEach(function(colName) {
       var items = window.RevOpsStore.getCollection(colName) || [];
       items.forEach(function(item) {
@@ -21912,6 +21912,46 @@ window.RevOpsStore = {
       localStorage.setItem('payments', JSON.stringify(defaultPayments));
       localStorage.setItem('reviews', JSON.stringify(defaultReviews));
 
+      // Seed Financial & Expense Collections if uninitialized
+      if (!localStorage.getItem('expenses')) {
+        localStorage.setItem('expenses', JSON.stringify([
+          { id: 'exp_1', voucherNo: 'TRV-1001', date: '18/07/2026', category: 'Travelling', payee: 'Murugan', amount: 18500, vertical: 'Sales', projectId: '', paymentMode: 'Bank Transfer', remarks: 'Travel Claim: Jharsuguda Cluster (15/07/2026 - 18/07/2026)', status: 'Approved', receiptBase64: '', policyExceeded: false, preAppRefId: 'TRV-APP-101', clientName: 'Tata Steel Long Products', items: [{ date: '15/07/2026', category: 'Flight/Train Ticket', desc: 'Flight Chennai to Jharsuguda', amount: 4400 }, { date: '16/07/2026', category: 'Hotel Accommodation', desc: 'Hotel Grand Residency 2 nights', amount: 10500 }, { date: '17/07/2026', category: 'Daily Allowance (Food)', desc: 'Daily allowance 3 days', amount: 3600 }] },
+          { id: 'exp_2', voucherNo: 'VOUCH-1002', date: '14/07/2026', category: 'Project Expenses', payee: 'Universal Testing Corp', amount: 650000, vertical: 'Projects', projectId: 'PRJ-2026-101', paymentMode: 'Bank Transfer', remarks: 'Raw material load cell sensors & crane scale calibration kit for Steel Plant Project', status: 'Approved', receiptBase64: '' },
+          { id: 'exp_3', voucherNo: 'VOUCH-1003', date: '18/07/2026', category: 'Admin', payee: 'Airtel Broadband & Utilities', amount: 14200, vertical: 'Overhead', projectId: '', paymentMode: 'UPI', remarks: 'Head office internet, landline & cloud server hosting bill', status: 'Approved', receiptBase64: '' },
+          { id: 'exp_4', voucherNo: 'VOUCH-1004', date: '22/07/2026', category: 'Salary Advance', payee: 'Sivakumar', amount: 25000, vertical: 'Service/Parts', projectId: '', paymentMode: 'Bank Transfer', remarks: 'Temporary salary advance for field service emergency', status: 'Approved', receiptBase64: '' },
+          { id: 'exp_5', voucherNo: 'TRV-1005', date: '05/06/2026', category: 'Travelling', payee: 'Sivakumar', amount: 12400, vertical: 'Service/Parts', projectId: 'PRJ-2026-102', paymentMode: 'Bank Transfer', remarks: 'Toranagallu emergency calibration trip flight & conveyance', status: 'Approved', receiptBase64: '' },
+          { id: 'exp_6', voucherNo: 'VOUCH-1006', date: '12/06/2026', category: 'Project Expenses', payee: 'Precision Sensors India Ltd', amount: 420000, vertical: 'Projects', projectId: 'PRJ-2026-102', paymentMode: 'Bank Transfer', remarks: 'Digital weighbridge terminal displays and load cell mounting hardware', status: 'Approved', receiptBase64: '' },
+          { id: 'exp_7', voucherNo: 'VOUCH-1007', date: '20/05/2026', category: 'Admin', payee: 'Godrej Office Supplies', amount: 38500, vertical: 'Overhead', projectId: '', paymentMode: 'Corporate Card', remarks: 'Office ergonomics chairs and client meeting room stationaries', status: 'Approved', receiptBase64: '' },
+          { id: 'exp_8', voucherNo: 'TRV-1008', date: '10/05/2026', category: 'Travelling', payee: 'Priya Sharma', amount: 15600, vertical: 'Service/Parts', projectId: '', paymentMode: 'Bank Transfer', remarks: 'Site inspection & calibration audit at Vedanta Smelter Plant', status: 'Approved', receiptBase64: '' },
+          { id: 'exp_9', voucherNo: 'VOUCH-1009', date: '02/04/2026', category: 'Project Expenses', payee: 'Industrial Cables & Controls', amount: 210000, vertical: 'Projects', projectId: 'PRJ-2026-101', paymentMode: 'Bank Transfer', remarks: 'Armored signal cable drums for weighbridge automation installation', status: 'Approved', receiptBase64: '' },
+          { id: 'exp_10', voucherNo: 'VOUCH-1010', date: '25/04/2026', category: 'Admin', payee: 'TNS & Associates CA Firm', amount: 45000, vertical: 'Overhead', projectId: '', paymentMode: 'Bank Transfer', remarks: 'GST annual audit retainer & statutory compliance filing fee', status: 'Approved', receiptBase64: '' }
+        ]));
+      }
+
+      if (!localStorage.getItem('projectsMaster')) {
+        localStorage.setItem('projectsMaster', JSON.stringify([
+          { id: 'PRJ-2026-101', projectCode: 'PRJ-2026-101', projectName: 'Tata Steel Weighbridge SLA & Automation', clientName: 'Tata Steel Long Products', vertical: 'Projects', budget: 2500000, milestones: [{ id: 'M1', title: 'Supply & Hardware Dispatch', amount: 1500000, status: 'Received' }, { id: 'M2', title: 'Installation & Calibration Commissioning', amount: 800000, status: 'Invoiced' }], tmBillings: [{ id: 'TM1', title: 'Overtime Automation Engineering (40 hrs @ ₹2,000)', hours: 40, rate: 2000, amount: 80000, status: 'Invoiced' }], changeOrders: [{ id: 'CO1', title: 'Additional Heavy-Duty Load Cell Cables', amount: 50000, status: 'Approved' }], directLaborCost: 350000, subcontractorCost: 280000, materialsCost: 850000 },
+          { id: 'PRJ-2026-102', projectCode: 'PRJ-2026-102', projectName: 'Jindal Steels Crane Scales Overhaul', clientName: 'Jindal Steels & Minerals Ltd', vertical: 'Projects', budget: 1800000, milestones: [{ id: 'M1', title: 'Phase 1 Sensor Supply & Disassembly', amount: 1000000, status: 'Received' }, { id: 'M2', title: 'Phase 2 Load Cell Testing & Final Signoff', amount: 600000, status: 'Invoiced' }], tmBillings: [{ id: 'TM1', title: 'Specialist On-site Calibration (30 hrs @ ₹2,500)', hours: 30, rate: 2500, amount: 75000, status: 'Invoiced' }], changeOrders: [{ id: 'CO1', title: 'Wireless Display Module Upgrade', amount: 45000, status: 'Approved' }], directLaborCost: 250000, subcontractorCost: 190000, materialsCost: 620000 }
+        ]));
+      }
+
+      if (!localStorage.getItem('expenseSplits')) {
+        localStorage.setItem('expenseSplits', JSON.stringify([
+          { splitId: 'SPL-101', expenseId: 'exp_1', projectCode: 'PRJ-2026-101', allocationMode: 'weighted', allocatedPercentage: 60, allocatedAmount: 11100, expenseClassification: 'Allocated Shared' },
+          { splitId: 'SPL-102', expenseId: 'exp_1', projectCode: 'PRJ-2026-102', allocationMode: 'weighted', allocatedPercentage: 40, allocatedAmount: 7400, expenseClassification: 'Allocated Shared' }
+        ]));
+      }
+
+      if (!localStorage.getItem('travelPolicyMaster')) {
+        localStorage.setItem('travelPolicyMaster', JSON.stringify([{ id: 'pol_1', hotelLimitPerDay: 3500, daLimitPerDay: 1200, localConveyancePerDay: 1500, flightLimitPerTrip: 12000, clientEntertainmentLimit: 5000, updatedAt: '2026-07-01' }]));
+      }
+
+      if (!localStorage.getItem('travelApprovals')) {
+        localStorage.setItem('travelApprovals', JSON.stringify([
+          { id: 'TRV-APP-101', empId: 'E-002', employeeName: 'Murugan', vertical: 'Sales', startDate: '2026-07-15', endDate: '2026-07-18', places: 'Jharsuguda & Rourkela Industrial Belts', purpose: 'New Crane Scale SLA contract & plant load cell inspection', clientType: 'existing', clientName: 'Tata Steel Long Products', contactPerson: 'Mr. S. K. Mahapatra (Sr. GM Projects)', contactPhone: '+91 97760 88210', estimatedBudget: 18000, isExtension: false, refId: '', status: 'Approved', appliedDate: '2026-07-10', extensionReason: '' }
+        ]));
+      }
+
       localStorage.setItem('revops_seeded_v17', 'true');
     }
   },
@@ -21933,24 +21973,37 @@ window.RevOpsStore = {
   addItem: function(colName, item) {
     var items = this.getCollection(colName);
     if (!item.id) {
-      item.id = colName.substring(0, 3) + '_' + Date.now();
+      item.id = colName.substring(0, 3) + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
     }
     items.push(item);
     this.saveCollection(colName, items);
+    if (this.isFirebaseAvailable()) {
+      db.collection(colName).doc(item.id).set(item, { merge: true }).catch(function(err) {
+        console.warn("Firestore addItem sync error for " + colName + ":", err);
+      });
+    }
     return item;
   },
 
   updateItem: function(colName, id, updates) {
     var items = this.getCollection(colName);
+    var updatedItem = null;
     for (var i = 0; i < items.length; i++) {
       if (items[i].id === id || items[i].docId === id) {
         for (var key in updates) {
           items[i][key] = updates[key];
         }
+        updatedItem = items[i];
         break;
       }
     }
     this.saveCollection(colName, items);
+    if (this.isFirebaseAvailable() && updatedItem) {
+      var docId = updatedItem.id || id;
+      db.collection(colName).doc(docId).set(updatedItem, { merge: true }).catch(function(err) {
+        console.warn("Firestore updateItem sync error for " + colName + ":", err);
+      });
+    }
   },
 
   deleteItem: function(colName, id) {
@@ -21959,8 +22012,116 @@ window.RevOpsStore = {
       return it.id !== id && it.docId !== id;
     });
     this.saveCollection(colName, filtered);
+    if (this.isFirebaseAvailable()) {
+      db.collection(colName).doc(id).delete().catch(function(err) {
+        console.warn("Firestore deleteItem sync error for " + colName + ":", err);
+      });
+    }
+  },
+
+  // Real-time synchronization listener for 200 concurrent user updates
+  subscribeRealtimeSync: function(colName, onDataUpdated) {
+    if (!this.isFirebaseAvailable()) return null;
+    try {
+      return db.collection(colName).onSnapshot(function(snapshot) {
+        var remoteItems = [];
+        snapshot.forEach(function(doc) {
+          var data = doc.data();
+          data.id = doc.id;
+          remoteItems.push(data);
+        });
+        if (remoteItems.length > 0) {
+          localStorage.setItem(colName, JSON.stringify(remoteItems));
+          if (typeof onDataUpdated === 'function') {
+            onDataUpdated(remoteItems);
+          }
+        }
+      }, function(err) {
+        console.warn("Firestore snapshot listener error for " + colName + ":", err);
+      });
+    } catch(e) {
+      console.warn("Failed to subscribe to real-time Firestore updates:", e);
+      return null;
+    }
+  },
+
+  // Auto-subscribe to all 15 RevOps collections for live 200-user collaboration
+  initRealtimeSyncAll: function() {
+    if (!this.isFirebaseAvailable()) return;
+    var collections = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews', 'expenses', 'projectsMaster', 'expenseSplits', 'travelPolicyMaster', 'travelApprovals', 'budgets'];
+    var self = this;
+    collections.forEach(function(colName) {
+      self.subscribeRealtimeSync(colName);
+    });
+    console.log("⚡ Real-time Firestore sync active for 200 concurrent user sessions.");
+  },
+
+  // Step 3 Data Validation & Sanitization Guardrail
+  sanitizeRecord: function(item) {
+    if (!item || typeof item !== 'object') return {};
+    var sanitized = {};
+    for (var key in item) {
+      if (Object.prototype.hasOwnProperty.call(item, key)) {
+        var val = item[key];
+        if (typeof val === 'string') {
+          // Trim whitespace and remove malicious script tags
+          sanitized[key] = val.trim().replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+        } else {
+          sanitized[key] = val;
+        }
+      }
+    }
+    if (!sanitized.updatedAt) {
+      sanitized.updatedAt = new Date().toISOString();
+    }
+    return sanitized;
+  },
+
+  // Bulk batch upload handler for CSV/Excel data imports (chunked up to 500 records)
+  bulkUploadItems: function(colName, recordArray, callback) {
+    if (!Array.isArray(recordArray) || recordArray.length === 0) {
+      if (typeof callback === 'function') callback(0, "No valid records provided.");
+      return;
+    }
+    var self = this;
+    var currentItems = this.getCollection(colName);
+    var count = 0;
+
+    recordArray.forEach(function(rawRecord) {
+      var record = self.sanitizeRecord(rawRecord);
+      if (!record.id) {
+        record.id = colName.substring(0, 3) + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+      }
+      currentItems.push(record);
+      count++;
+    });
+
+    this.saveCollection(colName, currentItems);
+
+    if (this.isFirebaseAvailable()) {
+      try {
+        var batch = db.batch();
+        recordArray.forEach(function(rawRecord) {
+          var record = self.sanitizeRecord(rawRecord);
+          var docRef = db.collection(colName).doc(record.id);
+          batch.set(docRef, record, { merge: true });
+        });
+        batch.commit().then(function() {
+          console.log("✅ Bulk batch import committed to Firestore for " + colName + " (" + count + " items)");
+          if (typeof callback === 'function') callback(count, null);
+        }).catch(function(err) {
+          console.warn("Bulk import Firestore batch warning:", err);
+          if (typeof callback === 'function') callback(count, err.message);
+        });
+      } catch(e) {
+        if (typeof callback === 'function') callback(count, null);
+      }
+    } else {
+      if (typeof callback === 'function') callback(count, null);
+    }
   }
 };
+
 
 // Helper: Format Date to DD/MM/YYYY
 function getFormattedToday() {
@@ -21987,9 +22148,12 @@ function parseDateDDMMYYYY(dateStr) {
   return new Date(dateStr);
 }
 
-// Seed on page load
+// Seed and subscribe on page load
 if (typeof window !== 'undefined') {
   window.RevOpsStore.initSeedData();
+  setTimeout(function() {
+    window.RevOpsStore.initRealtimeSyncAll();
+  }, 300);
 }
 
 // Helper: Get Financial Year from DD/MM/YYYY string

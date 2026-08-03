@@ -162,7 +162,7 @@
 
       function renderKraTable() {
         var filterFy = document.getElementById('kra-fy-filter') ? document.getElementById('kra-fy-filter').value : 'All';
-        var filterEmp = document.getElementById('kra-emp-filter') ? document.getElementById('kra-emp-filter').value : 'All';
+        var filterEmp = document.getElementById('kra-emp-filter') && document.getElementById('kra-emp-filter').value ? document.getElementById('kra-emp-filter').value : 'All';
         var kras = window.RevOpsStore.getCollection('kraTargets') || [];
         var employees = window.RevOpsStore.getCollection('employees') || [];
 

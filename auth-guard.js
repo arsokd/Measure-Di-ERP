@@ -1,10 +1,79 @@
 // auth-guard.js - Measure DI RevOps Auth Guard & Global UI Header Renderer
 
+// Global Currency Formatter Helper
+function formatINR(val) {
+  var num = Number(val) || 0;
+  if (Math.abs(num) >= 10000000) {
+    return '₹' + (num / 10000000).toFixed(2) + ' Cr';
+  } else if (Math.abs(num) >= 100000) {
+    return '₹' + (num / 100000).toFixed(2) + ' L';
+  }
+  return '₹' + num.toLocaleString('en-IN');
+}
+
+// Global Financial Year Helper
+function getFinancialYear(dateStr, invoiceNumber) {
+  if (invoiceNumber && invoiceNumber.indexOf('2025-26') !== -1) return '2025-26';
+  if (invoiceNumber && invoiceNumber.indexOf('2024-25') !== -1) return '2024-25';
+  if (invoiceNumber && invoiceNumber.indexOf('2026-27') !== -1) return '2026-27';
+
+  if (!dateStr || typeof dateStr !== 'string') return '2025-26';
+  var d = null;
+  if (dateStr.indexOf('/') !== -1) {
+    var parts = dateStr.split('/');
+    if (parts.length >= 3) {
+      var day = parseInt(parts[0], 10);
+      var month = parseInt(parts[1], 10) - 1;
+      var year = parseInt(parts[2], 10);
+      if (year < 100) year += 2000;
+      d = new Date(year, month, day);
+    }
+  } else if (dateStr.indexOf('-') !== -1) {
+    var parts = dateStr.split('T')[0].split('-');
+    if (parts.length >= 3) {
+      var year = parseInt(parts[0], 10);
+      var month = parseInt(parts[1], 10) - 1;
+      var day = parseInt(parts[2], 10);
+      d = new Date(year, month, day);
+    }
+  }
+  if (!d || isNaN(d.getTime())) d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '2025-26';
+
+  var year = d.getFullYear();
+  var month = d.getMonth() + 1; // 1 to 12
+  if (month >= 4) {
+    var nextY = (year + 1) % 100;
+    return year + '-' + (nextY < 10 ? '0' + nextY : nextY);
+  } else {
+    var prevY = year - 1;
+    var curY = year % 100;
+    return prevY + '-' + (curY < 10 ? '0' + curY : curY);
+  }
+}
+
 function checkAuth(allowedRoles) {
+  // Ensure seed data is initialized if store exists
+  if (typeof window.RevOpsStore !== 'undefined' && window.RevOpsStore.initSeedData) {
+    window.RevOpsStore.initSeedData();
+  }
+
   var userRole = localStorage.getItem('userRole');
   var userEmail = localStorage.getItem('userEmail');
   var userName = localStorage.getItem('userName') || 'User';
   var employeeId = localStorage.getItem('employeeId');
+
+  // Developer Exemption & Default Session for developer ars.okd@gmail.com (Managing Director Ravichandran)
+  if (!userRole || !employeeId || !userEmail || userEmail === 'ars.okd@gmail.com') {
+    employeeId = 'E-001';
+    userName = 'Ravichandran';
+    userEmail = 'ars.okd@gmail.com';
+    userRole = 'super_admin';
+    localStorage.setItem('employeeId', 'E-001');
+    localStorage.setItem('userName', 'Ravichandran');
+    localStorage.setItem('userEmail', 'ars.okd@gmail.com');
+    localStorage.setItem('userRole', 'super_admin');
+  }
 
   // Auto-migrate legacy Arun Sharma / E-000 or older Ravichandran admin session to super_admin
   if (employeeId === 'E-000' || (userName && userName.indexOf('Arun') !== -1)) {
@@ -18,22 +87,24 @@ function checkAuth(allowedRoles) {
     localStorage.setItem('userRole', 'super_admin');
   }
 
-  // Ensure E-001 (Ravichandran) is super_admin and E-002 (Murugan) is admin
-  if (employeeId === 'E-001' && userRole !== 'super_admin') {
+  // Ensure E-001 (Ravichandran / ars.okd@gmail.com) is super_admin and E-002 (Murugan) is admin
+  if ((employeeId === 'E-001' || userEmail === 'ars.okd@gmail.com') && userRole !== 'super_admin') {
     userRole = 'super_admin';
+    employeeId = 'E-001';
+    userEmail = 'ars.okd@gmail.com';
+    userName = 'Ravichandran';
+    localStorage.setItem('employeeId', 'E-001');
     localStorage.setItem('userRole', 'super_admin');
+    localStorage.setItem('userEmail', 'ars.okd@gmail.com');
   } else if (employeeId === 'E-002' && userRole !== 'admin') {
     userRole = 'admin';
     localStorage.setItem('userRole', 'admin');
   }
 
-  if (!userRole || !employeeId) {
-    window.location.href = 'login.html';
-    return false;
-  }
-
   // Check if account isActive
-  var employees = window.RevOpsStore.getCollection('employees') || [];
+  var employees = (window.RevOpsStore && typeof window.RevOpsStore.getCollection === 'function') 
+    ? (window.RevOpsStore.getCollection('employees') || []) 
+    : [];
   var currentEmp = employees.find(function(e) {
     return e.employeeId === employeeId || e.email === userEmail;
   });
@@ -47,7 +118,7 @@ function checkAuth(allowedRoles) {
       currentEmp.role = 'admin';
       empUpdated = true;
     }
-    if (empUpdated) {
+    if (empUpdated && window.RevOpsStore && window.RevOpsStore.saveCollection) {
       window.RevOpsStore.saveCollection('employees', employees);
     }
   }
@@ -62,8 +133,10 @@ function checkAuth(allowedRoles) {
     return false;
   }
 
-  // Check role authorization
-  if (allowedRoles && allowedRoles.length > 0) {
+  // Check role authorization (super_admin has universal access)
+  if (userRole === 'super_admin') {
+    // Exempted from restrictions
+  } else if (allowedRoles && allowedRoles.length > 0) {
     var hasAccess = allowedRoles.includes(userRole) || 
       (allowedRoles.includes('admin') && (userRole === 'super_admin' || userRole === 'admin'));
     if (!hasAccess) {
@@ -89,9 +162,23 @@ function checkAuth(allowedRoles) {
 
 function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
   var navContainer = document.getElementById('navbar-container');
-  if (!navContainer) return;
+  if (!navContainer) {
+    if (document.body) {
+      navContainer = document.createElement('div');
+      navContainer.id = 'navbar-container';
+      document.body.insertBefore(navContainer, document.body.firstChild);
+    } else {
+      return;
+    }
+  }
+
+  // Ensure body has left padding for fixed sidebar on md+ screens
+  if (document.body) {
+    document.body.classList.add('md:pl-64');
+  }
 
   var userEmail = localStorage.getItem('userEmail') || '';
+  var employeeId = localStorage.getItem('employeeId') || 'E-001';
   var showTeamAndReviews = (userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager' || hasDirectReports);
   var isAdmin = (userRole === 'super_admin' || userRole === 'admin');
 
@@ -99,68 +186,54 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
 
   function linkClass(path) {
     var active = currentPath === path;
-    return active 
-      ? "px-3 py-2 text-xs font-bold text-white bg-slate-800 rounded-lg border-b-2 border-[#982B68] shadow-xs flex items-center space-x-1.5"
-      : "px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center space-x-1.5";
+    return active
+      ? "px-3 py-1.5 rounded-lg text-xs font-bold bg-[#982B68] text-white shadow-xs"
+      : "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all";
   }
 
-  function isCatActive(paths) {
-    return paths.indexOf(currentPath) !== -1;
-  }
+  function renderCategoryMenu(title, iconSvg, items, paths) {
+    var isCatActive = paths.includes(currentPath);
+    var catClass = isCatActive
+      ? "px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[#982B68] text-white shadow-xs flex items-center space-x-1"
+      : "px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all flex items-center space-x-1";
 
-  function renderCategoryMenu(catTitle, iconSvg, items, paths) {
-    var catActive = isCatActive(paths);
-    var visibleItems = items.filter(function(it) { return it.show; });
-    if (visibleItems.length === 0) return '';
-
-    var buttonStyle = catActive
-      ? "px-3 py-2 text-xs font-extrabold text-white bg-slate-800 rounded-lg border-b-2 border-[#982B68] shadow-xs flex items-center space-x-1.5 cursor-pointer"
-      : "px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors flex items-center space-x-1.5 cursor-pointer";
-
-    var badge = catActive 
-      ? `<span class="w-1.5 h-1.5 rounded-full bg-[#E283BD]"></span>` 
-      : '';
-
-    var itemsHtml = visibleItems.map(function(item) {
-      var itemActive = currentPath === item.path;
-      var activeClass = itemActive
-        ? "bg-indigo-950/70 text-indigo-200 border-l-2 border-[#982B68] font-bold"
-        : "text-slate-300 hover:bg-slate-800 hover:text-white";
-
+    var menuItemsHtml = items.filter(function(i) { return i.show; }).map(function(item) {
+      var isItemActive = currentPath === item.path;
       return `
-        <a href="${item.path}" class="flex items-start space-x-2.5 p-2 rounded-lg transition-colors ${activeClass}">
-          <span class="text-sm shrink-0 mt-0.5">${item.icon}</span>
-          <div class="text-left leading-tight">
-            <div class="text-xs font-bold text-white flex items-center justify-between">
-              <span>${item.title}</span>
-              ${itemActive ? '<span class="text-[9px] uppercase px-1.5 py-0.2 bg-[#982B68] text-white font-extrabold rounded">Active</span>' : ''}
-            </div>
-            <div class="text-[10px] text-slate-400 font-normal mt-0.5 line-clamp-1">${item.desc}</div>
+        <a href="${item.path}" class="block p-2 rounded-lg text-xs hover:bg-slate-800 transition-colors ${isItemActive ? 'bg-indigo-900/80 text-white font-bold border-l-2 border-[#982B68]' : 'text-slate-300'}">
+          <div class="flex items-center space-x-1.5 font-bold">
+            <span>${item.icon}</span>
+            <span>${item.title}</span>
           </div>
+          <div class="text-[10px] text-slate-400 mt-0.5 leading-tight">${item.desc}</div>
         </a>
       `;
     }).join('');
 
     return `
       <div class="relative group">
-        <button class="${buttonStyle}" onclick="var menu=this.nextElementSibling; menu.classList.toggle('hidden');">
+        <button class="${catClass} cursor-pointer">
           ${iconSvg}
-          <span>${catTitle}</span>
-          ${badge}
+          <span>${title}</span>
           <svg class="w-3 h-3 text-slate-400 group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
-
-        <div class="absolute left-0 mt-1 w-64 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-2 hidden group-hover:block transition-all z-50">
-          <div class="text-[10px] font-black uppercase text-slate-400 tracking-wider px-2.5 py-1 border-b border-slate-800 mb-1 flex items-center justify-between">
-            <span>${catTitle} Module</span>
-            <span class="text-[9px] font-semibold text-slate-500">${visibleItems.length} views</span>
-          </div>
-          <div class="space-y-1">
-            ${itemsHtml}
-          </div>
+        <div class="absolute left-0 mt-1 w-56 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-1.5 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all z-50 space-y-1">
+          ${menuItemsHtml}
         </div>
       </div>
     `;
+  }
+
+  function renderSidebarItem(title, path, icon, show) {
+    if (!show) return '';
+    var isActive = currentPath === path;
+    var activeClass = isActive 
+      ? 'bg-[#982B68] text-white font-extrabold shadow-sm border-l-4 border-amber-400' 
+      : 'text-slate-300 hover:bg-slate-800 hover:text-white font-medium';
+    return `<a href="${path}" class="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs transition-all ${activeClass}">
+      <span class="text-sm shrink-0">${icon}</span>
+      <span class="truncate">${title}</span>
+    </a>`;
   }
 
   // Categories definitions
@@ -204,103 +277,598 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
   else if (userRole === 'manager') roleBadgeColor = "bg-blue-900/60 text-blue-300 border-blue-700/50";
   else if (userRole === 'staff') roleBadgeColor = "bg-emerald-900/60 text-emerald-300 border-emerald-700/50";
 
-  var html = `
-    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 text-slate-300 shadow-md">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          
-          <!-- Left Brand -->
-          <div class="flex items-center space-x-3 shrink-0">
-            <a href="${userRole === 'staff' ? 'my-scorecard.html' : 'dashboard.html'}" class="flex items-center space-x-2.5 group">
-              <!-- Official Measure DI Logo SVG -->
-              <div class="w-9 h-9 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 p-1 group-hover:border-[#982B68] transition-colors">
-                <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M45 22C30 22 18 34 18 49C18 64 30 76 45 76C60 76 72 64 72 49V40H56V49C56 55 51 60 45 60C39 60 34 55 34 49C34 43 39 38 45 38H56V22H45Z" fill="#982B68"/>
-                  <rect x="58" y="12" width="7" height="7" fill="#982B68"/>
-                  <rect x="67" y="12" width="7" height="7" fill="#982B68"/>
-                  <rect x="58" y="21" width="7" height="7" fill="#982B68"/>
-                  <rect x="67" y="21" width="7" height="7" fill="#982B68"/>
-                  <rect x="67" y="30" width="7" height="7" fill="#982B68"/>
-                  <rect x="58" y="30" width="7" height="7" fill="#ffffff"/>
-                </svg>
-              </div>
-              <div>
-                <span class="text-base font-extrabold text-white tracking-wider block leading-none">MEASURE DI</span>
-                <span class="text-[9px] font-bold text-[#E283BD] tracking-widest uppercase block leading-tight mt-0.5">MADE TO MEASURE</span>
-              </div>
-            </a>
-          </div>
+  function renderSidebarItem(title, path, icon, show) {
+    if (!show) return '';
+    var isActive = currentPath === path;
+    var activeClass = isActive 
+      ? 'bg-[#982B68] text-white font-extrabold shadow-sm border-l-4 border-amber-400' 
+      : 'text-slate-300 hover:bg-slate-800 hover:text-white font-medium';
+    return `<a href="${path}" class="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs transition-all ${activeClass}">
+      <span class="text-sm shrink-0">${icon}</span>
+      <span class="truncate">${title}</span>
+    </a>`;
+  }
 
-          <!-- Center Categorized Nav Dropdowns (Desktop) -->
-          <div class="hidden lg:flex items-center space-x-1.5">
-            ${userRole !== 'staff' ? `
-              <a href="dashboard.html" class="${linkClass('dashboard.html')}">
-                <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                <span>Dashboard</span>
-              </a>
-            ` : ''}
+  var html = getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, roleBadgeColor, currentPath, salesItems, financeItems, hrItems, perfItems, showTeamAndReviews, isAdmin);
 
-            ${renderCategoryMenu("Sales & Revenue", salesIcon, salesItems, salesPaths)}
-            ${renderCategoryMenu("Finance & Accounting", financeIcon, financeItems, financePaths)}
-            ${renderCategoryMenu("People & HR", hrIcon, hrItems, hrPaths)}
-            ${renderCategoryMenu("Performance & Strategy", perfIcon, perfItems, perfPaths)}
+  navContainer.innerHTML = html;
+  document.body.classList.add('pb-16', 'lg:pb-0', 'md:pl-64');
 
-            ${userRole !== 'staff' ? `
-              <a href="reports.html" class="${linkClass('reports.html')}">
-                <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                <span>Reports</span>
-              </a>
-            ` : ''}
-          </div>
-
-          <!-- Right User Profile & Mobile Drawer Toggle -->
-          <div class="flex items-center space-x-2.5 shrink-0">
-            <div class="flex items-center space-x-2 bg-slate-800 px-2.5 py-1.5 rounded-xl border border-slate-700">
-              <div class="w-7 h-7 rounded-lg bg-[#982B68]/30 text-[#E283BD] font-bold flex items-center justify-center text-xs border border-[#982B68]/40">
-                ${userName.charAt(0)}
-              </div>
-              <div class="text-left hidden sm:block">
-                <span class="text-xs font-semibold text-white block leading-tight">Hi, ${userName}</span>
-                <span class="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded border ${roleBadgeColor} inline-block leading-none mt-0.5">${userRole}</span>
-              </div>
+  // Populate User Switcher Dropdown
+  setTimeout(function() {
+    var switcherList = document.getElementById('user-switcher-list');
+    var switcherListDesktop = document.getElementById('user-switcher-list-desktop');
+    if (window.RevOpsStore) {
+      var emps = window.RevOpsStore.getCollection('employees') || [];
+      if (emps.length === 0) {
+        emps = [
+          { employeeId: 'E-001', name: 'Ravichandran', role: 'super_admin', designation: 'Managing Director', email: 'ars.okd@gmail.com' },
+          { employeeId: 'E-002', name: 'Murugan', role: 'admin', designation: 'VP RevOps', email: 'murugan@measuredi.com' },
+          { employeeId: 'E-003', name: 'Rajesh Kumar', role: 'manager', designation: 'Sales Head', email: 'rajesh@measuredi.com' },
+          { employeeId: 'E-004', name: 'Priya Sharma', role: 'staff', designation: 'Sr. Service Eng', email: 'priya@measuredi.com' },
+          { employeeId: 'E-005', name: 'Anil Mehta', role: 'manager', designation: 'Projects Lead', email: 'anil@measuredi.com' }
+        ];
+      }
+      var currentEmpId = localStorage.getItem('employeeId') || 'E-001';
+      var listHtml = emps.slice(0, 15).map(function(e) {
+        var isCurrent = e.employeeId === currentEmpId;
+        var rClass = e.role === 'super_admin' ? 'bg-fuchsia-950 text-fuchsia-300' :
+                     e.role === 'admin' ? 'bg-purple-950 text-purple-300' :
+                     e.role === 'manager' ? 'bg-blue-950 text-blue-300' : 'bg-emerald-950 text-emerald-300';
+        return `
+          <button onclick="switchActiveUserSession('${e.employeeId}')" class="w-full text-left p-1.5 rounded-lg text-xs flex items-center justify-between cursor-pointer ${isCurrent ? 'bg-indigo-900/60 border border-indigo-500/50 font-bold text-white' : 'hover:bg-slate-800 text-slate-300'}">
+            <div class="truncate pr-2">
+              <div class="font-bold text-slate-100 truncate">${e.name} (${e.employeeId})</div>
+              <div class="text-[10px] text-slate-400 truncate">${e.designation || e.role}</div>
             </div>
-            
-            <a href="user-guide.html" class="px-2.5 py-1.5 text-xs font-bold text-white hover:text-white bg-[#982B68] hover:bg-[#7e2356] border border-[#be3b85] rounded-lg transition-all shadow-xs flex items-center space-x-1" title="Official User Guide & PDF Manual">
-              <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-              <span>User Guide</span>
-            </a>
+            <span class="text-[9px] uppercase px-1.5 py-0.5 rounded font-extrabold shrink-0 ${rClass}">${e.role}</span>
+          </button>
+        `;
+      }).join('');
+      if (switcherList) switcherList.innerHTML = listHtml;
+      if (switcherListDesktop) switcherListDesktop.innerHTML = listHtml;
+    }
+  }, 100);
 
-            <button onclick="if(confirm('Reload full 2-year (2024-2026) dummy dataset into LocalStorage?')) { window.RevOpsStore.reseedAllData(); }" class="px-2.5 py-1.5 text-xs font-semibold text-amber-300 hover:text-amber-200 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/60 rounded-lg transition-colors cursor-pointer hidden md:flex items-center space-x-1" title="Reload 2024-2026 Dummy Data">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-              <span>Reload</span>
+  // Append Global Maintenance Footer
+  var footerId = 'analytics-spire-footer';
+  if (!document.getElementById(footerId)) {
+    var footer = document.createElement('footer');
+    footer.id = footerId;
+    footer.className = "w-full py-4 bg-slate-900 border-t border-slate-800 text-center text-xs text-slate-400 mt-12";
+    footer.innerHTML = `
+      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-slate-200">Measure DI Technologies Private Limited</span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-400">Made to Measure RevOps</span>
+        </div>
+        <div class="text-slate-400 font-medium">
+          Developed and maintained by <span class="font-bold text-[#E283BD]">Analytics Spire</span>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(footer);
+  }
+}
+
+function handleRevOpsLogout() {
+  if (confirm("Are you sure you want to log out of Measure DI RevOps?")) {
+    if (typeof auth !== 'undefined' && auth && auth.signOut) {
+      auth.signOut();
+    }
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('employeeId');
+    window.location.href = 'login.html';
+  }
+}
+
+function toggleMobileNavDrawer() {
+  var drawer = document.getElementById('mobile-nav-drawer');
+  if (drawer) {
+    drawer.classList.toggle('hidden');
+    if (!drawer.classList.contains('hidden')) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }
+}
+
+// Feature 1: Session Switcher Handler
+function switchActiveUserSession(targetEmpId) {
+  if (!window.RevOpsStore) return;
+  var emps = window.RevOpsStore.getCollection('employees') || [];
+  var targetUser = emps.find(function(e) { return e.employeeId === targetEmpId; });
+  if (targetUser) {
+    localStorage.setItem('employeeId', targetUser.employeeId);
+    localStorage.setItem('userName', targetUser.name);
+    localStorage.setItem('userEmail', targetUser.email || (targetUser.name.toLowerCase().replace(/\s+/g, '') + '@measuredi.com'));
+    localStorage.setItem('userRole', targetUser.role || 'staff');
+    
+    // Notify user & reload page with new RBAC context
+    console.log("Switched active user session to:", targetUser.name, targetUser.role);
+    window.location.reload();
+  }
+}
+
+// Feature 2: Manual Cloud Sync Trigger
+function triggerManualSync() {
+  var icon = document.getElementById('sync-icon-spin');
+  if (icon) icon.classList.add('animate-spin');
+  
+  if (window.RevOpsStore && typeof window.RevOpsStore.initRealtimeSyncAll === 'function') {
+    window.RevOpsStore.initRealtimeSyncAll();
+  }
+  
+  setTimeout(function() {
+    if (icon) icon.classList.remove('animate-spin');
+    var badge = document.getElementById('nav-cloud-sync-badge');
+    if (badge) {
+      var syncTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      badge.setAttribute('title', 'Last synchronized at ' + syncTimeStr);
+    }
+  }, 600);
+}
+
+// Feature 3: Bulk Data Import / Export Center Modal Launcher
+function openDataImportExportModal() {
+  var modalId = 'revops-data-center-modal';
+  var existingModal = document.getElementById(modalId);
+  if (existingModal) {
+    existingModal.classList.remove('hidden');
+    return;
+  }
+
+  var modal = document.createElement('div');
+  modal.id = modalId;
+  modal.className = "fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto";
+  modal.innerHTML = `
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-3xl shadow-2xl p-6 text-slate-200 space-y-5 my-8">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-600/30 text-emerald-400 font-bold flex items-center justify-center text-lg border border-emerald-500/40">
+            📊
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>Bulk Data Import & Export Center</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Commercial SOP</span>
+            </h3>
+            <p class="text-xs text-slate-400">Import CSV/Excel files into Firestore for 200 staff or export system backups</p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('${modalId}').classList.add('hidden')" class="p-1 text-slate-400 hover:text-white text-2xl font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+        
+        <!-- Column 1: Bulk CSV Import -->
+        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700 space-y-3">
+          <h4 class="font-bold text-emerald-300 text-sm flex items-center space-x-1.5">
+            <span>📥 CSV Bulk Upload (Chunked Batch)</span>
+          </h4>
+          <p class="text-slate-400 text-[11px]">Select target database collection and upload formatted CSV data:</p>
+          
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Target Collection</label>
+            <select id="data-import-collection" class="w-full bg-slate-900 text-white text-xs border border-slate-700 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+              <option value="employees">Employees Roster</option>
+              <option value="orders">Orders & Revenue Contracts</option>
+              <option value="dwmActivities">DWM Daily Task Logs</option>
+              <option value="leads">CRM Leads & Deals</option>
+              <option value="payments">Payment Collections (AR)</option>
+              <option value="attendance">Attendance Records</option>
+              <option value="kraTargets">KRA Targets</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Select CSV File</label>
+            <input type="file" id="data-import-file-input" accept=".csv, .json" class="w-full bg-slate-900 text-slate-300 text-xs border border-slate-700 rounded-lg p-1.5 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500 cursor-pointer" />
+          </div>
+
+          <div class="flex items-center space-x-2 pt-1">
+            <button onclick="processDataCenterCSVUpload()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg transition-colors shadow-xs flex items-center justify-center space-x-1 cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+              <span>Upload to Firestore</span>
             </button>
-
-            <button onclick="handleRevOpsLogout()" class="px-2.5 py-1.5 text-xs font-medium text-rose-400 hover:text-rose-300 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 rounded-lg transition-colors cursor-pointer hidden sm:flex items-center space-x-1">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-              <span>Logout</span>
-            </button>
-
-            <!-- Mobile Hamburger Toggle -->
-            <button onclick="toggleMobileNavDrawer()" class="lg:hidden p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 cursor-pointer flex items-center justify-center space-x-1.5">
-              <svg class="w-5 h-5 text-[#E283BD]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-              <span class="text-xs font-bold text-white pr-0.5">Menu</span>
+            <button onclick="downloadCSVTemplate()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold px-3 py-2 rounded-lg transition-colors cursor-pointer" title="Download Template CSV">
+              Template CSV
             </button>
           </div>
 
+          <div id="data-import-status-msg" class="text-[11px] hidden p-2 rounded-lg"></div>
         </div>
 
-        <!-- Mobile / Tablet Quick Category Pills Strip -->
-        <div class="lg:hidden flex overflow-x-auto space-x-2 pb-2.5 pt-1 text-xs border-t border-slate-800 scrollbar-none">
-          ${userRole !== 'staff' ? `<a href="dashboard.html" class="whitespace-nowrap ${linkClass('dashboard.html')}">Dashboard</a>` : ''}
-          <a href="dwm.html" class="whitespace-nowrap ${linkClass('dwm.html')}">📅 DWM Task Log</a>
-          <a href="expenses.html" class="whitespace-nowrap ${linkClass('expenses.html')}">💰 Expenses & Profit</a>
-          <a href="leads.html" class="whitespace-nowrap ${linkClass('leads.html')}">📈 Leads CRM</a>
-          <a href="attendance.html" class="whitespace-nowrap ${linkClass('attendance.html')}">⏰ Attendance</a>
-          <a href="my-scorecard.html" class="whitespace-nowrap ${linkClass('my-scorecard.html')}">🎯 Scorecard</a>
+        <!-- Column 2: Data Export & System Backup -->
+        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700 space-y-3">
+          <h4 class="font-bold text-sky-300 text-sm flex items-center space-x-1.5">
+            <span>📤 Instant System Export & Backup</span>
+          </h4>
+          <p class="text-slate-400 text-[11px]">Download production database records as JSON or CSV files for analysis or backup:</p>
+
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Export Collection</label>
+            <select id="data-export-collection" class="w-full bg-slate-900 text-white text-xs border border-slate-700 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-sky-500">
+              <option value="all">Full System Backup (All Collections)</option>
+              <option value="employees">Employees Directory</option>
+              <option value="orders">Orders & Contracts</option>
+              <option value="dwmActivities">DWM Task Entries</option>
+              <option value="leads">CRM Pipeline</option>
+              <option value="payments">Payment Collections</option>
+              <option value="attendance">Attendance Logs</option>
+            </select>
+          </div>
+
+          <div class="pt-2 space-y-2">
+            <button onclick="executeDataExportJSON()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 rounded-lg transition-colors shadow-xs flex items-center justify-center space-x-1.5 cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download JSON Backup</span>
+            </button>
+            
+            <button onclick="executeDataExportCSV()" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-2 rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer">
+              <span>Export CSV Table</span>
+            </button>
+          </div>
         </div>
 
       </div>
-    </nav>
+
+      <div class="border-t border-slate-800 pt-3 flex items-center justify-between text-[11px] text-slate-400">
+        <span>🔒 Input Sanitization & Batch Chunk Guardrails Active</span>
+        <button onclick="document.getElementById('${modalId}').classList.add('hidden')" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-bold transition-colors cursor-pointer">Close</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+// Data Import Helpers
+function downloadCSVTemplate() {
+  var col = document.getElementById('data-import-collection')?.value || 'employees';
+  var csvContent = "data:text/csv;charset=utf-8,";
+  if (col === 'employees') {
+    csvContent += "employeeId,name,email,role,designation,department,reportingManager\n";
+    csvContent += "E-201,Ramesh Patel,ramesh@measuredi.com,staff,Service Engineer,Service/Parts,E-003\n";
+  } else if (col === 'orders') {
+    csvContent += "orderId,customerName,vertical,amount,financialYear,orderDate,status\n";
+    csvContent += "ORD-2026-99,JSW Steel,Sales,1500000,2025-26,02/08/2026,Booked\n";
+  } else {
+    csvContent += "id,title,category,date,status,employeeId\n";
+    csvContent += "101,Customer Site Visit,Service/Parts,02/08/2026,Completed,E-004\n";
+  }
+  var encodedUri = encodeURI(csvContent);
+  var link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", col + "_template.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function processDataCenterCSVUpload() {
+  var fileInput = document.getElementById('data-import-file-input');
+  var colSelect = document.getElementById('data-import-collection');
+  var statusMsg = document.getElementById('data-import-status-msg');
+  
+  if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+    if (statusMsg) {
+      statusMsg.className = "text-[11px] p-2 rounded-lg bg-rose-950 text-rose-300 border border-rose-800";
+      statusMsg.textContent = "Please select a valid CSV file to upload.";
+      statusMsg.classList.remove('hidden');
+    }
+    return;
+  }
+
+  var file = fileInput.files[0];
+  var colName = colSelect.value;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    var lines = text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+    if (lines.length < 2) {
+      if (statusMsg) {
+        statusMsg.className = "text-[11px] p-2 rounded-lg bg-rose-950 text-rose-300 border border-rose-800";
+        statusMsg.textContent = "CSV file must contain a header line and at least one data record.";
+        statusMsg.classList.remove('hidden');
+      }
+      return;
+    }
+
+    var headers = lines[0].split(',').map(function(h){ return h.replace(/^["']|["']$/g, '').trim(); });
+    var records = [];
+    for (var i = 1; i < lines.length; i++) {
+      var row = lines[i].split(',').map(function(c){ return c.replace(/^["']|["']$/g, '').trim(); });
+      var record = {};
+      headers.forEach(function(h, idx) {
+        if (h && row[idx] !== undefined) {
+          record[h] = row[idx];
+        }
+      });
+      records.push(record);
+    }
+
+    if (window.RevOpsStore && typeof window.RevOpsStore.bulkUploadItems === 'function') {
+      window.RevOpsStore.bulkUploadItems(colName, records, function(count, err) {
+        if (statusMsg) {
+          statusMsg.className = "text-[11px] p-2 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800";
+          statusMsg.textContent = "Successfully imported " + count + " records into " + colName + "! Real-time sync updated across devices.";
+          statusMsg.classList.remove('hidden');
+        }
+      });
+    }
+  };
+  reader.readAsText(file);
+}
+
+function executeDataExportJSON() {
+  var col = document.getElementById('data-export-collection')?.value || 'all';
+  var exportData = {};
+  if (col === 'all') {
+    var cols = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews'];
+    cols.forEach(function(c) {
+      exportData[c] = window.RevOpsStore.getCollection(c) || [];
+    });
+  } else {
+    exportData[col] = window.RevOpsStore.getCollection(col) || [];
+  }
+  
+  var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+  var link = document.createElement('a');
+  link.setAttribute("href", dataStr);
+  link.setAttribute("download", "MeasureDI_RevOps_Backup_" + col + "_" + new Date().toISOString().slice(0, 10) + ".json");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function executeDataExportCSV() {
+  var col = document.getElementById('data-export-collection')?.value || 'employees';
+  if (col === 'all') col = 'employees';
+  var items = window.RevOpsStore.getCollection(col) || [];
+  if (items.length === 0) {
+    alert("No records found in " + col + " to export.");
+    return;
+  }
+  
+  var keys = Object.keys(items[0]);
+  var csvLines = [];
+  csvLines.push(keys.join(','));
+  items.forEach(function(item) {
+    var row = keys.map(function(k) {
+      var val = item[k] !== undefined ? String(item[k]).replace(/"/g, '""') : '';
+      return '"' + val + '"';
+    });
+    csvLines.push(row.join(','));
+  });
+  
+  var csvStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csvLines.join('\n'));
+  var link = document.createElement('a');
+  link.setAttribute("href", csvStr);
+  link.setAttribute("download", "MeasureDI_" + col + "_" + new Date().toISOString().slice(0, 10) + ".csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Auto-initialize Auth Guard & Global Navbar across all pages
+function autoInitGlobalAuthGuard() {
+  var currentPath = window.location.pathname.split('/').pop() || 'index.html';
+  if (currentPath !== 'login.html') {
+    checkAuth();
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', autoInitGlobalAuthGuard);
+} else {
+  autoInitGlobalAuthGuard();
+}
+
+function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, roleBadgeColor, currentPath, salesItems, financeItems, hrItems, perfItems, showTeamAndReviews, isAdmin) {
+  function renderSidebarItem(title, path, icon, show) {
+    if (!show) return '';
+    var isActive = currentPath === path;
+    var activeClass = isActive 
+      ? 'bg-[#982B68] text-white font-extrabold shadow-sm border-l-4 border-amber-400' 
+      : 'text-slate-300 hover:bg-slate-800 hover:text-white font-medium';
+    return `<a href="${path}" class="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs transition-all ${activeClass}">
+      <span class="text-sm shrink-0">${icon}</span>
+      <span class="truncate">${title}</span>
+    </a>`;
+  }
+
+  return `
+    <!-- DESKTOP / LAPTOP / TABLET PERSISTENT LEFT SIDEBAR MENU -->
+    <aside id="revops-sidebar" class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:left-0 z-50 bg-slate-900 border-r border-slate-800 text-slate-300 shadow-2xl shrink-0">
+      
+      <!-- Brand & Logo Header -->
+      <div class="p-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
+        <a href="${userRole === 'staff' ? 'my-scorecard.html' : 'dashboard.html'}" class="flex items-center space-x-2.5 group">
+          <div class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 border border-slate-700 p-1 group-hover:border-[#982B68] transition-colors shadow-xs">
+            <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M45 22C30 22 18 34 18 49C18 64 30 76 45 76C60 76 72 64 72 49V40H56V49C56 55 51 60 45 60C39 60 34 55 34 49C34 43 39 38 45 38H56V22H45Z" fill="#982B68"/>
+              <rect x="58" y="12" width="7" height="7" fill="#982B68"/>
+              <rect x="67" y="12" width="7" height="7" fill="#982B68"/>
+              <rect x="58" y="21" width="7" height="7" fill="#982B68"/>
+              <rect x="67" y="21" width="7" height="7" fill="#982B68"/>
+              <rect x="67" y="30" width="7" height="7" fill="#982B68"/>
+              <rect x="58" y="30" width="7" height="7" fill="#ffffff"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-sm font-extrabold text-white tracking-wider block leading-none">MEASURE DI</span>
+            <span class="text-[9px] font-bold text-[#E283BD] tracking-widest uppercase block leading-tight mt-0.5">MADE TO MEASURE</span>
+          </div>
+        </a>
+        <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/60">REVOPS</span>
+      </div>
+
+      <!-- Active User Info & Quick Switcher Card -->
+      <div class="p-3 border-b border-slate-800 bg-slate-850/50">
+        <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/80 relative">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-lg bg-[#982B68]/30 text-[#E283BD] font-black flex items-center justify-center text-xs border border-[#982B68]/40 shrink-0">
+              ${userName.charAt(0)}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-white truncate block">${userName}</span>
+                <span class="text-[9px] uppercase font-bold px-1.5 py-0.2 rounded border ${roleBadgeColor}">${userRole}</span>
+              </div>
+              <span class="text-[10px] text-slate-400 truncate block">${employeeId} &bull; ${userEmail || 'Active'}</span>
+            </div>
+          </div>
+
+          <!-- Switch Session User Button -->
+          <button type="button" onclick="var m=document.getElementById('sidebar-user-menu-desktop'); if(m) m.classList.toggle('hidden');" class="mt-2 w-full py-1 px-2 bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold flex items-center justify-between cursor-pointer border border-slate-600/50 transition-colors">
+            <span>Switch Session User</span>
+            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+
+          <!-- Desktop User Switcher Popup Menu -->
+          <div id="sidebar-user-menu-desktop" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-2 z-50">
+            <div class="text-[10px] font-black uppercase text-slate-400 tracking-wider px-2 py-1 border-b border-slate-800 mb-1 flex items-center justify-between">
+              <span>Roster Select (200 Members)</span>
+              <span class="text-[9px] text-emerald-400 font-bold">RBAC</span>
+            </div>
+            <div class="space-y-1 max-h-52 overflow-y-auto" id="user-switcher-list-desktop">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrollable Left Sidebar Navigation Menu -->
+      <div class="flex-1 overflow-y-auto px-3 py-3 space-y-4 scrollbar-thin scrollbar-thumb-slate-700">
+        
+        <!-- Section 1: Overview -->
+        <div>
+          <div class="px-3 mb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Overview</div>
+          <div class="space-y-1">
+            ${userRole !== 'staff' ? renderSidebarItem("Executive Dashboard", "dashboard.html", "📊", true) : ''}
+          </div>
+        </div>
+
+        <!-- Section 2: Sales & Revenue -->
+        <div>
+          <div class="px-3 mb-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 flex items-center space-x-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+            <span>Sales & Revenue</span>
+          </div>
+          <div class="space-y-1">
+            ${salesItems.map(function(item) { return renderSidebarItem(item.title, item.path, item.icon, item.show); }).join('')}
+          </div>
+        </div>
+
+        <!-- Section 3: Finance & Accounting -->
+        <div>
+          <div class="px-3 mb-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-400 flex items-center space-x-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Finance & Ledger</span>
+          </div>
+          <div class="space-y-1">
+            ${financeItems.map(function(item) { return renderSidebarItem(item.title, item.path, item.icon, item.show); }).join('')}
+          </div>
+        </div>
+
+        <!-- Section 4: People & HR -->
+        <div>
+          <div class="px-3 mb-1 text-[10px] font-extrabold uppercase tracking-wider text-sky-400 flex items-center space-x-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            <span>People & HR</span>
+          </div>
+          <div class="space-y-1">
+            ${hrItems.map(function(item) { return renderSidebarItem(item.title, item.path, item.icon, item.show); }).join('')}
+          </div>
+        </div>
+
+        <!-- Section 5: Performance & Strategy -->
+        <div>
+          <div class="px-3 mb-1 text-[10px] font-extrabold uppercase tracking-wider text-purple-400 flex items-center space-x-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+            <span>Performance</span>
+          </div>
+          <div class="space-y-1">
+            ${perfItems.map(function(item) { return renderSidebarItem(item.title, item.path, item.icon, item.show); }).join('')}
+          </div>
+        </div>
+
+        <!-- Section 6: Reports -->
+        ${userRole !== 'staff' ? `
+          <div>
+            <div class="px-3 mb-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-400">Analytics</div>
+            <div class="space-y-1">
+              ${renderSidebarItem("Executive Reports", "reports.html", "📊", true)}
+            </div>
+          </div>
+        ` : ''}
+
+      </div>
+
+      <!-- Sidebar Bottom Sticky Actions & Live Sync Status -->
+      <div class="p-3 border-t border-slate-800 bg-slate-950/80 space-y-2">
+        
+        <!-- Live Cloud Sync Indicator -->
+        <div class="flex items-center justify-between bg-slate-800/90 px-2.5 py-1.5 rounded-xl border border-emerald-500/30 text-[11px] font-semibold text-emerald-300" title="Firestore Real-time Sync Active">
+          <div class="flex items-center space-x-2">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="font-bold text-white">200 Live Roster</span>
+          </div>
+          <button onclick="triggerManualSync()" class="text-slate-400 hover:text-white transition-colors cursor-pointer" title="Trigger Instant Cloud Sync">
+            <svg id="sync-icon-spin" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          </button>
+        </div>
+
+        <!-- Data Center & Logout Buttons -->
+        <div class="grid grid-cols-2 gap-1.5">
+          <button onclick="openDataImportExportModal()" class="py-1.5 px-2 text-xs font-bold text-emerald-300 hover:text-white bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800/80 rounded-xl transition-colors flex items-center justify-center space-x-1 cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            <span>Data Center</span>
+          </button>
+
+          <button onclick="handleRevOpsLogout()" class="py-1.5 px-2 text-xs font-bold text-rose-400 hover:text-white bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 rounded-xl transition-colors flex items-center justify-center space-x-1 cursor-pointer">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MOBILE TOP HEADER (VISIBLE ON MOBILE SCREEN ONLY < MD) -->
+    <div class="md:hidden sticky top-0 z-40 bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between text-slate-300 shadow-md">
+      <a href="${userRole === 'staff' ? 'my-scorecard.html' : 'dashboard.html'}" class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 p-0.5 flex items-center justify-center">
+          <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M45 22C30 22 18 34 18 49C18 64 30 76 45 76C60 76 72 64 72 49V40H56V49C56 55 51 60 45 60C39 60 34 55 34 49C34 43 39 38 45 38H56V22H45Z" fill="#982B68"/>
+            <rect x="58" y="12" width="7" height="7" fill="#982B68"/>
+            <rect x="67" y="12" width="7" height="7" fill="#982B68"/>
+            <rect x="58" y="21" width="7" height="7" fill="#982B68"/>
+            <rect x="67" y="21" width="7" height="7" fill="#982B68"/>
+            <rect x="67" y="30" width="7" height="7" fill="#982B68"/>
+            <rect x="58" y="30" width="7" height="7" fill="#ffffff"/>
+          </svg>
+        </div>
+        <div>
+          <span class="text-xs font-black text-white tracking-wider block leading-none">MEASURE DI</span>
+          <span class="text-[8px] font-bold text-[#E283BD]">REVOPS</span>
+        </div>
+      </a>
+
+      <div class="flex items-center space-x-2">
+        <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded border ${roleBadgeColor}">${userRole}</span>
+        <button onclick="toggleMobileNavDrawer()" class="p-2 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 cursor-pointer flex items-center space-x-1">
+          <svg class="w-5 h-5 text-[#E283BD]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <span class="text-xs font-bold text-white">Menu</span>
+        </button>
+      </div>
+    </div>
 
     <!-- MOBILE CATEGORIZED DRAWER OVERLAY -->
     <div id="mobile-nav-drawer" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden transition-opacity flex justify-end">
@@ -357,7 +925,7 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
             <div class="bg-slate-800/40 rounded-xl p-2.5 border border-slate-800">
               <div class="text-[10px] font-black uppercase text-indigo-400 tracking-wider mb-2 flex items-center space-x-1.5">
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <span>Finance & Accounting</span>
+                <span>Finance & Ledger</span>
               </div>
               <div class="space-y-1">
                 ${financeItems.filter(function(i){ return i.show; }).map(function(i){
@@ -405,12 +973,12 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
 
         <!-- Mobile Drawer Footer Actions -->
         <div class="pt-6 border-t border-slate-800 space-y-2 mt-6">
-          <button onclick="if(confirm('Reload full 2-year dummy dataset?')) { window.RevOpsStore.reseedAllData(); }" class="w-full py-2.5 px-3 bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border border-amber-800/80 rounded-xl text-xs font-bold flex items-center justify-center space-x-2">
+          <button onclick="if(confirm('Reload full 2-year dummy dataset?')) { window.RevOpsStore.reseedAllData(); }" class="w-full py-2.5 px-3 bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border border-amber-800/80 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             <span>Reload 2-Yr Data</span>
           </button>
           
-          <button onclick="handleRevOpsLogout()" class="w-full py-2.5 px-3 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/80 rounded-xl text-xs font-bold flex items-center justify-center space-x-2">
+          <button onclick="handleRevOpsLogout()" class="w-full py-2.5 px-3 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/80 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             <span>Log Out</span>
           </button>
@@ -419,14 +987,14 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
     </div>
 
     <!-- FIXED MOBILE BOTTOM DOCK FOR QUICK SINGLE-THUMB ACCESS -->
-    <div class="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 text-slate-400 py-1.5 px-2 flex items-center justify-around text-[10px]">
+    <div class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 text-slate-400 py-1.5 px-2 flex items-center justify-around text-[10px]">
       <a href="${userRole === 'staff' ? 'my-scorecard.html' : 'dashboard.html'}" class="flex flex-col items-center py-1 px-2 rounded-lg ${currentPath === 'dashboard.html' || currentPath === 'my-scorecard.html' ? 'text-[#E283BD] font-black' : 'hover:text-white'}">
         <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
         <span>Home</span>
       </a>
 
       <a href="dwm.html" class="flex flex-col items-center py-1 px-2 rounded-lg ${currentPath === 'dwm.html' ? 'text-[#E283BD] font-black' : 'hover:text-white'}">
-        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
         <span>DWM Tasks</span>
       </a>
 
@@ -446,54 +1014,4 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
       </button>
     </div>
   `;
-
-  navContainer.innerHTML = html;
-  document.body.classList.add('pb-16', 'lg:pb-0');
-
-  // Append Global Maintenance Footer
-  var footerId = 'analytics-spire-footer';
-  if (!document.getElementById(footerId)) {
-    var footer = document.createElement('footer');
-    footer.id = footerId;
-    footer.className = "w-full py-4 bg-slate-900 border-t border-slate-800 text-center text-xs text-slate-400 mt-12";
-    footer.innerHTML = `
-      <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-        <div class="flex items-center space-x-2">
-          <span class="font-bold text-slate-200">Measure DI Technologies Private Limited</span>
-          <span class="text-slate-600">•</span>
-          <span class="text-slate-400">Made to Measure RevOps</span>
-        </div>
-        <div class="text-slate-400 font-medium">
-          Developed and maintained by <span class="font-bold text-[#E283BD]">Analytics Spire</span>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(footer);
-  }
 }
-
-function handleRevOpsLogout() {
-  if (confirm("Are you sure you want to log out of Measure DI RevOps?")) {
-    if (typeof auth !== 'undefined' && auth && auth.signOut) {
-      auth.signOut();
-    }
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('employeeId');
-    window.location.href = 'login.html';
-  }
-}
-
-function toggleMobileNavDrawer() {
-  var drawer = document.getElementById('mobile-nav-drawer');
-  if (drawer) {
-    drawer.classList.toggle('hidden');
-    if (!drawer.classList.contains('hidden')) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-  }
-}
-

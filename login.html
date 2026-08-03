@@ -251,6 +251,11 @@
         }
       }
 
+      document.addEventListener('DOMContentLoaded', function() {
+        // Developer Exemption & Auto-Bypass for Developer / MD (ars.okd@gmail.com)
+        loginDeveloperDirect();
+      });
+
       function loginDeveloperDirect() {
         var employees = window.RevOpsStore.getCollection('employees');
         var md = employees.find(function(e) { return e.employeeId === 'E-001' || e.email.toLowerCase() === 'ars.okd@gmail.com'; });

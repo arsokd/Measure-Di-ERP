@@ -98,7 +98,7 @@ window.RevOpsStore = {
       return !arr || arr.length === 0;
     });
 
-    if (!localStorage.getItem('revops_seeded_v23') || hasEmptyCols) {
+    if (!localStorage.getItem('revops_seeded_v24') || hasEmptyCols) {
       console.log("Seeding Google Sheets RevOps data for Measure DI Technologies...");
       
       
@@ -22244,7 +22244,7 @@ window.RevOpsStore = {
         ]));
       }
 
-      localStorage.setItem('revops_seeded_v23', 'true');
+      localStorage.setItem('revops_seeded_v24', 'true');
     }
   },
 

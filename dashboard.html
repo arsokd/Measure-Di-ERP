@@ -756,6 +756,12 @@
       }
 
       function renderDashboardData() {
+        if (typeof Chart === 'undefined') {
+          console.warn("Chart.js loading from CDN... Retrying render in 200ms...");
+          setTimeout(renderDashboardData, 200);
+          return;
+        }
+
         var employees = window.RevOpsStore.getCollection('employees') || [];
         var rawOrders = window.RevOpsStore.getCollection('orders') || [];
         var rawLeads = window.RevOpsStore.getCollection('leads') || [];
@@ -926,12 +932,12 @@
         window.currentPeriodInfo = periodInfo;
         renderLeaderboardRows(employees, currRev.employees, selectedFy, periodRatio, periodInfo);
 
-        // RENDER CHARTS
-        renderTimelineChart(rawOrders, selectedFy, selectedVertical, selectedEmpId, periodCompanyTarget, periodInfo);
-        renderVerticalDonutChart(currRev.verticals);
-        renderPipelineFunnelChart(filteredLeads, false, periodInfo);
-        renderSalesConversionFunnel(filteredLeads, periodInfo);
-        renderTeamContributionChart(employees, currRev.employees, selectedFy, periodRatio, periodInfo);
+        // RENDER CHARTS (Safely isolated)
+        try { renderTimelineChart(rawOrders, selectedFy, selectedVertical, selectedEmpId, periodCompanyTarget, periodInfo); } catch(e1) { console.error("Timeline chart error:", e1); }
+        try { renderVerticalDonutChart(currRev.verticals); } catch(e2) { console.error("Vertical donut chart error:", e2); }
+        try { renderPipelineFunnelChart(filteredLeads, false, periodInfo); } catch(e3) { console.error("Pipeline funnel error:", e3); }
+        try { renderSalesConversionFunnel(filteredLeads, periodInfo); } catch(e4) { console.error("Conversion funnel error:", e4); }
+        try { renderTeamContributionChart(employees, currRev.employees, selectedFy, periodRatio, periodInfo); } catch(e5) { console.error("Team contribution chart error:", e5); }
       }
 
       function calculateTrendBadge(currentVal, prevVal, label) {

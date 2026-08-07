@@ -98,11 +98,11 @@ window.RevOpsStore = {
       return !arr || arr.length === 0;
     });
 
-    if (!localStorage.getItem('revops_seeded_v22') || hasEmptyCols) {
+    if (!localStorage.getItem('revops_seeded_v23') || hasEmptyCols) {
       console.log("Seeding Google Sheets RevOps data for Measure DI Technologies...");
       
       
-      // Cleanup legacy E-000 / Arun Sharma if present in local storage and update roles
+      // Cleanup legacy E-000 / Arun Sharma if present in local storage and update roles and mobile number
       var currentEmps = window.RevOpsStore.getCollection('employees') || [];
       var empListChanged = false;
       if (currentEmps.some(function(e) { return e.employeeId === 'E-000' || (e.fullName && e.fullName.indexOf('Arun') !== -1); })) {
@@ -111,8 +111,10 @@ window.RevOpsStore = {
         empListChanged = true;
       }
       currentEmps.forEach(function(e) {
-        if (e.employeeId === 'E-001' && e.role !== 'super_admin') {
+        if (e.employeeId === 'E-001') {
           e.role = 'super_admin';
+          e.mobile = '9840629928';
+          e.email = 'measuredichennai@gmail.com';
           empListChanged = true;
         } else if (e.employeeId === 'E-002' && e.role !== 'admin') {
           e.role = 'admin';
@@ -136,8 +138,8 @@ window.RevOpsStore = {
     "reportsTo": "",
     "reportsToName": "",
     "workArrangement": "Head Office",
-    "email": "ravi@measuredi.com",
-    "mobile": "9176699747",
+    "email": "measuredichennai@gmail.com",
+    "mobile": "9840629928",
     "password": "MeasureDI@123",
     "dateOfJoining": "01/04/2020",
     "primaryAopMetric": "Sales Revenue, Service Revenue, Spare parts Revenue",
@@ -22242,7 +22244,7 @@ window.RevOpsStore = {
         ]));
       }
 
-      localStorage.setItem('revops_seeded_v21', 'true');
+      localStorage.setItem('revops_seeded_v23', 'true');
     }
   },
 

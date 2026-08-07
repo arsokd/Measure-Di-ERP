@@ -96,15 +96,15 @@ function checkAuth(allowedRoles) {
   if (employeeId === 'null' || employeeId === 'undefined') employeeId = null;
   if (userEmail === 'null' || userEmail === 'undefined') userEmail = null;
 
-  // Developer Exemption & Default Session for developer ars.okd@gmail.com (Managing Director Ravichandran)
-  if (!userRole || !employeeId || !userEmail || userEmail === 'ars.okd@gmail.com') {
+  // Developer Exemption & Default Session for developer measuredichennai@gmail.com / ars.okd@gmail.com (Managing Director Ravichandran)
+  if (!userRole || !employeeId || !userEmail || userEmail === 'ars.okd@gmail.com' || userEmail === 'measuredichennai@gmail.com') {
     employeeId = 'E-001';
     userName = 'Ravichandran';
-    userEmail = 'ars.okd@gmail.com';
+    userEmail = 'measuredichennai@gmail.com';
     userRole = 'super_admin';
     localStorage.setItem('employeeId', 'E-001');
     localStorage.setItem('userName', 'Ravichandran');
-    localStorage.setItem('userEmail', 'ars.okd@gmail.com');
+    localStorage.setItem('userEmail', 'measuredichennai@gmail.com');
     localStorage.setItem('userRole', 'super_admin');
   }
 
@@ -112,23 +112,23 @@ function checkAuth(allowedRoles) {
   if (employeeId === 'E-000' || (userName && userName.indexOf('Arun') !== -1)) {
     employeeId = 'E-001';
     userName = 'Ravichandran';
-    userEmail = 'ars.okd@gmail.com';
+    userEmail = 'measuredichennai@gmail.com';
     userRole = 'super_admin';
     localStorage.setItem('employeeId', 'E-001');
     localStorage.setItem('userName', 'Ravichandran');
-    localStorage.setItem('userEmail', 'ars.okd@gmail.com');
+    localStorage.setItem('userEmail', 'measuredichennai@gmail.com');
     localStorage.setItem('userRole', 'super_admin');
   }
 
-  // Ensure E-001 (Ravichandran / ars.okd@gmail.com) is super_admin and E-002 (Murugan) is admin
-  if ((employeeId === 'E-001' || userEmail === 'ars.okd@gmail.com') && userRole !== 'super_admin') {
+  // Ensure E-001 (Ravichandran / measuredichennai@gmail.com) is super_admin and E-002 (Murugan) is admin
+  if ((employeeId === 'E-001' || userEmail === 'ars.okd@gmail.com' || userEmail === 'measuredichennai@gmail.com') && userRole !== 'super_admin') {
     userRole = 'super_admin';
     employeeId = 'E-001';
-    userEmail = 'ars.okd@gmail.com';
+    userEmail = 'measuredichennai@gmail.com';
     userName = 'Ravichandran';
     localStorage.setItem('employeeId', 'E-001');
     localStorage.setItem('userRole', 'super_admin');
-    localStorage.setItem('userEmail', 'ars.okd@gmail.com');
+    localStorage.setItem('userEmail', 'measuredichennai@gmail.com');
   } else if (employeeId === 'E-002' && userRole !== 'admin') {
     userRole = 'admin';
     localStorage.setItem('userRole', 'admin');

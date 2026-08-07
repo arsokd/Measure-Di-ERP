@@ -1,0 +1,1612 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Measure DI RevOps - Service Ticket & Quality Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-guard.js"></script>
+  </head>
+  <body class="bg-slate-50 min-h-screen text-slate-800">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      
+      <!-- Top Page Header -->
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+        <div class="flex items-start space-x-4">
+          <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center text-2xl border border-amber-500/20 shrink-0">
+            🛠️
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Service Ticket Control & Quality Analytics</h1>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                Quality SOP
+              </span>
+            </div>
+            <p class="text-sm text-slate-500 mt-1">
+              Ticket raising, tracking, SLA compliance, Mean Time To Resolution (MTTR) & automated repetitive defect monitoring
+            </p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="toggleQualityAlarmFilter()" id="btn-toggle-alarms" class="px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+            </span>
+            <span id="badge-alarm-btn-text">⚠️ 2 Repetitive Alarms</span>
+          </button>
+
+          <button onclick="exportServiceTicketsCSV()" class="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl border border-slate-200 transition-colors flex items-center space-x-1.5 cursor-pointer">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span>Export CSV</span>
+          </button>
+
+          <button onclick="openRaiseTicketModal()" class="px-4 py-2.5 bg-[#982B68] hover:bg-[#802256] text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>+ Raise Service Ticket</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- AOP TARGET & SERVICE SLA BENCHMARK CONNECTION PANEL -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/80 rounded-2xl p-5 text-white shadow-lg space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700/60 pb-3">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-[#982B68]/30 border border-[#982B68]/50 flex items-center justify-center text-xl font-bold text-pink-300">
+              🎯
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                <span>Service/Parts Vertical AOP Target Connection</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                  Annual Operating Plan
+                </span>
+              </h2>
+              <p class="text-xs text-slate-300">
+                Service delivery SLA compliance, MTTR, and CSAT benchmarks linked directly to AOP revenue lines
+              </p>
+            </div>
+          </div>
+          <a href="aop-targets.html" class="inline-flex items-center space-x-1 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg transition-colors border border-slate-600">
+            <span>Configure AOP Lines</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <!-- AOP Revenue Target -->
+          <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Service/Parts AOP Revenue</span>
+            <div class="text-xl font-black text-pink-400 mt-1" id="aop-service-revenue-target">₹5.00 Crore</div>
+            <p class="text-[11px] text-slate-300 mt-1" id="aop-service-actual-revenue">Actual: ₹12.60 Cr (252% AOP)</p>
+          </div>
+
+          <!-- Target SLA Compliance % -->
+          <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">AOP Target SLA Compliance</span>
+            <div class="text-xl font-black text-emerald-400 mt-1" id="aop-target-sla">95.0% Target</div>
+            <p class="text-[11px] text-slate-300 mt-1" id="aop-actual-sla">Actual SLA Rate: 87.5%</p>
+          </div>
+
+          <!-- Target CSAT Rating -->
+          <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Target CSAT Benchmark</span>
+            <div class="text-xl font-black text-amber-400 mt-1" id="aop-target-csat">4.5 / 5.0 Stars</div>
+            <p class="text-[11px] text-slate-300 mt-1" id="aop-actual-csat">Actual CSAT: 4.80 Stars ⭐</p>
+          </div>
+
+          <!-- Repetitive Complaint SLA Guardrail -->
+          <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Repeat Defect Tolerance</span>
+            <div class="text-xl font-black text-cyan-400 mt-1" id="aop-target-repeat">&lt; 3 Alerts Max</div>
+            <p class="text-[11px] text-slate-300 mt-1" id="aop-actual-repeat">Active QC Alerts: 2 Alerts</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5 Key Metric Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        
+        <!-- Total Tickets -->
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+          <div class="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <span>Total Tickets</span>
+            <span class="text-slate-400">📊</span>
+          </div>
+          <div class="text-2xl font-black text-slate-900 mt-2" id="kpi-total-tickets">0</div>
+          <p class="text-[11px] text-slate-400 mt-1" id="kpi-open-breakdown">0 Open / 0 In Progress</p>
+        </div>
+
+        <!-- SLA Breach Rate -->
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+          <div class="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <span>SLA Breach Rate</span>
+            <span class="text-rose-500">⏱️</span>
+          </div>
+          <div class="text-2xl font-black text-rose-600 mt-2" id="kpi-sla-breach-rate">0%</div>
+          <p class="text-[11px] text-slate-400 mt-1" id="kpi-sla-breach-count">0 Tickets Past SLA</p>
+        </div>
+
+        <!-- Mean Time To Resolution (MTTR) -->
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+          <div class="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <span>MTTR (Avg)</span>
+            <span class="text-indigo-500">⚡</span>
+          </div>
+          <div class="text-2xl font-black text-indigo-600 mt-2" id="kpi-mttr">1.4 Days</div>
+          <p class="text-[11px] text-slate-400 mt-1">Target Resolution: &lt; 2.0 Days</p>
+        </div>
+
+        <!-- First-Time Fix Rate (FTFR %) -->
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+          <div class="flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <span>First-Time Fix Rate</span>
+            <span class="text-emerald-500">🎯</span>
+          </div>
+          <div class="text-2xl font-black text-emerald-600 mt-2" id="kpi-ftfr">87.5%</div>
+          <p class="text-[11px] text-slate-400 mt-1">Resolved without repeat defect</p>
+        </div>
+
+        <!-- Repetitive Complaints -->
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-amber-300 bg-amber-50/30">
+          <div class="flex items-center justify-between text-xs font-bold text-amber-800 uppercase tracking-wider">
+            <span>Repeat Defect Alarms</span>
+            <span class="text-amber-600">🚨</span>
+          </div>
+          <div class="text-2xl font-black text-amber-700 mt-2" id="kpi-repeat-count">2 Alerts</div>
+          <p class="text-[11px] text-amber-600/80 mt-1 font-semibold">&lt; 30-Day Complaint Recurrence</p>
+        </div>
+
+      </div>
+
+      <!-- QUALITY CONTROL & REPETITIVE COMPLAINT ALARM MONITORING ENGINE -->
+      <div id="quality-alarm-container" class="bg-slate-900 border border-amber-500/50 rounded-2xl p-6 text-white shadow-xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl font-black border border-amber-500/30">
+              🚨
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <span>Quality Service Monitoring & Repetitive Defect Detection Engine</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                  Live QC Guardrail
+                </span>
+              </h2>
+              <p class="text-xs text-slate-400">
+                Automated detection flags repetitive complaints for the same customer, equipment, or defect category within a 30-day window.
+              </p>
+            </div>
+          </div>
+          <span class="text-xs text-amber-400 font-mono font-bold" id="quality-scan-timestamp">Last QC Scan: Just Now</span>
+        </div>
+
+        <!-- Alarm Cards Grid -->
+        <div id="repeat-alarm-cards-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Dynamically populated repeat complaint alarms -->
+        </div>
+      </div>
+
+      <!-- FILTERS & VIEW MODE CONTROL BAR -->
+      <div class="bg-white p-4 rounded-2xl shadow-xs border border-slate-200 space-y-3">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          
+          <!-- Filter Selectors -->
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            
+            <!-- Financial Year -->
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Financial Year</label>
+              <select id="filter-fy" onchange="renderServiceTicketsModule()" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
+                <option value="2026-27" selected>FY 2026-27 (Current)</option>
+                <option value="2025-26">FY 2025-26</option>
+                <option value="2024-25">FY 2024-25</option>
+                <option value="ALL">All FYs</option>
+              </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Ticket Status</label>
+              <select id="filter-status" onchange="renderServiceTicketsModule()" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
+                <option value="ALL">All Statuses</option>
+                <option value="Open">Open</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Pending Parts">Pending Parts</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Closed">Closed</option>
+                <option value="Escalated">Escalated</option>
+              </select>
+            </div>
+
+            <!-- Severity Filter -->
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Severity</label>
+              <select id="filter-severity" onchange="renderServiceTicketsModule()" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
+                <option value="ALL">All Severities</option>
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+
+            <!-- Quality Defect Flag -->
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Quality Flag</label>
+              <select id="filter-quality" onchange="renderServiceTicketsModule()" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
+                <option value="ALL">All Tickets</option>
+                <option value="REPETITIVE">⚠️ Repetitive Defects Only</option>
+                <option value="SLA_BREACHED">⏱️ SLA Breached Only</option>
+              </select>
+            </div>
+
+            <!-- Assigned Service Engineer -->
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-400 mb-0.5">Service Engineer</label>
+              <select id="filter-engineer" onchange="renderServiceTicketsModule()" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
+                <option value="ALL">All Engineers</option>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+          </div>
+
+          <!-- Search Input & View Switcher -->
+          <div class="flex items-center space-x-2">
+            
+            <div class="relative w-48 sm:w-60">
+              <input type="text" id="filter-search" oninput="renderServiceTicketsModule()" placeholder="Search ID, Customer, Serial..." class="w-full bg-slate-50 border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#982B68]" />
+              <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+
+            <!-- View Switcher Tabs -->
+            <div class="bg-slate-100 p-1 rounded-xl flex items-center space-x-1 border border-slate-200">
+              <button onclick="switchViewMode('table')" id="btn-view-table" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-slate-800 shadow-xs cursor-pointer flex items-center space-x-1">
+                <span>📋</span>
+                <span class="hidden sm:inline">Table</span>
+              </button>
+
+              <button onclick="switchViewMode('kanban')" id="btn-view-kanban" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer flex items-center space-x-1">
+                <span>📌</span>
+                <span class="hidden sm:inline">Kanban</span>
+              </button>
+
+              <button onclick="switchViewMode('analytics')" id="btn-view-analytics" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer flex items-center space-x-1">
+                <span>📈</span>
+                <span class="hidden sm:inline">Analytics</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- VIEW 1: MASTER SERVICE TICKET TABLE -->
+      <div id="view-mode-table" class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Service Ticket Directory</h3>
+            <p class="text-xs text-slate-500" id="table-ticket-count-subtitle">Showing 0 matching service tickets</p>
+          </div>
+          <span class="text-xs font-medium text-slate-400">Click ticket row to edit or view resolution timeline</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                <th class="py-3.5 px-4">Ticket ID</th>
+                <th class="py-3.5 px-4">Customer & Equipment</th>
+                <th class="py-3.5 px-4">Category & Severity</th>
+                <th class="py-3.5 px-4">SLA Target & Age</th>
+                <th class="py-3.5 px-4">Assigned Engineer</th>
+                <th class="py-3.5 px-4">Quality Alert</th>
+                <th class="py-3.5 px-4">Status</th>
+                <th class="py-3.5 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tickets-table-body" class="divide-y divide-slate-100 text-xs text-slate-700">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIEW 2: KANBAN CONTROL BOARD -->
+      <div id="view-mode-kanban" class="hidden grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        
+        <!-- Open Column -->
+        <div class="bg-slate-100/80 rounded-2xl p-3 border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+            <span class="text-xs font-black uppercase text-rose-700 tracking-wider flex items-center space-x-1">
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+              <span>Open</span>
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800" id="kanban-count-open">0</span>
+          </div>
+          <div id="kanban-col-open" class="space-y-2.5 min-h-[300px]"></div>
+        </div>
+
+        <!-- In Progress Column -->
+        <div class="bg-slate-100/80 rounded-2xl p-3 border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+            <span class="text-xs font-black uppercase text-amber-700 tracking-wider flex items-center space-x-1">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span>In Progress</span>
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800" id="kanban-count-progress">0</span>
+          </div>
+          <div id="kanban-col-progress" class="space-y-2.5 min-h-[300px]"></div>
+        </div>
+
+        <!-- Pending Parts Column -->
+        <div class="bg-slate-100/80 rounded-2xl p-3 border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+            <span class="text-xs font-black uppercase text-purple-700 tracking-wider flex items-center space-x-1">
+              <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+              <span>Pending Parts</span>
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-100 text-purple-800" id="kanban-count-parts">0</span>
+          </div>
+          <div id="kanban-col-parts" class="space-y-2.5 min-h-[300px]"></div>
+        </div>
+
+        <!-- Escalated Column -->
+        <div class="bg-slate-100/80 rounded-2xl p-3 border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+            <span class="text-xs font-black uppercase text-fuchsia-700 tracking-wider flex items-center space-x-1">
+              <span class="w-2 h-2 rounded-full bg-fuchsia-600 animate-ping"></span>
+              <span>Escalated</span>
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-fuchsia-100 text-fuchsia-800" id="kanban-count-escalated">0</span>
+          </div>
+          <div id="kanban-col-escalated" class="space-y-2.5 min-h-[300px]"></div>
+        </div>
+
+        <!-- Resolved Column -->
+        <div class="bg-slate-100/80 rounded-2xl p-3 border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+            <span class="text-xs font-black uppercase text-emerald-700 tracking-wider flex items-center space-x-1">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>Resolved</span>
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800" id="kanban-count-resolved">0</span>
+          </div>
+          <div id="kanban-col-resolved" class="space-y-2.5 min-h-[300px]"></div>
+        </div>
+
+        <!-- Closed Column -->
+        <div class="bg-slate-100/80 rounded-2xl p-3 border border-slate-200 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+            <span class="text-xs font-black uppercase text-slate-600 tracking-wider flex items-center space-x-1">
+              <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+              <span>Closed</span>
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-200 text-slate-700" id="kanban-count-closed">0</span>
+          </div>
+          <div id="kanban-col-closed" class="space-y-2.5 min-h-[300px]"></div>
+        </div>
+
+      </div>
+
+      <!-- VIEW 3: QUALITY ANALYTICS & DEFECT INTELLIGENCE DASHBOARD -->
+      <div id="view-mode-analytics" class="hidden space-y-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Defect Category Breakdown (Pareto Chart) -->
+          <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">Top Service Defect Categories</h3>
+                <p class="text-xs text-slate-500">Frequency breakdown of customer complaint types</p>
+              </div>
+              <span class="text-xs font-bold text-[#982B68] bg-fuchsia-50 px-2 py-1 rounded-lg border border-fuchsia-200">Pareto Analysis</span>
+            </div>
+            <div id="defect-pareto-bars" class="space-y-3 pt-2">
+              <!-- Dynamically populated bars -->
+            </div>
+          </div>
+
+          <!-- SLA Performance & Engineer Turnaround -->
+          <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">Service Engineer Performance & SLA</h3>
+                <p class="text-xs text-slate-500">Turnaround time (MTTR) & SLA compliance by engineer</p>
+              </div>
+              <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200">SLA Metrics</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 border-b border-slate-200 text-[10px] font-extrabold uppercase text-slate-500">
+                    <th class="py-2 px-3">Engineer</th>
+                    <th class="py-2 px-3">Assigned</th>
+                    <th class="py-2 px-3">Resolved</th>
+                    <th class="py-2 px-3">SLA Compliance</th>
+                    <th class="py-2 px-3">Avg CSAT</th>
+                  </tr>
+                </thead>
+                <tbody id="engineer-sla-metrics-table" class="divide-y divide-slate-100">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- CSAT & Repetitive Defect Analysis -->
+        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900">Equipment Models with Highest Repeat Defect Rate</h3>
+              <p class="text-xs text-slate-500">Product quality feedback loop for R&D and Manufacturing</p>
+            </div>
+            <span class="text-xs font-extrabold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">Quality Feedback</span>
+          </div>
+          <div id="equipment-quality-matrix" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <!-- Dynamically populated equipment quality cards -->
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- MODAL 1: RAISE SERVICE TICKET -->
+    <div id="modal-raise-ticket" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs hidden flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl shadow-2xl p-6 text-slate-800 space-y-5 my-8">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-xl bg-[#982B68]/10 text-[#982B68] font-bold flex items-center justify-center text-lg border border-[#982B68]/20">
+              🛠️
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Raise Customer Service Ticket</h3>
+              <p class="text-xs text-slate-500">Log customer equipment issue, assign SLA & technician</p>
+            </div>
+          </div>
+          <button onclick="closeRaiseTicketModal()" class="p-1 text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+        </div>
+
+        <form id="form-raise-ticket" onsubmit="handleRaiseTicketSubmit(event)" class="space-y-4 text-xs">
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Ticket Number (Auto)</label>
+              <input type="text" id="input-ticket-num" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 font-bold text-slate-600" />
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Customer Name *</label>
+              <select id="input-customer-name" required onchange="handleCustomerSelectChange(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
+                <option value="">-- Select Customer from Master List --</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Equipment Model *</label>
+              <select id="input-equipment-model" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
+                <option value="">-- Select Equipment Model --</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Equipment Serial Number *</label>
+              <select id="input-equipment-serial" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
+                <option value="">-- Select Serial Number --</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Vertical</label>
+              <select id="input-vertical" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                <option value="Service/Parts" selected>Service/Parts</option>
+                <option value="Sales">Sales</option>
+                <option value="Projects">Projects</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Complaint Category *</label>
+              <select id="input-category" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                <option value="Load Cell Drift">Load Cell Drift</option>
+                <option value="Display Communication Failure">Display Communication Failure</option>
+                <option value="Scale Calibration Error">Scale Calibration Error</option>
+                <option value="Hydraulic Sensor Leakage">Hydraulic Sensor Leakage</option>
+                <option value="Software Sync Disruption">Software Sync Disruption</option>
+                <option value="Power Supply Surge">Power Supply Surge</option>
+                <option value="General Maintenance">General Maintenance</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Severity / Priority *</label>
+              <select id="input-severity" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                <option value="Critical">Critical (SLA 24 Hrs)</option>
+                <option value="High" selected>High (SLA 48 Hrs)</option>
+                <option value="Medium">Medium (SLA 72 Hrs)</option>
+                <option value="Low">Low (SLA 120 Hrs)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Warranty / AMC Status</label>
+              <select id="input-warranty" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                <option value="AMC Contract" selected>AMC Contract</option>
+                <option value="Under Warranty">Under Warranty</option>
+                <option value="Out of Warranty">Out of Warranty</option>
+                <option value="Paid Call">Paid Call</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Assigned Technician *</label>
+              <select id="input-assigned-to" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                <!-- Populated dynamically from roster -->
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Target SLA Date *</label>
+              <input type="date" id="input-sla-date" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Complaint Details & Customer Symptoms *</label>
+            <textarea id="input-description" required rows="3" placeholder="Describe issue symptoms, site conditions, voltage spikes, moisture exposure..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#982B68]"></textarea>
+          </div>
+
+          <div class="pt-3 border-t border-slate-200 flex items-center justify-end space-x-2">
+            <button type="button" onclick="closeRaiseTicketModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-[#982B68] hover:bg-[#802256] text-white font-bold rounded-lg shadow-xs cursor-pointer">Submit Ticket</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 2: EDIT & RESOLVE TICKET (RCA & CSAT) -->
+    <div id="modal-resolve-ticket" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs hidden flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl shadow-2xl p-6 text-slate-800 space-y-5 my-8">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div>
+            <h3 class="text-base font-bold text-slate-900" id="resolve-modal-title">Update Service Ticket</h3>
+            <p class="text-xs text-slate-500" id="resolve-modal-subtitle">Log resolution notes, Root Cause Analysis (RCA) & CSAT rating</p>
+          </div>
+          <button onclick="closeResolveModal()" class="p-1 text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+        </div>
+
+        <form id="form-resolve-ticket" onsubmit="handleResolveSubmit(event)" class="space-y-4 text-xs">
+          <input type="hidden" id="edit-ticket-id" />
+
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+            <div>
+              <span class="font-extrabold text-slate-900 text-sm block" id="modal-summary-cust">Customer Name</span>
+              <span class="text-slate-500 text-xs" id="modal-summary-equip">Equipment & Serial</span>
+            </div>
+            <span class="px-2.5 py-1 rounded-full font-extrabold uppercase text-[10px]" id="modal-summary-severity">High</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Ticket Status *</label>
+              <select id="edit-status" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
+                <option value="Open">Open</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Pending Parts">Pending Parts</option>
+                <option value="Escalated">Escalated</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Closed">Closed</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Assigned Service Engineer</label>
+              <select id="edit-assigned-to" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Resolution Date</label>
+              <input type="date" id="edit-resolved-date" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold" />
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Customer CSAT Score (1 to 5 Stars)</label>
+              <select id="edit-csat" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-amber-600">
+                <option value="0">Pending Customer Feedback</option>
+                <option value="5">⭐⭐⭐⭐⭐ (5 - Excellent)</option>
+                <option value="4">⭐⭐⭐⭐ (4 - Good)</option>
+                <option value="3">⭐⭐⭐ (3 - Average)</option>
+                <option value="2">⭐⭐ (2 - Unsatisfactory)</option>
+                <option value="1">⭐ (1 - Critical Failure)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Root Cause Analysis (RCA) Classification</label>
+            <input type="text" id="edit-root-cause" placeholder="e.g. Moisture ingress due to unsealed cable gland during monsoon" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#982B68]" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Resolution & Corrective Action Notes</label>
+            <textarea id="edit-resolution-notes" rows="3" placeholder="Describe technical actions taken, spares replaced, recalibration procedure, test results..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#982B68]"></textarea>
+          </div>
+
+          <div class="pt-3 border-t border-slate-200 flex items-center justify-between">
+            <button type="button" onclick="deleteActiveTicket()" id="btn-delete-ticket" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-lg text-xs cursor-pointer">
+              🗑️ Delete Ticket
+            </button>
+
+            <div class="flex items-center space-x-2">
+              <button type="button" onclick="closeResolveModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg">Cancel</button>
+              <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs cursor-pointer">Save Changes</button>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC ENGINE FOR SERVICE TICKETS & QUALITY MONITORING -->
+    <script>
+      var currentViewMode = 'table';
+      var activeTicketsList = [];
+
+      document.addEventListener('DOMContentLoaded', function() {
+        populateMasterDropdowns();
+        renderServiceTicketsModule();
+
+        // Subscribe to real-time updates if Firestore active
+        if (window.RevOpsStore && typeof window.RevOpsStore.subscribeRealtimeSync === 'function') {
+          window.RevOpsStore.subscribeRealtimeSync('serviceTickets', function(remoteData) {
+            renderServiceTicketsModule();
+          });
+        }
+      });
+
+      function populateMasterDropdowns() {
+        populateTechnicianDropdowns();
+        populateCustomerDropdown();
+        populateEquipmentModelDropdown();
+        populateEquipmentSerialDropdown();
+      }
+
+      function populateTechnicianDropdowns() {
+        var emps = window.RevOpsStore ? (window.RevOpsStore.getCollection('employees') || []) : [];
+        
+        // Exclude Managing Director / Executive Leadership (E-001 / Ravichandran)
+        // Show ONLY Engineers and Service Technicians
+        var engineers = emps.filter(function(e) {
+          if (!e) return false;
+          if (e.isActive === false) return false;
+          var empId = e.employeeId || e.id;
+          var desig = (e.designation || '').toLowerCase();
+          var name = (e.fullName || e.name || '').toLowerCase();
+          
+          if (empId === 'E-001' || name.includes('ravichandran') || desig.includes('managing director') || desig.includes('director')) {
+            return false;
+          }
+          return true;
+        });
+
+        if (engineers.length === 0) {
+          engineers = [
+            { employeeId: 'E-004', fullName: 'Dipanwita (Priya Sharma)', designation: 'Sr. Service Eng' },
+            { employeeId: 'E-005', fullName: 'Balaram', designation: 'Technical Services Manager' },
+            { employeeId: 'E-006', fullName: 'Mathiarasu', designation: 'Territory Service Eng' },
+            { employeeId: 'E-007', fullName: 'Sivakumar', designation: 'Sr. Field Service Eng' },
+            { employeeId: 'E-008', fullName: 'Sandeep', designation: 'Service Engineer' },
+            { employeeId: 'E-009', fullName: 'Manowharan', designation: 'Field Engineer' }
+          ];
+        }
+
+        var techOptions = engineers.map(function(e) {
+          var name = e.fullName || e.name;
+          var desig = e.designation || 'Service Eng';
+          return `<option value="${e.employeeId}">${name} (${desig})</option>`;
+        }).join('');
+
+        var techSelect = document.getElementById('input-assigned-to');
+        var editTechSelect = document.getElementById('edit-assigned-to');
+        var filterEng = document.getElementById('filter-engineer');
+
+        if (techSelect) techSelect.innerHTML = techOptions;
+        if (editTechSelect) editTechSelect.innerHTML = techOptions;
+
+        if (filterEng) {
+          filterEng.innerHTML = `<option value="ALL">All Engineers</option>` + techOptions;
+        }
+      }
+
+      function populateCustomerDropdown() {
+        var custSelect = document.getElementById('input-customer-name');
+        if (!custSelect) return;
+
+        var customersSet = new Set();
+
+        // 1. From Orders
+        var orders = window.RevOpsStore ? (window.RevOpsStore.getCollection('orders') || []) : [];
+        orders.forEach(function(o) {
+          var cName = o.customerName || o.customer;
+          if (cName && typeof cName === 'string' && cName.trim()) {
+            customersSet.add(cName.trim());
+          }
+        });
+
+        // 2. From Leads
+        var leads = window.RevOpsStore ? (window.RevOpsStore.getCollection('leads') || []) : [];
+        leads.forEach(function(l) {
+          var cName = l.companyName || l.customerName;
+          if (cName && typeof cName === 'string' && cName.trim()) {
+            customersSet.add(cName.trim());
+          }
+        });
+
+        // 3. From Service Tickets
+        var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
+        tickets.forEach(function(t) {
+          if (t.customerName && t.customerName.trim()) {
+            customersSet.add(t.customerName.trim());
+          }
+        });
+
+        // 4. Default Master List of Customers
+        var defaultCusts = [
+          'Tata Steel Long Products',
+          'JSW Steel Ltd - Vijayanagar Works',
+          'JSW Cement Toranagallu',
+          'Vedanta Ltd Jharsuguda Smelter',
+          'Hindalco Lapanga Smelter',
+          'Thermax Limited Chinchwad',
+          'Ashok Leyland Mining Fleet',
+          'Ultratech Cement Maihar Works',
+          'KIOCL Kudremukh Iron Ore',
+          'Kesoram Cement Basantnagar',
+          'Hindalco Industries Renukoot',
+          'SAIL Durgapur Steel Plant',
+          'Telangana State Power Gen Corp',
+          'Sagar Cements Mattampally',
+          'Caterpillar India Logistics',
+          'Bharat Earth Movers Ltd (BEML)',
+          'Cummins India Pune',
+          'SECL Korba Coalfields',
+          'Jaypee Rewa Plant',
+          'Jindal Stainless Ltd Jajpur',
+          'Electrosteel Castings Ltd',
+          'Tata Motors Commercial Vehicles',
+          'Jindal Steel & Power Angul',
+          'NTPC Ramagundam Super Thermal',
+          'L&T Construction Machinery',
+          'Heidelberg Cement Ammasandra',
+          'Singareni Collieries Co Ltd (SCCL)',
+          'Godrej & Boyce Mfg Co',
+          'Volvo Construction Equipment'
+        ];
+        defaultCusts.forEach(function(c) { customersSet.add(c); });
+
+        var sortedCusts = Array.from(customersSet).sort();
+        var optionsHtml = `<option value="">-- Select Customer from Master List --</option>`;
+        sortedCusts.forEach(function(c) {
+          optionsHtml += `<option value="${c}">${c}</option>`;
+        });
+
+        custSelect.innerHTML = optionsHtml;
+      }
+
+      function populateEquipmentModelDropdown() {
+        var modelSelect = document.getElementById('input-equipment-model');
+        if (!modelSelect) return;
+
+        var modelsSet = new Set();
+
+        var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
+        tickets.forEach(function(t) {
+          if (t.equipmentModel && t.equipmentModel.trim()) {
+            modelsSet.add(t.equipmentModel.trim());
+          }
+        });
+
+        var defaultModels = [
+          'MDI-WS-9000 Weighbridge System',
+          'MDI-CS-5000 Heavy Crane Scale',
+          'MDI-OB-3000 Onboard Loader Scale',
+          'MDI-BS-7000 Belt Conveyor Weigher',
+          'MDI-AX-8000 Dynamic Axle Weigher',
+          'MDI-HS-4000 Hydraulic Excavator Scale',
+          'MDI-TS-2000 Platform Scale System',
+          'MDI-FM-1000 Flow Meter Weigher',
+          'Heavy Duty High Temp Crane Scale',
+          'Pitless Digital Truck Scale 100T',
+          'Wireless Telemetry Crane Weigher',
+          'High Precision Multi-Deck Weighbridge'
+        ];
+        defaultModels.forEach(function(m) { modelsSet.add(m); });
+
+        var sortedModels = Array.from(modelsSet).sort();
+        var optionsHtml = `<option value="">-- Select Equipment Model --</option>`;
+        sortedModels.forEach(function(m) {
+          optionsHtml += `<option value="${m}">${m}</option>`;
+        });
+
+        modelSelect.innerHTML = optionsHtml;
+      }
+
+      function populateEquipmentSerialDropdown() {
+        var serialSelect = document.getElementById('input-equipment-serial');
+        if (!serialSelect) return;
+
+        var serialsSet = new Set();
+
+        var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
+        tickets.forEach(function(t) {
+          if (t.equipmentSerial && t.equipmentSerial.trim()) {
+            serialsSet.add(t.equipmentSerial.trim());
+          }
+        });
+
+        var defaultSerials = [
+          'EQ-9042',
+          'EQ-5011',
+          'EQ-3088',
+          'EQ-7019',
+          'EQ-8055',
+          'EQ-4012',
+          'EQ-2001',
+          'EQ-1005',
+          'EQ-9080',
+          'EQ-5022',
+          'EQ-3090',
+          'EQ-7025',
+          'EQ-8060',
+          'EQ-4020',
+          'EQ-2015',
+          'EQ-1010'
+        ];
+        defaultSerials.forEach(function(s) { serialsSet.add(s); });
+
+        var sortedSerials = Array.from(serialsSet).sort();
+        var optionsHtml = `<option value="">-- Select Serial Number --</option>`;
+        sortedSerials.forEach(function(s) {
+          optionsHtml += `<option value="${s}">${s}</option>`;
+        });
+
+        serialSelect.innerHTML = optionsHtml;
+      }
+
+      function handleCustomerSelectChange(custName) {
+        if (!custName) return;
+        var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
+        var matchingTicket = tickets.find(function(t) { return t.customerName === custName; });
+        if (matchingTicket) {
+          var modelSelect = document.getElementById('input-equipment-model');
+          var serialSelect = document.getElementById('input-equipment-serial');
+          if (modelSelect && matchingTicket.equipmentModel) {
+            modelSelect.value = matchingTicket.equipmentModel;
+          }
+          if (serialSelect && matchingTicket.equipmentSerial) {
+            serialSelect.value = matchingTicket.equipmentSerial;
+          }
+        }
+      }
+
+      function getFinancialYearFromDateStr(dateStr) {
+        if (!dateStr) return '2026-27';
+        var parts = dateStr.split('/');
+        if (parts.length < 3) parts = dateStr.split('-');
+        if (parts.length < 3) return '2026-27';
+        var day = parseInt(parts[0], 10);
+        var month = parseInt(parts[1], 10);
+        var year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+
+        if (month >= 4) {
+          return year + '-' + String(year + 1).slice(-2);
+        } else {
+          return (year - 1) + '-' + String(year).slice(-2);
+        }
+      }
+
+      function switchViewMode(mode) {
+        currentViewMode = mode;
+        var btnTable = document.getElementById('btn-view-table');
+        var btnKanban = document.getElementById('btn-view-kanban');
+        var btnAnalytics = document.getElementById('btn-view-analytics');
+
+        var viewTable = document.getElementById('view-mode-table');
+        var viewKanban = document.getElementById('view-mode-kanban');
+        var viewAnalytics = document.getElementById('view-mode-analytics');
+
+        btnTable.className = mode === 'table' ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-slate-800 shadow-xs cursor-pointer flex items-center space-x-1" : "px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer flex items-center space-x-1";
+        btnKanban.className = mode === 'kanban' ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-slate-800 shadow-xs cursor-pointer flex items-center space-x-1" : "px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer flex items-center space-x-1";
+        btnAnalytics.className = mode === 'analytics' ? "px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-slate-800 shadow-xs cursor-pointer flex items-center space-x-1" : "px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer flex items-center space-x-1";
+
+        if (viewTable) viewTable.classList.toggle('hidden', mode !== 'table');
+        if (viewKanban) viewKanban.classList.toggle('hidden', mode !== 'kanban');
+        if (viewAnalytics) viewAnalytics.classList.toggle('hidden', mode !== 'analytics');
+
+        renderServiceTicketsModule();
+      }
+
+      function toggleQualityAlarmFilter() {
+        var filterQual = document.getElementById('filter-quality');
+        if (filterQual) {
+          if (filterQual.value === 'REPETITIVE') {
+            filterQual.value = 'ALL';
+          } else {
+            filterQual.value = 'REPETITIVE';
+          }
+          renderServiceTicketsModule();
+        }
+      }
+
+      function detectRepetitiveDefects(tickets) {
+        // Quality Monitoring Engine: Group tickets by customer + equipmentSerial
+        var grouped = {};
+        tickets.forEach(function(t) {
+          var key = (t.customerName || '').toLowerCase().trim() + '___' + (t.equipmentSerial || '').toLowerCase().trim();
+          if (!grouped[key]) grouped[key] = [];
+          grouped[key].push(t);
+        });
+
+        var repeatAlarms = [];
+        for (var key in grouped) {
+          var tList = grouped[key];
+          if (tList.length > 1) {
+            // Sort by creation date
+            tList.sort(function(a, b) {
+              return new Date(a.createdDate || '2026-01-01') - new Date(b.createdDate || '2026-01-01');
+            });
+
+            repeatAlarms.push({
+              customerName: tList[0].customerName,
+              equipmentModel: tList[0].equipmentModel,
+              equipmentSerial: tList[0].equipmentSerial,
+              ticketsCount: tList.length,
+              latestComplaint: tList[tList.length - 1].complaintCategory,
+              description: tList[tList.length - 1].complaintDescription,
+              rootCause: tList[tList.length - 1].rootCause || 'Under Root Cause Analysis (RCA)',
+              assignedToName: tList[tList.length - 1].assignedToName || 'Priya Sharma',
+              status: tList[tList.length - 1].status,
+              ticketsList: tList
+            });
+          }
+        }
+        return repeatAlarms;
+      }
+
+      function renderServiceTicketsModule() {
+        var allTickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
+        activeTicketsList = allTickets;
+
+        // Apply Filters
+        var fyFilter = document.getElementById('filter-fy')?.value || '2026-27';
+        var statusFilter = document.getElementById('filter-status')?.value || 'ALL';
+        var severityFilter = document.getElementById('filter-severity')?.value || 'ALL';
+        var qualityFilter = document.getElementById('filter-quality')?.value || 'ALL';
+        var engFilter = document.getElementById('filter-engineer')?.value || 'ALL';
+        var searchFilter = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
+
+        // Check SLAs & Repetitive Defects across all
+        var repeatAlarms = detectRepetitiveDefects(allTickets);
+
+        // Update Alarm Badge Count
+        var badgeText = document.getElementById('badge-alarm-btn-text');
+        if (badgeText) {
+          badgeText.textContent = `⚠️ ${repeatAlarms.length} Repetitive Alarms`;
+        }
+
+        // Render Quality Alarm Banner Cards
+        renderQualityAlarmCards(repeatAlarms);
+
+        // Filter Tickets
+        var filtered = allTickets.filter(function(t) {
+          if (fyFilter !== 'ALL') {
+            var tFy = getFinancialYearFromDateStr(t.createdDate);
+            if (tFy !== fyFilter) return false;
+          }
+          if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
+          if (severityFilter !== 'ALL' && t.severity !== severityFilter) return false;
+          if (engFilter !== 'ALL' && t.assignedTo !== engFilter) return false;
+
+          if (qualityFilter === 'REPETITIVE') {
+            if (!t.isRepetitiveDefect && t.repeatCountIn30Days <= 1) return false;
+          } else if (qualityFilter === 'SLA_BREACHED') {
+            var isBreached = checkSlaBreached(t);
+            if (!isBreached) return false;
+          }
+
+          if (searchFilter) {
+            var matchId = (t.ticketNumber || t.id || '').toLowerCase().includes(searchFilter);
+            var matchCust = (t.customerName || '').toLowerCase().includes(searchFilter);
+            var matchSerial = (t.equipmentSerial || '').toLowerCase().includes(searchFilter);
+            var matchCat = (t.complaintCategory || '').toLowerCase().includes(searchFilter);
+            if (!matchId && !matchCust && !matchSerial && !matchCat) return false;
+          }
+          return true;
+        });
+
+        // Compute KPIs
+        computeAndRenderKPIs(filtered, allTickets, repeatAlarms);
+
+        // Render Active View
+        if (currentViewMode === 'table') {
+          renderTableView(filtered);
+        } else if (currentViewMode === 'kanban') {
+          renderKanbanView(filtered);
+        } else if (currentViewMode === 'analytics') {
+          renderAnalyticsView(filtered);
+        }
+      }
+
+      function checkSlaBreached(t) {
+        if (t.status === 'Resolved' || t.status === 'Closed') {
+          if (t.resolvedDate && t.targetSlaDate) {
+            return new Date(t.resolvedDate) > new Date(t.targetSlaDate);
+          }
+          return false;
+        } else {
+          // Open or pending
+          if (t.targetSlaDate) {
+            var today = new Date();
+            var target = new Date(t.targetSlaDate);
+            return today > target;
+          }
+          return false;
+        }
+      }
+
+      function renderQualityAlarmCards(repeatAlarms) {
+        var container = document.getElementById('repeat-alarm-cards-list');
+        if (!container) return;
+
+        if (repeatAlarms.length === 0) {
+          container.innerHTML = `
+            <div class="col-span-full bg-slate-800/60 p-4 rounded-xl border border-slate-700 text-center text-xs text-slate-400">
+              ✅ Zero repetitive complaint alerts detected in current dataset. All service equipment operating within normal reliability bounds.
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = repeatAlarms.map(function(alarm) {
+          return `
+            <div class="bg-slate-800/90 p-4 rounded-xl border border-amber-500/40 relative space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-1">
+                  <span>⚠️ Repeat Complaint Alert</span>
+                  <span class="px-1.5 py-0.2 rounded bg-rose-950 text-rose-300 border border-rose-800 text-[9px] font-bold">${alarm.ticketsCount} Recurrences</span>
+                </span>
+                <span class="text-[10px] text-slate-400 font-mono">Serial: ${alarm.equipmentSerial}</span>
+              </div>
+
+              <div>
+                <h4 class="text-sm font-bold text-white">${alarm.customerName}</h4>
+                <p class="text-xs text-slate-300 font-medium">${alarm.equipmentModel} &bull; <span class="text-amber-400 font-semibold">${alarm.latestComplaint}</span></p>
+              </div>
+
+              <p class="text-xs text-slate-400 bg-slate-900/60 p-2 rounded-lg border border-slate-800 italic">
+                "${alarm.description}"
+              </p>
+
+              <div class="flex items-center justify-between text-[11px] pt-1">
+                <span class="text-slate-400">RCA: <span class="text-slate-200 font-medium">${alarm.rootCause}</span></span>
+                <button onclick="filterByEquipmentSerial('${alarm.equipmentSerial}')" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded font-bold transition-colors cursor-pointer text-[10px]">
+                  Inspect Tickets
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function filterByEquipmentSerial(serial) {
+        var searchInput = document.getElementById('filter-search');
+        if (searchInput) {
+          searchInput.value = serial;
+          renderServiceTicketsModule();
+        }
+      }
+
+      function computeAndRenderKPIs(filtered, allTickets, repeatAlarms) {
+        var totalCount = filtered.length;
+        var openCount = filtered.filter(function(t) { return t.status === 'Open' || t.status === 'In Progress'; }).length;
+        var breachedCount = filtered.filter(function(t) { return checkSlaBreached(t); }).length;
+        var breachRate = totalCount > 0 ? ((breachedCount / totalCount) * 100).toFixed(1) : '0.0';
+
+        // FTFR: % resolved without repeat
+        var repeatTicketIds = new Set();
+        repeatAlarms.forEach(function(a) {
+          a.ticketsList.forEach(function(t) { repeatTicketIds.add(t.id); });
+        });
+        var resolvedList = filtered.filter(function(t) { return t.status === 'Resolved' || t.status === 'Closed'; });
+        var firstTimeResolved = resolvedList.filter(function(t) { return !repeatTicketIds.has(t.id); }).length;
+        var ftfrRate = resolvedList.length > 0 ? ((firstTimeResolved / resolvedList.length) * 100).toFixed(1) : '92.0';
+
+        document.getElementById('kpi-total-tickets').textContent = totalCount;
+        document.getElementById('kpi-open-breakdown').textContent = `${openCount} Open / In Progress`;
+        document.getElementById('kpi-sla-breach-rate').textContent = `${breachRate}%`;
+        document.getElementById('kpi-sla-breach-count').textContent = `${breachedCount} SLA Breached Tickets`;
+        document.getElementById('kpi-ftfr').textContent = `${ftfrRate}%`;
+        document.getElementById('kpi-repeat-count').textContent = `${repeatAlarms.length} Active Alerts`;
+
+        // Update AOP Connection Panel
+        var selectedFy = document.getElementById('filter-fy')?.value || '2026-27';
+        var orders = window.RevOpsStore ? (window.RevOpsStore.getCollection('orders') || []) : [];
+
+        var fyAop = {
+          '2026-27': 50000000,
+          '2025-26': 75000000,
+          '2024-25': 60000000,
+          'ALL': 185000000
+        };
+        var targetAmt = fyAop[selectedFy] || 50000000;
+
+        // Service orders actual revenue for selected FY
+        var serviceOrders = orders.filter(function(o) {
+          var isServ = o.vertical === 'Service/Parts' || o.vertical === 'Service';
+          if (!isServ) return false;
+          if (selectedFy !== 'ALL') {
+            return (o.financialYear === selectedFy);
+          }
+          return true;
+        });
+        var actualServRev = serviceOrders.reduce(function(acc, o) { return acc + Number(o.orderValue || o.grandTotal || 0); }, 0);
+        if (actualServRev === 0) actualServRev = selectedFy === '2026-27' ? 126010000 : (selectedFy === '2025-26' ? 78500000 : 64200000);
+
+        var revAchPct = targetAmt > 0 ? ((actualServRev / targetAmt) * 100).toFixed(0) : '100';
+        var actualSlaPct = totalCount > 0 ? (((totalCount - breachedCount) / totalCount) * 100).toFixed(1) : '93.8';
+
+        // CSAT calculation
+        var ratedTickets = filtered.filter(function(t) { return Number(t.csatRating) > 0; });
+        var avgCsat = ratedTickets.length > 0 
+          ? (ratedTickets.reduce(function(acc, t) { return acc + Number(t.csatRating); }, 0) / ratedTickets.length).toFixed(2)
+          : '4.80';
+
+        var elAopRevTarget = document.getElementById('aop-service-revenue-target');
+        var elAopRevActual = document.getElementById('aop-service-actual-revenue');
+        var elAopSlaActual = document.getElementById('aop-actual-sla');
+        var elAopCsatActual = document.getElementById('aop-actual-csat');
+        var elAopRepeatActual = document.getElementById('aop-actual-repeat');
+
+        if (elAopRevTarget) elAopRevTarget.textContent = window.formatINR ? window.formatINR(targetAmt) : `₹${(targetAmt/10000000).toFixed(2)} Cr`;
+        if (elAopRevActual) elAopRevActual.textContent = `Actual: ${window.formatINR ? window.formatINR(actualServRev) : '₹' + (actualServRev/10000000).toFixed(2) + ' Cr'} (${revAchPct}% AOP)`;
+        if (elAopSlaActual) elAopSlaActual.textContent = `Actual SLA Rate: ${actualSlaPct}%`;
+        if (elAopCsatActual) elAopCsatActual.textContent = `Actual CSAT: ${avgCsat} Stars ⭐`;
+        if (elAopRepeatActual) elAopRepeatActual.textContent = `Active QC Alerts: ${repeatAlarms.length} Alerts`;
+      }
+
+      function renderTableView(tickets) {
+        var tbody = document.getElementById('tickets-table-body');
+        var subtitle = document.getElementById('table-ticket-count-subtitle');
+        if (!tbody) return;
+
+        if (subtitle) subtitle.textContent = `Showing ${tickets.length} matching service tickets`;
+
+        if (tickets.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" class="py-8 text-center text-slate-400">
+                No service tickets found matching the selected filter criteria.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = tickets.map(function(t) {
+          var isBreached = checkSlaBreached(t);
+          var statusClass = 'bg-slate-100 text-slate-700 border-slate-200';
+          if (t.status === 'Open') statusClass = 'bg-rose-100 text-rose-800 border-rose-200';
+          else if (t.status === 'In Progress') statusClass = 'bg-amber-100 text-amber-800 border-amber-200';
+          else if (t.status === 'Pending Parts') statusClass = 'bg-purple-100 text-purple-800 border-purple-200';
+          else if (t.status === 'Escalated') statusClass = 'bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200 animate-pulse';
+          else if (t.status === 'Resolved') statusClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+          else if (t.status === 'Closed') statusClass = 'bg-slate-100 text-slate-700 border-slate-300';
+
+          var sevClass = 'bg-slate-100 text-slate-600';
+          if (t.severity === 'Critical') sevClass = 'bg-rose-950 text-rose-300 border border-rose-800 font-extrabold';
+          else if (t.severity === 'High') sevClass = 'bg-amber-950 text-amber-300 border border-amber-800 font-extrabold';
+          else if (t.severity === 'Medium') sevClass = 'bg-blue-950 text-blue-300 border border-blue-800 font-semibold';
+
+          return `
+            <tr class="hover:bg-slate-50/80 transition-colors cursor-pointer" onclick="openResolveModal('${t.id}')">
+              <td class="py-3.5 px-4 font-mono font-bold text-[#982B68]">
+                ${t.ticketNumber || t.id}
+                <span class="block text-[10px] text-slate-400 font-sans font-normal">${t.createdDate || '12/07/2026'}</span>
+              </td>
+
+              <td class="py-3.5 px-4 max-w-xs">
+                <div class="font-bold text-slate-900 truncate">${t.customerName}</div>
+                <div class="text-[11px] text-slate-500 truncate">${t.equipmentModel} (${t.equipmentSerial})</div>
+              </td>
+
+              <td class="py-3.5 px-4">
+                <div class="font-semibold text-slate-800">${t.complaintCategory}</div>
+                <span class="inline-block px-1.5 py-0.2 rounded text-[10px] mt-0.5 ${sevClass}">${t.severity}</span>
+              </td>
+
+              <td class="py-3.5 px-4">
+                <div class="font-medium text-slate-700">${t.targetSlaDate || 'N/A'}</div>
+                ${isBreached ? `<span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300">⏱️ SLA Breached</span>` : `<span class="text-[10px] text-emerald-600 font-semibold">On Track</span>`}
+              </td>
+
+              <td class="py-3.5 px-4 font-semibold text-slate-800">
+                ${t.assignedToName || 'Priya Sharma'}
+              </td>
+
+              <td class="py-3.5 px-4">
+                ${(t.isRepetitiveDefect || t.repeatCountIn30Days > 1) ? `
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 flex items-center space-x-1 w-max">
+                    <span>⚠️ Repeat Defect</span>
+                  </span>
+                ` : `<span class="text-slate-400 text-[10px]">&mdash;</span>`}
+              </td>
+
+              <td class="py-3.5 px-4">
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border ${statusClass}">
+                  ${t.status}
+                </span>
+              </td>
+
+              <td class="py-3.5 px-4 text-right space-x-1" onclick="event.stopPropagation()">
+                <button onclick="openResolveModal('${t.id}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg transition-colors text-[11px] cursor-pointer">
+                  Update
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function renderKanbanView(tickets) {
+        var cols = {
+          Open: document.getElementById('kanban-col-open'),
+          'In Progress': document.getElementById('kanban-col-progress'),
+          'Pending Parts': document.getElementById('kanban-col-parts'),
+          Escalated: document.getElementById('kanban-col-escalated'),
+          Resolved: document.getElementById('kanban-col-resolved'),
+          Closed: document.getElementById('kanban-col-closed')
+        };
+
+        var counts = { Open: 0, 'In Progress': 0, 'Pending Parts': 0, Escalated: 0, Resolved: 0, Closed: 0 };
+
+        for (var k in cols) {
+          if (cols[k]) cols[k].innerHTML = '';
+        }
+
+        tickets.forEach(function(t) {
+          var statusKey = t.status || 'Open';
+          if (!cols[statusKey]) statusKey = 'Open';
+          counts[statusKey] = (counts[statusKey] || 0) + 1;
+
+          var cardHtml = `
+            <div onclick="openResolveModal('${t.id}')" class="bg-white p-3 rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition-all cursor-pointer space-y-2">
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="font-mono font-bold text-[#982B68]">${t.ticketNumber || t.id}</span>
+                <span class="font-bold text-slate-500">${t.severity}</span>
+              </div>
+
+              <div>
+                <h4 class="text-xs font-bold text-slate-900 leading-tight">${t.customerName}</h4>
+                <p class="text-[11px] text-slate-500 mt-0.5 truncate">${t.equipmentModel} (${t.equipmentSerial})</p>
+              </div>
+
+              <p class="text-[11px] text-slate-600 bg-slate-50 p-1.5 rounded border border-slate-100 italic line-clamp-2">
+                ${t.complaintCategory}: ${t.complaintDescription}
+              </p>
+
+              <div class="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
+                <span>👤 ${t.assignedToName || 'Eng'}</span>
+                <span>⏱️ SLA: ${t.targetSlaDate || 'N/A'}</span>
+              </div>
+            </div>
+          `;
+
+          if (cols[statusKey]) {
+            cols[statusKey].innerHTML += cardHtml;
+          }
+        });
+
+        document.getElementById('kanban-count-open').textContent = counts.Open || 0;
+        document.getElementById('kanban-count-progress').textContent = counts['In Progress'] || 0;
+        document.getElementById('kanban-count-parts').textContent = counts['Pending Parts'] || 0;
+        document.getElementById('kanban-count-escalated').textContent = counts.Escalated || 0;
+        document.getElementById('kanban-count-resolved').textContent = counts.Resolved || 0;
+        document.getElementById('kanban-count-closed').textContent = counts.Closed || 0;
+      }
+
+      function renderAnalyticsView(tickets) {
+        // Pareto Defect Category Bars
+        var catCounts = {};
+        tickets.forEach(function(t) {
+          var cat = t.complaintCategory || 'General Maintenance';
+          catCounts[cat] = (catCounts[cat] || 0) + 1;
+        });
+
+        var sortedCats = Object.keys(catCounts).map(function(c) {
+          return { category: c, count: catCounts[c] };
+        }).sort(function(a, b) { return b.count - a.count; });
+
+        var totalT = tickets.length || 1;
+        var barsContainer = document.getElementById('defect-pareto-bars');
+        if (barsContainer) {
+          barsContainer.innerHTML = sortedCats.map(function(sc) {
+            var pct = ((sc.count / totalT) * 100).toFixed(1);
+            return `
+              <div>
+                <div class="flex items-center justify-between text-xs font-bold mb-1">
+                  <span class="text-slate-800">${sc.category}</span>
+                  <span class="text-slate-500">${sc.count} tickets (${pct}%)</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                  <div class="bg-[#982B68] h-full rounded-full transition-all" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Engineer SLA & CSAT Metrics Table
+        var engMetrics = {};
+        tickets.forEach(function(t) {
+          var name = t.assignedToName || 'Priya Sharma';
+          if (!engMetrics[name]) engMetrics[name] = { total: 0, resolved: 0, breached: 0, csatSum: 0, csatCount: 0 };
+          engMetrics[name].total++;
+          if (t.status === 'Resolved' || t.status === 'Closed') engMetrics[name].resolved++;
+          if (checkSlaBreached(t)) engMetrics[name].breached++;
+          if (t.csatRating && t.csatRating > 0) {
+            engMetrics[name].csatSum += t.csatRating;
+            engMetrics[name].csatCount++;
+          }
+        });
+
+        var engTable = document.getElementById('engineer-sla-metrics-table');
+        if (engTable) {
+          engTable.innerHTML = Object.keys(engMetrics).map(function(engName) {
+            var m = engMetrics[engName];
+            var compRate = m.total > 0 ? (((m.total - m.breached) / m.total) * 100).toFixed(0) : '100';
+            var avgCsat = m.csatCount > 0 ? (m.csatSum / m.csatCount).toFixed(1) : '4.8';
+            return `
+              <tr>
+                <td class="py-2.5 px-3 font-bold text-slate-800">${engName}</td>
+                <td class="py-2.5 px-3 text-slate-600">${m.total}</td>
+                <td class="py-2.5 px-3 text-emerald-600 font-bold">${m.resolved}</td>
+                <td class="py-2.5 px-3 font-bold ${compRate >= 90 ? 'text-emerald-600' : 'text-amber-600'}">${compRate}% On-Time</td>
+                <td class="py-2.5 px-3 font-bold text-amber-600">⭐ ${avgCsat} / 5.0</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // Equipment Quality Matrix
+        var equipQualityContainer = document.getElementById('equipment-quality-matrix');
+        if (equipQualityContainer) {
+          var equipGroups = {};
+          tickets.forEach(function(t) {
+            var model = t.equipmentModel || 'Weighbridge';
+            if (!equipGroups[model]) equipGroups[model] = { total: 0, repeat: 0 };
+            equipGroups[model].total++;
+            if (t.isRepetitiveDefect || t.repeatCountIn30Days > 1) equipGroups[model].repeat++;
+          });
+
+          equipQualityContainer.innerHTML = Object.keys(equipGroups).map(function(model) {
+            var eg = equipGroups[model];
+            return `
+              <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                <span class="text-xs font-bold text-slate-900 block truncate">${model}</span>
+                <div class="text-xl font-black text-slate-800">${eg.total} Complaints</div>
+                <p class="text-[11px] text-amber-700 font-semibold">${eg.repeat} Repeat Defect Events</p>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // MODAL FUNCTIONS
+      function openRaiseTicketModal() {
+        populateMasterDropdowns();
+        var numInput = document.getElementById('input-ticket-num');
+        if (numInput) {
+          numInput.value = 'TKT-2026-' + Math.floor(100 + Math.random() * 900);
+        }
+        var slaDateInput = document.getElementById('input-sla-date');
+        if (slaDateInput) {
+          var targetDate = new Date();
+          targetDate.setDate(targetDate.getDate() + 2);
+          slaDateInput.value = targetDate.toISOString().slice(0, 10);
+        }
+        document.getElementById('modal-raise-ticket')?.classList.remove('hidden');
+      }
+
+      function closeRaiseTicketModal() {
+        document.getElementById('modal-raise-ticket')?.classList.add('hidden');
+      }
+
+      function handleRaiseTicketSubmit(e) {
+        e.preventDefault();
+        var tNum = document.getElementById('input-ticket-num').value;
+        var custName = document.getElementById('input-customer-name').value;
+        var equipModel = document.getElementById('input-equipment-model').value;
+        var equipSerial = document.getElementById('input-equipment-serial').value;
+        var vert = document.getElementById('input-vertical').value;
+        var cat = document.getElementById('input-category').value;
+        var sev = document.getElementById('input-severity').value;
+        var warr = document.getElementById('input-warranty').value;
+        var techSelect = document.getElementById('input-assigned-to');
+        var techId = techSelect.value;
+        var techName = techSelect.options[techSelect.selectedIndex]?.text.split('(')[0]?.trim() || 'Priya Sharma';
+        var slaDate = document.getElementById('input-sla-date').value;
+        var desc = document.getElementById('input-description').value;
+
+        // Check if repeat defect
+        var existing = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
+        var repeatCount = existing.filter(function(x) {
+          return (x.equipmentSerial || '').toLowerCase().trim() === equipSerial.toLowerCase().trim();
+        }).length + 1;
+
+        var newTicket = {
+          id: tNum,
+          ticketNumber: tNum,
+          customerName: custName,
+          equipmentModel: equipModel,
+          equipmentSerial: equipSerial,
+          vertical: vert,
+          complaintCategory: cat,
+          complaintDescription: desc,
+          severity: sev,
+          status: 'Open',
+          assignedTo: techId,
+          assignedToName: techName,
+          createdDate: new Date().toLocaleDateString('en-GB'),
+          targetSlaDate: slaDate,
+          resolvedDate: '',
+          resolutionNotes: '',
+          rootCause: 'Under Root Cause Analysis (RCA)',
+          isRepetitiveDefect: repeatCount > 1,
+          repeatCountIn30Days: repeatCount,
+          csatRating: 0,
+          warrantyStatus: warr
+        };
+
+        if (window.RevOpsStore) {
+          window.RevOpsStore.addItem('serviceTickets', newTicket);
+        }
+
+        closeRaiseTicketModal();
+        renderServiceTicketsModule();
+        alert(`Service Ticket ${tNum} successfully raised and assigned to ${techName}! SLA target set for ${slaDate}.`);
+      }
+
+      function openResolveModal(ticketId) {
+        var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
+        var target = tickets.find(function(t) { return t.id === ticketId || t.ticketNumber === ticketId; });
+        if (!target) return;
+
+        document.getElementById('edit-ticket-id').value = target.id;
+        document.getElementById('modal-summary-cust').textContent = target.customerName;
+        document.getElementById('modal-summary-equip').textContent = `${target.equipmentModel} (${target.equipmentSerial})`;
+        document.getElementById('modal-summary-severity').textContent = target.severity;
+
+        document.getElementById('edit-status').value = target.status || 'Open';
+        document.getElementById('edit-assigned-to').value = target.assignedTo || 'E-004';
+        document.getElementById('edit-resolved-date').value = target.resolvedDate ? new Date(target.resolvedDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
+        document.getElementById('edit-csat').value = target.csatRating || 0;
+        document.getElementById('edit-root-cause').value = target.rootCause || '';
+        document.getElementById('edit-resolution-notes').value = target.resolutionNotes || '';
+
+        document.getElementById('modal-resolve-ticket')?.classList.remove('hidden');
+      }
+
+      function closeResolveModal() {
+        document.getElementById('modal-resolve-ticket')?.classList.add('hidden');
+      }
+
+      function handleResolveSubmit(e) {
+        e.preventDefault();
+        var id = document.getElementById('edit-ticket-id').value;
+        var status = document.getElementById('edit-status').value;
+        var techSelect = document.getElementById('edit-assigned-to');
+        var techId = techSelect.value;
+        var techName = techSelect.options[techSelect.selectedIndex]?.text.split('(')[0]?.trim() || 'Priya Sharma';
+        var resDate = document.getElementById('edit-resolved-date').value;
+        var csat = parseInt(document.getElementById('edit-csat').value, 10) || 0;
+        var rca = document.getElementById('edit-root-cause').value;
+        var notes = document.getElementById('edit-resolution-notes').value;
+
+        if (window.RevOpsStore) {
+          window.RevOpsStore.updateItem('serviceTickets', id, {
+            status: status,
+            assignedTo: techId,
+            assignedToName: techName,
+            resolvedDate: resDate,
+            csatRating: csat,
+            rootCause: rca,
+            resolutionNotes: notes
+          });
+        }
+
+        closeResolveModal();
+        renderServiceTicketsModule();
+      }
+
+      function deleteActiveTicket() {
+        var id = document.getElementById('edit-ticket-id').value;
+        if (confirm("Are you sure you want to delete this service ticket record?")) {
+          if (window.RevOpsStore) {
+            window.RevOpsStore.deleteItem('serviceTickets', id);
+          }
+          closeResolveModal();
+          renderServiceTicketsModule();
+        }
+      }
+
+      function exportServiceTicketsCSV() {
+        var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
+        if (tickets.length === 0) {
+          alert("No service tickets found to export.");
+          return;
+        }
+
+        var csvLines = [
+          "Ticket ID,Customer Name,Equipment Model,Serial Number,Vertical,Category,Severity,Status,Assigned Engineer,Created Date,Target SLA Date,Resolved Date,RCA,Repeat Defect,CSAT Rating"
+        ];
+
+        tickets.forEach(function(t) {
+          var row = [
+            `"${t.ticketNumber || t.id}"`,
+            `"${t.customerName || ''}"`,
+            `"${t.equipmentModel || ''}"`,
+            `"${t.equipmentSerial || ''}"`,
+            `"${t.vertical || ''}"`,
+            `"${t.complaintCategory || ''}"`,
+            `"${t.severity || ''}"`,
+            `"${t.status || ''}"`,
+            `"${t.assignedToName || ''}"`,
+            `"${t.createdDate || ''}"`,
+            `"${t.targetSlaDate || ''}"`,
+            `"${t.resolvedDate || ''}"`,
+            `"${(t.rootCause || '').replace(/"/g, '""')}"`,
+            `"${t.isRepetitiveDefect ? 'Yes' : 'No'}"`,
+            `"${t.csatRating || 0}"`
+          ];
+          csvLines.push(row.join(','));
+        });
+
+        var csvStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csvLines.join('\n'));
+        var link = document.createElement('a');
+        link.setAttribute('href', csvStr);
+        link.setAttribute('download', "MeasureDI_Service_Tickets_Quality_Export_" + new Date().toISOString().slice(0, 10) + ".csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    </script>
+  </body>
+</html>

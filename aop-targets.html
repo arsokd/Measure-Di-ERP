@@ -28,10 +28,10 @@
         <div class="flex items-center space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-200">
           <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Financial Year:</label>
           <select id="fy-select" onchange="renderAopData()" class="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-indigo-700 focus:outline-none cursor-pointer">
-            <option value="All">All Financial Years</option>
+            <option value="2026-27" selected>FY 2026-27 (Current)</option>
+            <option value="2025-26">FY 2025-26</option>
             <option value="2024-25">FY 2024-25</option>
-            <option value="2025-26" selected>FY 2025-26</option>
-            <option value="2026-27">FY 2026-27</option>
+            <option value="All">All Financial Years</option>
           </select>
         </div>
       </div>
@@ -175,7 +175,7 @@
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        if (checkAuth(['admin', 'manager'])) {
+        if (checkAuth(['super_admin', 'admin'])) {
           renderAopData();
         }
       });
@@ -265,7 +265,7 @@
 
         orders.forEach(function(o) {
           if (o.status === "Won") {
-            var ordFy = typeof getFinancialYear === 'function' ? getFinancialYear(o.orderDate) : '2025-26';
+            var ordFy = typeof getFinancialYear === 'function' ? getFinancialYear(o.orderDate) : '2026-27';
             if (fy !== 'All' && ordFy !== fy) return;
             var val = Number(o.orderValue) || 0;
             totalWonRevenue += val;

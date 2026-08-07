@@ -2152,7 +2152,32 @@
       }
 
       function renderExpensesTable() {
-        var expenses = window.RevOpsStore.getCollection('expenses') || [];
+        var rawExpenses = window.RevOpsStore.getCollection('expenses') || [];
+        var userRole = localStorage.getItem('userRole');
+        var userName = localStorage.getItem('userName') || '';
+        var myEmpId = localStorage.getItem('employeeId') || '';
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+        var myEmp = employees.find(function(emp) { return emp.employeeId === myEmpId; });
+
+        var expenses = rawExpenses;
+        if (userRole === 'staff') {
+          expenses = rawExpenses.filter(function(e) {
+            return (e.employeeId && e.employeeId === myEmpId) || 
+                   (e.payee && e.payee.toLowerCase() === userName.toLowerCase()) ||
+                   (e.payee && userName && e.payee.toLowerCase().includes(userName.toLowerCase()));
+          });
+        } else if (userRole === 'manager') {
+          var directReportIds = employees.filter(function(emp) { return emp.reportsTo === myEmpId; }).map(function(emp) { return emp.employeeId; });
+          var directReportNames = employees.filter(function(emp) { return emp.reportsTo === myEmpId; }).map(function(emp) { return emp.fullName || emp.name; });
+          expenses = rawExpenses.filter(function(e) {
+            return (e.employeeId && e.employeeId === myEmpId) ||
+                   (e.payee && e.payee.toLowerCase() === userName.toLowerCase()) ||
+                   directReportIds.includes(e.employeeId) ||
+                   (e.payee && directReportNames.some(function(n) { return n && e.payee.toLowerCase().includes(n.toLowerCase()); })) ||
+                   (myEmp && myEmp.vertical && e.vertical === myEmp.vertical);
+          });
+        }
+
         var catFilter = document.getElementById('flt-category').value;
         var vertFilter = document.getElementById('flt-vertical').value;
         var search = document.getElementById('flt-search').value.toLowerCase();

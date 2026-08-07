@@ -13,33 +13,57 @@ function formatINR(val) {
 
 // Global Financial Year Helper
 function getFinancialYear(dateStr, invoiceNumber) {
-  if (invoiceNumber && invoiceNumber.indexOf('2025-26') !== -1) return '2025-26';
-  if (invoiceNumber && invoiceNumber.indexOf('2024-25') !== -1) return '2024-25';
-  if (invoiceNumber && invoiceNumber.indexOf('2026-27') !== -1) return '2026-27';
-
-  if (!dateStr || typeof dateStr !== 'string') return '2025-26';
-  var d = null;
-  if (dateStr.indexOf('/') !== -1) {
-    var parts = dateStr.split('/');
-    if (parts.length >= 3) {
-      var day = parseInt(parts[0], 10);
-      var month = parseInt(parts[1], 10) - 1;
-      var year = parseInt(parts[2], 10);
-      if (year < 100) year += 2000;
-      d = new Date(year, month, day);
+  if (dateStr && typeof dateStr === 'string' && dateStr.trim()) {
+    var trimmed = dateStr.trim();
+    if (/^\d{4}-\d{2}$/.test(trimmed)) return trimmed;
+    if (/^\d{4}-\d{4}$/.test(trimmed)) {
+      return trimmed.substring(0, 5) + trimmed.substring(7);
     }
-  } else if (dateStr.indexOf('-') !== -1) {
-    var parts = dateStr.split('T')[0].split('-');
-    if (parts.length >= 3) {
-      var year = parseInt(parts[0], 10);
-      var month = parseInt(parts[1], 10) - 1;
-      var day = parseInt(parts[2], 10);
-      d = new Date(year, month, day);
+    var d = null;
+    if (trimmed.indexOf('/') !== -1) {
+      var parts = trimmed.split('/');
+      if (parts.length >= 3) {
+        var day = parseInt(parts[0], 10);
+        var month = parseInt(parts[1], 10) - 1;
+        var year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+        d = new Date(year, month, day);
+      }
+    } else if (trimmed.indexOf('-') !== -1) {
+      var parts = trimmed.split('T')[0].split('-');
+      if (parts.length >= 3) {
+        var year = parseInt(parts[0], 10);
+        var month = parseInt(parts[1], 10) - 1;
+        var day = parseInt(parts[2], 10);
+        d = new Date(year, month, day);
+      }
+    }
+    if (!d || isNaN(d.getTime())) d = new Date(trimmed);
+    if (d && !isNaN(d.getTime())) {
+      var year = d.getFullYear();
+      var month = d.getMonth() + 1; // 1 to 12
+      if (month >= 4) {
+        var nextY = (year + 1) % 100;
+        return year + '-' + (nextY < 10 ? '0' + nextY : nextY);
+      } else {
+        var prevY = year - 1;
+        var curY = year % 100;
+        return prevY + '-' + (curY < 10 ? '0' + curY : curY);
+      }
     }
   }
-  if (!d || isNaN(d.getTime())) d = new Date(dateStr);
-  if (isNaN(d.getTime())) return '2025-26';
 
+  if (invoiceNumber && typeof invoiceNumber === 'string') {
+    if (invoiceNumber.indexOf('2026-27') !== -1) return '2026-27';
+    if (invoiceNumber.indexOf('2025-26') !== -1) return '2025-26';
+    if (invoiceNumber.indexOf('2024-25') !== -1) return '2024-25';
+  }
+
+  return '2026-27';
+}
+
+function getCurrentFinancialYear() {
+  var d = new Date();
   var year = d.getFullYear();
   var month = d.getMonth() + 1; // 1 to 12
   if (month >= 4) {
@@ -53,15 +77,24 @@ function getFinancialYear(dateStr, invoiceNumber) {
 }
 
 function checkAuth(allowedRoles) {
-  // Ensure seed data is initialized if store exists
-  if (typeof window.RevOpsStore !== 'undefined' && window.RevOpsStore.initSeedData) {
-    window.RevOpsStore.initSeedData();
+  try {
+    // Ensure seed data is initialized if store exists
+    if (typeof window.RevOpsStore !== 'undefined' && window.RevOpsStore.initSeedData) {
+      window.RevOpsStore.initSeedData();
+    }
+  } catch(errSeed) {
+    console.warn("Seed init warning in checkAuth:", errSeed);
   }
 
   var userRole = localStorage.getItem('userRole');
   var userEmail = localStorage.getItem('userEmail');
   var userName = localStorage.getItem('userName') || 'User';
   var employeeId = localStorage.getItem('employeeId');
+
+  // Clean string 'null' or 'undefined'
+  if (userRole === 'null' || userRole === 'undefined') userRole = null;
+  if (employeeId === 'null' || employeeId === 'undefined') employeeId = null;
+  if (userEmail === 'null' || userEmail === 'undefined') userEmail = null;
 
   // Developer Exemption & Default Session for developer ars.okd@gmail.com (Managing Director Ravichandran)
   if (!userRole || !employeeId || !userEmail || userEmail === 'ars.okd@gmail.com') {
@@ -101,12 +134,17 @@ function checkAuth(allowedRoles) {
     localStorage.setItem('userRole', 'admin');
   }
 
-  // Check if account isActive
-  var employees = (window.RevOpsStore && typeof window.RevOpsStore.getCollection === 'function') 
-    ? (window.RevOpsStore.getCollection('employees') || []) 
-    : [];
+  var employees = [];
+  try {
+    employees = (window.RevOpsStore && typeof window.RevOpsStore.getCollection === 'function') 
+      ? (window.RevOpsStore.getCollection('employees') || []) 
+      : [];
+  } catch(eEmps) {
+    console.warn("Could not fetch employees collection:", eEmps);
+  }
+
   var currentEmp = employees.find(function(e) {
-    return e.employeeId === employeeId || e.email === userEmail;
+    return e && (e.employeeId === employeeId || e.email === userEmail);
   });
 
   if (currentEmp) {
@@ -119,12 +157,14 @@ function checkAuth(allowedRoles) {
       empUpdated = true;
     }
     if (empUpdated && window.RevOpsStore && window.RevOpsStore.saveCollection) {
-      window.RevOpsStore.saveCollection('employees', employees);
+      try {
+        window.RevOpsStore.saveCollection('employees', employees);
+      } catch(eSave) {}
     }
   }
 
   if (currentEmp && currentEmp.isActive === false) {
-    if (typeof auth !== 'undefined' && auth.signOut) {
+    if (typeof auth !== 'undefined' && auth && auth.signOut) {
       auth.signOut();
     }
     localStorage.clear();
@@ -152,7 +192,7 @@ function checkAuth(allowedRoles) {
 
   // Check if user has direct reports
   var hasDirectReports = employees.some(function(e) {
-    return e.reportsTo === employeeId;
+    return e && e.reportsTo === employeeId;
   });
 
   // Render standard Navbar
@@ -166,15 +206,17 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
     if (document.body) {
       navContainer = document.createElement('div');
       navContainer.id = 'navbar-container';
-      document.body.insertBefore(navContainer, document.body.firstChild);
+      if (document.body.firstChild) {
+        document.body.insertBefore(navContainer, document.body.firstChild);
+      } else {
+        document.body.appendChild(navContainer);
+      }
     } else {
+      document.addEventListener('DOMContentLoaded', function() {
+        renderRevOpsNavbar(userName, userRole, hasDirectReports);
+      });
       return;
     }
-  }
-
-  // Ensure body has left padding for fixed sidebar on md+ screens
-  if (document.body) {
-    document.body.classList.add('md:pl-64');
   }
 
   var userEmail = localStorage.getItem('userEmail') || '';
@@ -184,83 +226,24 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
 
   var currentPath = window.location.pathname.split('/').pop() || 'index.html';
 
-  function linkClass(path) {
-    var active = currentPath === path;
-    return active
-      ? "px-3 py-1.5 rounded-lg text-xs font-bold bg-[#982B68] text-white shadow-xs"
-      : "px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all";
-  }
-
-  function renderCategoryMenu(title, iconSvg, items, paths) {
-    var isCatActive = paths.includes(currentPath);
-    var catClass = isCatActive
-      ? "px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[#982B68] text-white shadow-xs flex items-center space-x-1"
-      : "px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all flex items-center space-x-1";
-
-    var menuItemsHtml = items.filter(function(i) { return i.show; }).map(function(item) {
-      var isItemActive = currentPath === item.path;
-      return `
-        <a href="${item.path}" class="block p-2 rounded-lg text-xs hover:bg-slate-800 transition-colors ${isItemActive ? 'bg-indigo-900/80 text-white font-bold border-l-2 border-[#982B68]' : 'text-slate-300'}">
-          <div class="flex items-center space-x-1.5 font-bold">
-            <span>${item.icon}</span>
-            <span>${item.title}</span>
-          </div>
-          <div class="text-[10px] text-slate-400 mt-0.5 leading-tight">${item.desc}</div>
-        </a>
-      `;
-    }).join('');
-
-    return `
-      <div class="relative group">
-        <button class="${catClass} cursor-pointer">
-          ${iconSvg}
-          <span>${title}</span>
-          <svg class="w-3 h-3 text-slate-400 group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </button>
-        <div class="absolute left-0 mt-1 w-56 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-1.5 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all z-50 space-y-1">
-          ${menuItemsHtml}
-        </div>
-      </div>
-    `;
-  }
-
-  function renderSidebarItem(title, path, icon, show) {
-    if (!show) return '';
-    var isActive = currentPath === path;
-    var activeClass = isActive 
-      ? 'bg-[#982B68] text-white font-extrabold shadow-sm border-l-4 border-amber-400' 
-      : 'text-slate-300 hover:bg-slate-800 hover:text-white font-medium';
-    return `<a href="${path}" class="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs transition-all ${activeClass}">
-      <span class="text-sm shrink-0">${icon}</span>
-      <span class="truncate">${title}</span>
-    </a>`;
-  }
-
   // Categories definitions
-  var salesPaths = ['leads.html', 'orders.html', 'payments.html'];
   var salesItems = [
     { title: "Leads & Pipeline", path: "leads.html", desc: "CRM pipeline, stage conversions & deals", icon: "📈", show: true },
     { title: "Orders & Contracts", path: "orders.html", desc: "Customer orders, SLA & fulfillment", icon: "📦", show: true },
     { title: "Payments & Collections", path: "payments.html", desc: "AR collections & milestone invoicing", icon: "💳", show: true }
   ];
-  var salesIcon = `<svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>`;
 
-  var financePaths = ['expenses.html', 'payroll.html'];
   var financeItems = [
     { title: "Expenses & Profit Center", path: "expenses.html", desc: "Multi-project split & financial ledger", icon: "💰", show: true },
-    { title: "Payroll & CTC", path: "payroll.html", desc: "Monthly salary & disbursement logs", icon: "💵", show: true }
+    { title: "Payroll & CTC", path: "payroll.html", desc: "Monthly salary & disbursement logs", icon: "💵", show: isAdmin }
   ];
-  var financeIcon = `<svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
 
-  var hrPaths = ['employees.html', 'attendance.html', 'my-team.html'];
   var hrItems = [
-    { title: "Employee Directory", path: "employees.html", desc: "Roster, roles & departments", icon: "👥", show: true },
+    { title: "Employee Directory", path: "employees.html", desc: "Roster, roles & departments", icon: "👥", show: isAdmin },
     { title: "Attendance & Leaves", path: "attendance.html", desc: "Punch logs & leave approvals", icon: "⏰", show: true },
     { title: "My Team", path: "my-team.html", desc: "Direct reportees & org chart", icon: "🏢", show: showTeamAndReviews }
   ];
-  var hrIcon = `<svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>`;
 
-  var perfPaths = ['my-scorecard.html', 'dwm.html', 'kra-targets.html', 'reviews.html', 'aop-targets.html', 'user-guide.html'];
   var perfItems = [
     { title: "My Scorecard", path: "my-scorecard.html", desc: "Personal scorecard & achievement rating", icon: "🎯", show: true },
     { title: "Daily Work (DWM)", path: "dwm.html", desc: "Daily task logs & plan vs actuals", icon: "📅", show: true },
@@ -269,7 +252,10 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
     { title: "Annual Operating Plan (AOP)", path: "aop-targets.html", desc: "Company revenue targets & strategy", icon: "🏆", show: isAdmin },
     { title: "User Guide & PDF Manual", path: "user-guide.html", desc: "Comprehensive RevOps SOP & live PDF manual", icon: "📖", show: true }
   ];
-  var perfIcon = `<svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>`;
+
+  var serviceItems = [
+    { title: "Service Tickets & Quality", path: "service-tickets.html", desc: "Ticket raising, tracking, SLA, defect & repeat complaint monitoring", icon: "🛠️", show: true }
+  ];
 
   var roleBadgeColor = "bg-[#982B68]/30 text-[#E283BD] border-[#982B68]/50";
   if (userRole === 'super_admin') roleBadgeColor = "bg-fuchsia-900/60 text-fuchsia-300 border-fuchsia-700/50";
@@ -277,22 +263,14 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
   else if (userRole === 'manager') roleBadgeColor = "bg-blue-900/60 text-blue-300 border-blue-700/50";
   else if (userRole === 'staff') roleBadgeColor = "bg-emerald-900/60 text-emerald-300 border-emerald-700/50";
 
-  function renderSidebarItem(title, path, icon, show) {
-    if (!show) return '';
-    var isActive = currentPath === path;
-    var activeClass = isActive 
-      ? 'bg-[#982B68] text-white font-extrabold shadow-sm border-l-4 border-amber-400' 
-      : 'text-slate-300 hover:bg-slate-800 hover:text-white font-medium';
-    return `<a href="${path}" class="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs transition-all ${activeClass}">
-      <span class="text-sm shrink-0">${icon}</span>
-      <span class="truncate">${title}</span>
-    </a>`;
-  }
-
-  var html = getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, roleBadgeColor, currentPath, salesItems, financeItems, hrItems, perfItems, showTeamAndReviews, isAdmin);
+  var html = getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, roleBadgeColor, currentPath, salesItems, financeItems, hrItems, perfItems, serviceItems, showTeamAndReviews, isAdmin);
 
   navContainer.innerHTML = html;
-  document.body.classList.add('pb-16', 'lg:pb-0', 'md:pl-64');
+
+  // Add body padding so fixed header and sidebar never overlap page content
+  if (document.body) {
+    document.body.classList.add('md:pl-64', 'pt-14', 'pb-16', 'md:pb-6');
+  }
 
   // Populate User Switcher Dropdown
   setTimeout(function() {
@@ -656,9 +634,18 @@ function executeDataExportCSV() {
 
 // Auto-initialize Auth Guard & Global Navbar across all pages
 function autoInitGlobalAuthGuard() {
-  var currentPath = window.location.pathname.split('/').pop() || 'index.html';
-  if (currentPath !== 'login.html') {
-    checkAuth();
+  try {
+    var currentPath = window.location.pathname.split('/').pop() || 'index.html';
+    if (currentPath !== 'login.html') {
+      checkAuth();
+    }
+  } catch(e) {
+    console.error("Error initializing auth guard:", e);
+    try {
+      renderRevOpsNavbar('Ravichandran', 'super_admin', true);
+    } catch(e2) {
+      console.error("Fallback navbar render failed:", e2);
+    }
   }
 }
 
@@ -668,7 +655,7 @@ if (document.readyState === 'loading') {
   autoInitGlobalAuthGuard();
 }
 
-function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, roleBadgeColor, currentPath, salesItems, financeItems, hrItems, perfItems, showTeamAndReviews, isAdmin) {
+function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, roleBadgeColor, currentPath, salesItems, financeItems, hrItems, perfItems, serviceItems, showTeamAndReviews, isAdmin) {
   function renderSidebarItem(title, path, icon, show) {
     if (!show) return '';
     var isActive = currentPath === path;
@@ -681,9 +668,120 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
     </a>`;
   }
 
+  function renderTopDropdown(title, iconEmoji, items, categoryPaths) {
+    var isCatActive = categoryPaths.includes(currentPath);
+    var catClass = isCatActive
+      ? "px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[#982B68] text-white shadow-xs flex items-center space-x-1"
+      : "px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all flex items-center space-x-1";
+
+    var itemsHtml = items.filter(function(i) { return i.show; }).map(function(item) {
+      var isActive = currentPath === item.path;
+      return `
+        <a href="${item.path}" class="block p-2 rounded-lg text-xs hover:bg-slate-800 transition-colors ${isActive ? 'bg-indigo-900/80 text-white font-bold border-l-2 border-[#982B68]' : 'text-slate-300'}">
+          <div class="flex items-center space-x-1.5 font-bold">
+            <span>${item.icon}</span>
+            <span>${item.title}</span>
+          </div>
+          <div class="text-[10px] text-slate-400 mt-0.5 leading-tight">${item.desc}</div>
+        </a>
+      `;
+    }).join('');
+
+    return `
+      <div class="relative group">
+        <button class="${catClass} cursor-pointer">
+          <span class="text-xs">${iconEmoji}</span>
+          <span>${title}</span>
+          <svg class="w-3 h-3 text-slate-400 group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="absolute left-0 mt-1 w-60 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-1.5 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all z-50 space-y-1">
+          ${itemsHtml}
+        </div>
+      </div>
+    `;
+  }
+
   return `
+    <!-- TOP HORIZONTAL NAVIGATION HEADER BAR (FIXED AT VERY TOP ACROSS ALL PAGES) -->
+    <header class="fixed top-0 left-0 right-0 z-50 h-14 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-slate-200 shadow-xl px-4 flex items-center justify-between">
+      
+      <!-- Left: Logo & Brand -->
+      <div class="flex items-center space-x-3">
+        <a href="${userRole === 'staff' ? 'my-scorecard.html' : 'dashboard.html'}" class="flex items-center space-x-2.5 group">
+          <div class="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-800 border border-slate-700 p-1 group-hover:border-[#982B68] transition-colors shadow-xs">
+            <svg class="w-full h-full" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M45 22C30 22 18 34 18 49C18 64 30 76 45 76C60 76 72 64 72 49V40H56V49C56 55 51 60 45 60C39 60 34 55 34 49C34 43 39 38 45 38H56V22H45Z" fill="#982B68"/>
+              <rect x="58" y="12" width="7" height="7" fill="#982B68"/>
+              <rect x="67" y="12" width="7" height="7" fill="#982B68"/>
+              <rect x="58" y="21" width="7" height="7" fill="#982B68"/>
+              <rect x="67" y="21" width="7" height="7" fill="#982B68"/>
+              <rect x="67" y="30" width="7" height="7" fill="#982B68"/>
+              <rect x="58" y="30" width="7" height="7" fill="#ffffff"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-xs font-black text-white tracking-wider block leading-none">MEASURE DI</span>
+            <span class="text-[8px] font-bold text-[#E283BD] tracking-widest uppercase block leading-tight mt-0.5">MADE TO MEASURE REVOPS</span>
+          </div>
+        </a>
+        <span class="hidden sm:inline-block text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${roleBadgeColor}">${userRole}</span>
+      </div>
+
+      <!-- Middle: Horizontal Category Dropdown Menus (Desktop / Tablet) -->
+      <nav class="hidden md:flex items-center space-x-1.5">
+        ${isAdmin ? `<a href="dashboard.html" class="${currentPath === 'dashboard.html' ? 'px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[#982B68] text-white shadow-xs' : 'px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all'}">📊 Dashboard</a>` : ''}
+        ${renderTopDropdown("Sales", "📈", salesItems, ['leads.html', 'orders.html', 'payments.html'])}
+        ${renderTopDropdown("Service & Quality", "🛠️", serviceItems, ['service-tickets.html'])}
+        ${renderTopDropdown("Finance", "💰", financeItems, ['expenses.html', 'payroll.html'])}
+        ${renderTopDropdown("People & HR", "👥", hrItems, ['employees.html', 'attendance.html', 'my-team.html'])}
+        ${renderTopDropdown("Performance", "🎯", perfItems, ['my-scorecard.html', 'dwm.html', 'kra-targets.html', 'reviews.html', 'aop-targets.html', 'user-guide.html'])}
+        ${isAdmin ? `<a href="reports.html" class="${currentPath === 'reports.html' ? 'px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[#982B68] text-white shadow-xs' : 'px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all'}">📈 Reports</a>` : ''}
+      </nav>
+
+      <!-- Right: User Switcher, Data Sync, Logout -->
+      <div class="flex items-center space-x-2">
+        <!-- Switch Session User Button -->
+        <div class="relative">
+          <button type="button" onclick="var m=document.getElementById('topbar-user-menu'); if(m) m.classList.toggle('hidden');" class="py-1 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold flex items-center space-x-1.5 cursor-pointer border border-slate-700 transition-colors">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span class="truncate max-w-[120px]">${userName}</span>
+            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <!-- Popup List -->
+          <div id="topbar-user-menu" class="hidden absolute right-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-2 z-50">
+            <div class="text-[10px] font-black uppercase text-slate-400 tracking-wider px-2 py-1 border-b border-slate-800 mb-1 flex items-center justify-between">
+              <span>Switch Session User (200 Roster)</span>
+              <span class="text-[9px] text-emerald-400 font-bold">RBAC</span>
+            </div>
+            <div class="space-y-1 max-h-52 overflow-y-auto" id="user-switcher-list">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+        </div>
+
+        <a href="Measure_DI_RevOps_Client_Demo_Guide.pdf" download="Measure_DI_RevOps_Client_Demo_Guide.pdf" target="_blank" class="hidden sm:flex py-1 px-2.5 text-xs font-bold text-sky-300 hover:text-white bg-sky-950/60 hover:bg-sky-900 border border-sky-800/80 rounded-lg transition-colors items-center space-x-1 cursor-pointer" title="Download Application PDF Guide">
+          <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span>PDF Guide</span>
+        </a>
+
+        <button onclick="openDataImportExportModal()" class="hidden sm:flex py-1 px-2 text-xs font-bold text-emerald-300 hover:text-white bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-800/80 rounded-lg transition-colors items-center space-x-1 cursor-pointer" title="Data Center">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          <span>Data Center</span>
+        </button>
+
+        <button onclick="handleRevOpsLogout()" class="py-1 px-2 text-xs font-bold text-rose-400 hover:text-white bg-rose-950/60 hover:bg-rose-900 border border-rose-800/80 rounded-lg transition-colors flex items-center space-x-1 cursor-pointer" title="Logout">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          <span class="hidden sm:inline">Logout</span>
+        </button>
+
+        <!-- Mobile Drawer Menu Button -->
+        <button onclick="toggleMobileNavDrawer()" class="md:hidden p-1.5 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 cursor-pointer flex items-center space-x-1">
+          <svg class="w-5 h-5 text-[#E283BD]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </header>
     <!-- DESKTOP / LAPTOP / TABLET PERSISTENT LEFT SIDEBAR MENU -->
-    <aside id="revops-sidebar" class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:left-0 z-50 bg-slate-900 border-r border-slate-800 text-slate-300 shadow-2xl shrink-0">
+    <aside id="revops-sidebar" class="hidden md:flex md:w-64 md:flex-col md:fixed md:top-14 md:bottom-0 md:left-0 z-40 bg-slate-900 border-r border-slate-800 text-slate-300 shadow-2xl shrink-0">
       
       <!-- Brand & Logo Header -->
       <div class="p-4 border-b border-slate-800 bg-slate-950/60 flex items-center justify-between">
@@ -746,12 +844,14 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
       <div class="flex-1 overflow-y-auto px-3 py-3 space-y-4 scrollbar-thin scrollbar-thumb-slate-700">
         
         <!-- Section 1: Overview -->
-        <div>
-          <div class="px-3 mb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Overview</div>
-          <div class="space-y-1">
-            ${userRole !== 'staff' ? renderSidebarItem("Executive Dashboard", "dashboard.html", "📊", true) : ''}
+        ${isAdmin ? `
+          <div>
+            <div class="px-3 mb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Overview</div>
+            <div class="space-y-1">
+              ${renderSidebarItem("Executive Dashboard", "dashboard.html", "📊", true)}
+            </div>
           </div>
-        </div>
+        ` : ''}
 
         <!-- Section 2: Sales & Revenue -->
         <div>
@@ -761,6 +861,17 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
           </div>
           <div class="space-y-1">
             ${salesItems.map(function(item) { return renderSidebarItem(item.title, item.path, item.icon, item.show); }).join('')}
+          </div>
+        </div>
+
+        <!-- Section 2.5: Service & Quality -->
+        <div>
+          <div class="px-3 mb-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-400 flex items-center space-x-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span>Service & Quality</span>
+          </div>
+          <div class="space-y-1">
+            ${serviceItems.map(function(item) { return renderSidebarItem(item.title, item.path, item.icon, item.show); }).join('')}
           </div>
         </div>
 
@@ -798,7 +909,7 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
         </div>
 
         <!-- Section 6: Reports -->
-        ${userRole !== 'staff' ? `
+        ${isAdmin ? `
           <div>
             <div class="px-3 mb-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-400">Analytics</div>
             <div class="space-y-1">
@@ -916,6 +1027,19 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
               </div>
               <div class="space-y-1">
                 ${salesItems.filter(function(i){ return i.show; }).map(function(i){
+                  return `<a href="${i.path}" onclick="toggleMobileNavDrawer()" class="flex items-center space-x-2 p-2 rounded-lg text-xs font-semibold ${currentPath === i.path ? 'bg-indigo-900 text-white font-extrabold border-l-2 border-[#982B68]' : 'text-slate-300 hover:bg-slate-800'}"><span>${i.icon}</span><span>${i.title}</span></a>`;
+                }).join('')}
+              </div>
+            </div>
+
+            <!-- Service Group -->
+            <div class="bg-slate-800/40 rounded-xl p-2.5 border border-slate-800">
+              <div class="text-[10px] font-black uppercase text-amber-400 tracking-wider mb-2 flex items-center space-x-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <span>Service & Quality</span>
+              </div>
+              <div class="space-y-1">
+                ${serviceItems.filter(function(i){ return i.show; }).map(function(i){
                   return `<a href="${i.path}" onclick="toggleMobileNavDrawer()" class="flex items-center space-x-2 p-2 rounded-lg text-xs font-semibold ${currentPath === i.path ? 'bg-indigo-900 text-white font-extrabold border-l-2 border-[#982B68]' : 'text-slate-300 hover:bg-slate-800'}"><span>${i.icon}</span><span>${i.title}</span></a>`;
                 }).join('')}
               </div>

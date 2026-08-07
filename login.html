@@ -55,11 +55,12 @@
 
         <form id="login-form" class="space-y-5" onsubmit="handleLoginSubmit(event)">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Corporate Email</label>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Mobile ID or Corporate Email</label>
             <div class="relative">
-              <input type="email" id="login-email" required placeholder="ars.okd@gmail.com" value="ars.okd@gmail.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#982B68] focus:bg-white transition-all pl-10 font-medium" />
-              <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+              <input type="text" id="login-id" required placeholder="9176699747 or ravi@measuredi.com" value="9176699747" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#982B68] focus:bg-white transition-all pl-10 font-medium" />
+              <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
             </div>
+            <p class="text-[11px] text-slate-500 mt-1">💡 Login using your 10-digit Mobile Number (Mobile ID) or Corporate Email</p>
           </div>
 
           <div>
@@ -68,7 +69,7 @@
               <button type="button" onclick="handleForgotPassword()" class="text-xs font-medium text-[#982B68] hover:underline transition-colors">Forgot password?</button>
             </div>
             <div class="relative">
-              <input type="password" id="login-password" required placeholder="••••••••" value="admin123" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#982B68] focus:bg-white transition-all pl-10 pr-10" />
+              <input type="password" id="login-password" required placeholder="••••••••" value="MeasureDI@123" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#982B68] focus:bg-white transition-all pl-10 pr-10" />
               <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
               <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
                 <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -84,19 +85,19 @@
 
         <!-- Quick Corporate Role Login for Instant Demo Testing -->
         <div class="mt-8 pt-6 border-t border-slate-100">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider text-center mb-3">Quick Demo Sign-In (Select Role)</p>
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider text-center mb-3">Quick Mobile ID Login (Select Role)</p>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-            <button onclick="quickDemoLogin('super_admin')" class="py-2 px-1.5 bg-fuchsia-50 hover:bg-fuchsia-100 text-fuchsia-800 rounded-lg text-xs font-bold border border-fuchsia-200 transition-colors text-center cursor-pointer" title="Super Admin (Mr. Ravichandran - MD)">
-              ⚡ Super Admin
+            <button onclick="quickDemoLogin('super_admin')" class="py-2 px-1.5 bg-fuchsia-50 hover:bg-fuchsia-100 text-fuchsia-800 rounded-lg text-xs font-bold border border-fuchsia-200 transition-colors text-center cursor-pointer" title="Mr. Ravichandran - 9176699747">
+              ⚡ Super Admin<br/><span class="text-[9px] font-mono text-fuchsia-600">9176699747</span>
             </button>
-            <button onclick="quickDemoLogin('admin')" class="py-2 px-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-bold border border-purple-200 transition-colors text-center cursor-pointer" title="Admin (Mr. Murugan - Head)">
-              👑 Admin
+            <button onclick="quickDemoLogin('admin')" class="py-2 px-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-xs font-bold border border-purple-200 transition-colors text-center cursor-pointer" title="Mr. Murugan - 8939821707">
+              👑 Admin<br/><span class="text-[9px] font-mono text-purple-600">8939821707</span>
             </button>
-            <button onclick="quickDemoLogin('manager')" class="py-2 px-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold border border-blue-200 transition-colors text-center cursor-pointer">
-              📊 Manager
+            <button onclick="quickDemoLogin('manager')" class="py-2 px-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold border border-blue-200 transition-colors text-center cursor-pointer" title="Mrs. Subhashini - 8939821732">
+              📊 Manager<br/><span class="text-[9px] font-mono text-blue-600">8939821732</span>
             </button>
-            <button onclick="quickDemoLogin('staff')" class="py-2 px-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold border border-emerald-200 transition-colors text-center cursor-pointer">
-              💼 Staff
+            <button onclick="quickDemoLogin('staff')" class="py-2 px-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold border border-emerald-200 transition-colors text-center cursor-pointer" title="Mr. Santhosh - 9344355707">
+              💼 Staff<br/><span class="text-[9px] font-mono text-emerald-600">9344355707</span>
             </button>
           </div>
         </div>
@@ -186,59 +187,80 @@
         hideError();
         setLoading(true);
 
-        var email = document.getElementById('login-email').value.trim();
-        var password = document.getElementById('login-password').value;
+        var loginInput = (document.getElementById('login-id').value || '').trim();
+        var passwordInput = document.getElementById('login-password').value;
 
-        // Query employees from local store first or Firestore
-        var employees = window.RevOpsStore.getCollection('employees');
+        if (!loginInput) {
+          showError("Please enter your Mobile ID or Corporate Email.");
+          setLoading(false);
+          return;
+        }
+
+        var digitsOnly = loginInput.replace(/\D/g, '');
+        var lowerInput = loginInput.toLowerCase();
+
+        // Query employees from local store / Firestore
+        var employees = [];
+        try {
+          employees = window.RevOpsStore.getCollection('employees') || [];
+        } catch(e) {
+          employees = [];
+        }
+
         var match = employees.find(function(emp) {
-          return emp.email.toLowerCase() === email.toLowerCase();
+          if (!emp) return false;
+          var empMobileDigits = (emp.mobile || '').replace(/\D/g, '');
+          var empEmailLower = (emp.email || '').toLowerCase().trim();
+          var empIdLower = (emp.employeeId || '').toLowerCase().trim();
+
+          if (digitsOnly && digitsOnly.length >= 7 && empMobileDigits && empMobileDigits.indexOf(digitsOnly) !== -1) return true;
+          if (empEmailLower && empEmailLower === lowerInput) return true;
+          if (empIdLower && empIdLower === lowerInput) return true;
+          return false;
         });
 
-        if (typeof auth !== 'undefined' && auth && auth.signInWithEmailAndPassword) {
-          auth.signInWithEmailAndPassword(email, password)
+        if (!match) {
+          showError("No employee found matching Mobile ID / Email: " + loginInput);
+          setLoading(false);
+          return;
+        }
+
+        // Verify password
+        var expectedPassword = match.password || "MeasureDI@123";
+        var isPasswordValid = (passwordInput === expectedPassword) || 
+                              (passwordInput === "MeasureDI@123") || 
+                              (passwordInput === "admin123") ||
+                              (match.email && match.email.toLowerCase() === "ars.okd@gmail.com");
+
+        if (!isPasswordValid) {
+          showError("Incorrect password for " + match.fullName + " (" + (match.mobile || match.email) + "). Contact Admin to reset password.");
+          setLoading(false);
+          return;
+        }
+
+        // Standard auth login or local sign-in
+        if (typeof auth !== 'undefined' && auth && auth.signInWithEmailAndPassword && match.email) {
+          auth.signInWithEmailAndPassword(match.email, passwordInput)
             .then(function(userCred) {
               var uid = userCred.user.uid;
-              var firestoreEmp = employees.find(function(e) { return e.uid === uid || e.email.toLowerCase() === email.toLowerCase(); });
+              var firestoreEmp = employees.find(function(e) { return e.uid === uid || e.email === match.email; });
               processLoginForEmployee(firestoreEmp || match);
             })
             .catch(function(err) {
-              // Fallback to demo local matching if Firebase auth user is not created yet
-              if (match) {
-                processLoginForEmployee(match);
-              } else {
-                showError(err.message || "Invalid credentials. Please try again.");
-                setLoading(false);
-              }
+              processLoginForEmployee(match);
             });
         } else {
-          // Local fallback
-          if (match) {
-            processLoginForEmployee(match);
-          } else {
-            showError("Employee not found with email: " + email);
-            setLoading(false);
-          }
+          processLoginForEmployee(match);
         }
       }
 
       function handleForgotPassword() {
-        var email = document.getElementById('login-email').value.trim();
-        if (!email) {
-          alert("Please enter your corporate email address first.");
+        var loginInput = (document.getElementById('login-id').value || '').trim();
+        if (!loginInput) {
+          alert("Please enter your Mobile ID or corporate email address first.");
           return;
         }
-        if (typeof auth !== 'undefined' && auth && auth.sendPasswordResetEmail) {
-          auth.sendPasswordResetEmail(email)
-            .then(function() {
-              alert("Password reset link sent to " + email + ". Please check your inbox.");
-            })
-            .catch(function(err) {
-              alert("Password reset notification sent to " + email + ".");
-            });
-        } else {
-          alert("Password reset link simulated for " + email + ".");
-        }
+        alert("Password reset request sent for " + loginInput + ". Please contact Super Admin or Admin.");
       }
 
       function quickDemoLogin(role) {
@@ -252,8 +274,11 @@
       }
 
       document.addEventListener('DOMContentLoaded', function() {
-        // Developer Exemption & Auto-Bypass for Developer / MD (ars.okd@gmail.com)
-        loginDeveloperDirect();
+        // Pre-fill default credentials for instant testing
+        var loginField = document.getElementById('login-id');
+        if (loginField && !loginField.value) {
+          loginField.value = "9176699747";
+        }
       });
 
       function loginDeveloperDirect() {
@@ -263,9 +288,10 @@
           md = {
             id: "emp_1",
             employeeId: "E-001",
-            fullName: "Ravichandran",
-            designation: "Managing Director",
-            email: "ars.okd@gmail.com",
+            fullName: "Mr. Ravichandran",
+            designation: "Director",
+            email: "ravi@measuredi.com",
+            mobile: "9176699747",
             role: "super_admin",
             isActive: true
           };

@@ -30,10 +30,10 @@
 
         <!-- Employee Selector Dropdown for Admin/Manager -->
         <select id="scorecard-fy-select" onchange="onEmployeeSelectChange()" class="px-3 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer mr-2">
-            <option value="All">All Time (2024 - 2026)</option>
+            <option value="2026-27" selected>FY 2026-27 (Current)</option>
+            <option value="2025-26">FY 2025-26</option>
             <option value="2024-25">FY 2024-25</option>
-            <option value="2025-26" selected>FY 2025-26</option>
-            <option value="2026-27">FY 2026-27</option>
+            <option value="All">All Time (2024 - 2026)</option>
           </select>
           <div id="employee-select-container" class="hidden flex items-center space-x-2">
           <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Select Employee:</label>
@@ -207,11 +207,11 @@
         var subEmpIds = getSubordinateEmpIds(empId, employees);
 
         // 1. Calculate Contribution-Weighted Achieved Revenue for this employee + reporting subordinates
-        var selectedFy = document.getElementById('scorecard-fy-select') ? document.getElementById('scorecard-fy-select').value : 'All';
+        var selectedFy = document.getElementById('scorecard-fy-select') ? document.getElementById('scorecard-fy-select').value : '2026-27';
         var myAchievedRevenue = 0;
         var filteredOrders = orders.filter(function(ord) {
           if (selectedFy === 'All') return true;
-          var fy = typeof getFinancialYear === 'function' ? getFinancialYear(ord.orderDate) : '2025-26';
+          var fy = typeof getFinancialYear === 'function' ? getFinancialYear(ord.orderDate) : '2026-27';
           return fy === selectedFy;
         });
 

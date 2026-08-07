@@ -59,10 +59,10 @@
           
           <div class="flex items-center space-x-3">
             <select id="payment-fy-filter" onchange="renderPaymentsTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="All">All FYs (2024 - 2026)</option>
-              <option value="2024-25">FY 2024-25</option>
+              <option value="2026-27" selected>FY 2026-27 (Current)</option>
               <option value="2025-26">FY 2025-26</option>
-              <option value="2026-27">FY 2026-27</option>
+              <option value="2024-25">FY 2024-25</option>
+              <option value="All">All FYs (2024 - 2026)</option>
             </select>
             <div id="payment-filter-wrapper" class="hidden">
               <select id="payment-emp-filter" onchange="renderPaymentsTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -209,10 +209,10 @@
 
         var payments = window.RevOpsStore.getCollection('payments') || [];
 
-        var selectedFy = document.getElementById('payment-fy-filter') ? document.getElementById('payment-fy-filter').value : 'All';
+        var selectedFy = document.getElementById('payment-fy-filter') ? document.getElementById('payment-fy-filter').value : '2026-27';
         var filtered = payments.filter(function(p) {
           if (selectedFy !== 'All') {
-            var payFy = typeof getFinancialYear === 'function' ? getFinancialYear(p.paymentDate) : '2025-26';
+            var payFy = typeof getFinancialYear === 'function' ? getFinancialYear(p.paymentDate) : '2026-27';
             if (payFy !== selectedFy) return false;
           }
           if (userRole === 'staff' && p.employeeId !== myEmpId) return false;

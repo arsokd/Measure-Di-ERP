@@ -26,7 +26,7 @@
         </div>
 
         <div class="flex items-center space-x-3">
-          <button onclick="openAddReviewModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+          <button id="btn-log-review" onclick="openAddReviewModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             <span>+ Log New Review</span>
           </button>
@@ -34,7 +34,7 @@
       </div>
 
       <!-- Reviews Due Warning Panel -->
-      <div class="bg-amber-50 border border-amber-200 p-5 rounded-2xl space-y-2">
+      <div id="reviews-due-panel" class="bg-amber-50 border border-amber-200 p-5 rounded-2xl space-y-2">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-2 text-amber-800 font-bold text-xs uppercase tracking-wider">
             <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
@@ -68,10 +68,10 @@
             <div>
               <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Review Type:</label>
               <select id="filter-review-year" onchange="renderReviewHistory()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 mr-2">
-            <option value="All">All Years (2024 - 2026)</option>
-            <option value="2024">2024 Reviews</option>
+            <option value="2026" selected>2026 Reviews (Current)</option>
             <option value="2025">2025 Reviews</option>
-            <option value="2026">2026 Reviews</option>
+            <option value="2024">2024 Reviews</option>
+            <option value="All">All Years (2024 - 2026)</option>
           </select>
           <select id="filter-review-type" onchange="renderReviewHistory()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="All">All Cadences</option>
@@ -218,34 +218,50 @@
         var myEmpId = localStorage.getItem('employeeId');
         var employees = window.RevOpsStore.getCollection('employees') || [];
 
-        // Determine Team List
-        var teamList = [];
-        if (userRole === 'super_admin' || userRole === 'admin') {
-          teamList = employees.filter(function(e) { return e.employeeId !== myEmpId && e.employeeId !== 'E-001'; });
-        } else {
-          teamList = employees.filter(function(e) { return e.reportsTo === myEmpId && e.employeeId !== 'E-001'; });
-        }
-
-        // Populate Member Filter & Modal Dropdowns
         var filterSelect = document.getElementById('filter-team-member');
         var modalSelect = document.getElementById('modal-review-emp');
 
-        filterSelect.innerHTML = `<option value="All">All Team Members</option>`;
-        modalSelect.innerHTML = "";
+        if (userRole === 'staff') {
+          var btn = document.getElementById('btn-log-review');
+          var panel = document.getElementById('reviews-due-panel');
+          if (btn) btn.classList.add('hidden');
+          if (panel) panel.classList.add('hidden');
 
-        teamList.forEach(function(m) {
-          var opt1 = document.createElement('option');
-          opt1.value = m.employeeId;
-          opt1.innerText = m.fullName + " (" + m.employeeId + ")";
-          filterSelect.appendChild(opt1);
+          filterSelect.innerHTML = "";
+          var myEmp = employees.find(function(e) { return e.employeeId === myEmpId; });
+          var opt = document.createElement('option');
+          opt.value = myEmpId;
+          opt.innerText = (myEmp ? myEmp.fullName : 'My Appraisals') + " (" + myEmpId + ")";
+          opt.selected = true;
+          filterSelect.appendChild(opt);
+          filterSelect.disabled = true;
+        } else {
+          // Determine Team List
+          var teamList = [];
+          if (userRole === 'super_admin' || userRole === 'admin') {
+            teamList = employees.filter(function(e) { return e.employeeId !== myEmpId && e.employeeId !== 'E-001'; });
+          } else {
+            teamList = employees.filter(function(e) { return e.reportsTo === myEmpId && e.employeeId !== 'E-001'; });
+          }
 
-          var opt2 = document.createElement('option');
-          opt2.value = m.employeeId;
-          opt2.innerText = m.fullName + " (" + m.employeeId + ")";
-          modalSelect.appendChild(opt2);
-        });
+          filterSelect.innerHTML = `<option value="All">All Team Members</option>`;
+          modalSelect.innerHTML = "";
 
-        checkPendingReviewsDue();
+          teamList.forEach(function(m) {
+            var opt1 = document.createElement('option');
+            opt1.value = m.employeeId;
+            opt1.innerText = m.fullName + " (" + m.employeeId + ")";
+            filterSelect.appendChild(opt1);
+
+            var opt2 = document.createElement('option');
+            opt2.value = m.employeeId;
+            opt2.innerText = m.fullName + " (" + m.employeeId + ")";
+            modalSelect.appendChild(opt2);
+          });
+
+          checkPendingReviewsDue();
+        }
+
         renderReviewHistory();
       }
 
@@ -287,6 +303,8 @@
       }
 
       function renderReviewHistory() {
+        var userRole = localStorage.getItem('userRole');
+        var myEmpId = localStorage.getItem('employeeId');
         var selectedEmp = document.getElementById('filter-team-member').value;
         var selectedType = document.getElementById('filter-review-type').value;
         var searchQuery = document.getElementById('review-search').value.toLowerCase();
@@ -296,11 +314,12 @@
         tbody.innerHTML = "";
 
         var filtered = reviews.filter(function(r) {
+          if (userRole === 'staff' && r.employeeId !== myEmpId) return false;
           var matchEmp = (selectedEmp === 'All' || r.employeeId === selectedEmp);
-          var selectedYear = document.getElementById('filter-review-year') ? document.getElementById('filter-review-year').value : 'All';
+          var selectedYear = document.getElementById('filter-review-year') ? document.getElementById('filter-review-year').value : '2026';
           var matchYear = (selectedYear === 'All' || (r.periodLabel || '').includes(selectedYear) || (r.periodEndDate || '').includes(selectedYear));
           var matchType = (selectedType === 'All' || r.periodType === selectedType);
-          var matchText = (r.employeeName.toLowerCase().includes(searchQuery) || (r.managerComments || '').toLowerCase().includes(searchQuery) || (r.rating || '').toLowerCase().includes(searchQuery));
+          var matchText = ((r.employeeName || '').toLowerCase().includes(searchQuery) || (r.managerComments || '').toLowerCase().includes(searchQuery) || (r.rating || '').toLowerCase().includes(searchQuery));
           return matchEmp && matchYear && matchType && matchText;
         });
 

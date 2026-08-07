@@ -17,15 +17,27 @@ end_2026 = datetime.date(2026, 7, 31)
 
 # Employees reference
 employees = [
-    {"employeeId": "E-001", "fullName": "Ravichandran", "designation": "Managing Director", "role": "super_admin"},
-    {"employeeId": "E-002", "fullName": "Murugan", "designation": "Sales & Marketing Head", "role": "admin"},
-    {"employeeId": "E-003", "fullName": "Subhashini", "designation": "Onboard vertical head", "role": "manager"},
-    {"employeeId": "E-004", "fullName": "Dipanwita", "designation": "Service Revenue & Crane weighing", "role": "staff"},
-    {"employeeId": "E-005", "fullName": "Balaram", "designation": "Sr. Business Manager - Steel Industry", "role": "staff"},
-    {"employeeId": "E-006", "fullName": "Mathiarasu", "designation": "Territory Head -  Karnataka", "role": "staff"},
-    {"employeeId": "E-007", "fullName": "Sivakumar", "designation": "Territory Head -  Odisha & CG", "role": "staff"},
-    {"employeeId": "E-008", "fullName": "Sandeep", "designation": "Business Manager - MP & UP", "role": "staff"},
-    {"employeeId": "E-009", "fullName": "Manowharan", "designation": "Business Manager", "role": "staff"},
+    {"employeeId": "E-001", "fullName": "Mr. Ravichandran", "designation": "Director", "role": "super_admin"},
+    {"employeeId": "E-002", "fullName": "Mr. Murugan", "designation": "Marketing Head", "role": "admin"},
+    {"employeeId": "E-003", "fullName": "Mrs. Anitha", "designation": "Technical Head", "role": "admin"},
+    {"employeeId": "E-004", "fullName": "Mrs. Subhashini", "designation": "Markeing - Onboard Head", "role": "manager"},
+    {"employeeId": "E-005", "fullName": "Ms. Dipa", "designation": "Marketing - Crane & Spares", "role": "staff"},
+    {"employeeId": "E-006", "fullName": "Mrs. Krithika", "designation": "Project Lead", "role": "staff"},
+    {"employeeId": "E-007", "fullName": "Mrs. Sandhya", "designation": "Digital Marketing Lead", "role": "staff"},
+    {"employeeId": "E-008", "fullName": "Mr. Ramkarthik", "designation": "Mechanical Design", "role": "staff"},
+    {"employeeId": "E-009", "fullName": "Mr. Balamurugan", "designation": "Embedded Design", "role": "staff"},
+    {"employeeId": "E-010", "fullName": "Mr. Santhosh", "designation": "Software Engineer", "role": "staff"},
+    {"employeeId": "E-011", "fullName": "Mrs. Vijayalakshmi", "designation": "Finance Lead", "role": "manager"},
+    {"employeeId": "E-012", "fullName": "Mr. Prasanth", "designation": "Factory- Production Incharge", "role": "staff"},
+    {"employeeId": "E-013", "fullName": "Mrs. Sandhya", "designation": "Valasaravakkam- Electronics Production Incharge", "role": "staff"},
+    {"employeeId": "E-014", "fullName": "Mr. Sivakumar Murugan", "designation": "Valasaravakkam- Electronics Production Engineer", "role": "staff"},
+    {"employeeId": "E-015", "fullName": "Ms. Patchyammal", "designation": "Valasaravakkam- Electronics Production Engineer", "role": "staff"},
+    {"employeeId": "E-016", "fullName": "Mr. Sivakumar Chinnayan", "designation": "Territory Manager - Orissa", "role": "staff"},
+    {"employeeId": "E-017", "fullName": "Mr. Balram", "designation": "Territory Manager - Telangana", "role": "staff"},
+    {"employeeId": "E-018", "fullName": "Mr. Mathiyarasu", "designation": "Territory Manager - Karnataka", "role": "staff"},
+    {"employeeId": "E-019", "fullName": "Mr. Sandeep", "designation": "Territory Manager - Maihar", "role": "staff"},
+    {"employeeId": "E-020", "fullName": "Mr. Debi Tripathy", "designation": "Service Engineer", "role": "staff"},
+    {"employeeId": "E-021", "fullName": "Mr. Manohar", "designation": "Business Executive", "role": "staff"}
 ]
 
 emp_map = {e["employeeId"]: e for e in employees}

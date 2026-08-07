@@ -25,7 +25,7 @@
           <p class="text-sm text-slate-500 mt-1">Assign operational Key Result Areas, targets & daily control points to personnel</p>
         </div>
 
-        <button onclick="openKraModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+        <button id="add-kra-btn" onclick="openKraModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
           <span>+ Add KRA Target</span>
         </button>
@@ -37,10 +37,10 @@
           <h2 class="text-lg font-bold text-slate-900">Assigned Employee KRA Matrix</h2>
           <div class="flex items-center space-x-3">
             <select id="kra-fy-filter" onchange="renderKraTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="All">All FYs (2024 - 2026)</option>
+              <option value="2026-27" selected>FY 2026-27 (Current)</option>
+              <option value="2025-26">FY 2025-26</option>
               <option value="2024-25">FY 2024-25</option>
-              <option value="2025-26" selected>FY 2025-26</option>
-              <option value="2026-27">FY 2026-27</option>
+              <option value="All">All FYs (2024 - 2026)</option>
             </select>
             <select id="kra-emp-filter" onchange="renderKraTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
               <!-- Populated dynamically -->
@@ -131,37 +131,69 @@
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        if (checkAuth(['admin', 'manager'])) {
+        if (checkAuth(['admin', 'manager', 'staff'])) {
           initKraPage();
         }
       });
 
       function initKraPage() {
+        var userRole = localStorage.getItem('userRole');
+        var myEmpId = localStorage.getItem('employeeId');
         var employees = window.RevOpsStore.getCollection('employees') || [];
         var filter = document.getElementById('kra-emp-filter');
         var select = document.getElementById('inp-kra-emp');
+        var addBtn = document.getElementById('add-kra-btn');
 
-        filter.innerHTML = `<option value="All">All Employees</option>`;
-        select.innerHTML = "";
+        if (userRole === 'staff') {
+          if (addBtn) addBtn.classList.add('hidden');
+          filter.innerHTML = "";
+          var myEmp = employees.find(function(e) { return e.employeeId === myEmpId; });
+          var opt = document.createElement('option');
+          opt.value = myEmpId;
+          opt.innerText = (myEmp ? myEmp.fullName : 'My Targets') + " (" + myEmpId + ")";
+          opt.selected = true;
+          filter.appendChild(opt);
+          filter.disabled = true;
+        } else if (userRole === 'manager') {
+          filter.innerHTML = `<option value="All">All Team Members</option>`;
+          select.innerHTML = "";
+          var teamEmps = employees.filter(function(e) { return e.employeeId === myEmpId || e.reportsTo === myEmpId; });
+          teamEmps.forEach(function(e) {
+            if (e.employeeId === 'E-001') return;
+            var opt1 = document.createElement('option');
+            opt1.value = e.employeeId;
+            opt1.innerText = e.fullName + " (" + e.employeeId + ")";
+            filter.appendChild(opt1);
 
-        employees.forEach(function(e) {
-          if (e.employeeId === 'E-001') return; // Business Head excluded from individual KRAs
-          var opt1 = document.createElement('option');
-          opt1.value = e.employeeId;
-          opt1.innerText = e.fullName + " (" + e.employeeId + ")";
-          filter.appendChild(opt1);
+            var opt2 = document.createElement('option');
+            opt2.value = e.employeeId;
+            opt2.innerText = e.fullName + " (" + e.employeeId + ")";
+            select.appendChild(opt2);
+          });
+        } else {
+          filter.innerHTML = `<option value="All">All Employees</option>`;
+          select.innerHTML = "";
+          employees.forEach(function(e) {
+            if (e.employeeId === 'E-001') return;
+            var opt1 = document.createElement('option');
+            opt1.value = e.employeeId;
+            opt1.innerText = e.fullName + " (" + e.employeeId + ")";
+            filter.appendChild(opt1);
 
-          var opt2 = document.createElement('option');
-          opt2.value = e.employeeId;
-          opt2.innerText = e.fullName + " (" + e.employeeId + ")";
-          select.appendChild(opt2);
-        });
+            var opt2 = document.createElement('option');
+            opt2.value = e.employeeId;
+            opt2.innerText = e.fullName + " (" + e.employeeId + ")";
+            select.appendChild(opt2);
+          });
+        }
 
         renderKraTable();
       }
 
       function renderKraTable() {
-        var filterFy = document.getElementById('kra-fy-filter') ? document.getElementById('kra-fy-filter').value : 'All';
+        var userRole = localStorage.getItem('userRole');
+        var myEmpId = localStorage.getItem('employeeId');
+        var filterFy = document.getElementById('kra-fy-filter') ? document.getElementById('kra-fy-filter').value : '2026-27';
         var filterEmp = document.getElementById('kra-emp-filter') && document.getElementById('kra-emp-filter').value ? document.getElementById('kra-emp-filter').value : 'All';
         var kras = window.RevOpsStore.getCollection('kraTargets') || [];
         var employees = window.RevOpsStore.getCollection('employees') || [];
@@ -171,7 +203,8 @@
 
         var filtered = kras.filter(function(k) {
           if (k.employeeId === "E-001") return false; // Business Head excluded from individual KRA targets
-          var matchFy = (filterFy === "All" || (k.financialYear || '2025-26') === filterFy);
+          if (userRole === 'staff' && k.employeeId !== myEmpId) return false;
+          var matchFy = (filterFy === "All" || (k.financialYear || '2026-27') === filterFy);
           var matchEmp = (filterEmp === "All" || k.employeeId === filterEmp);
           return matchFy && matchEmp;
         });

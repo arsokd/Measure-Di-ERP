@@ -223,7 +223,7 @@
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        if (checkAuth()) {
+        if (checkAuth(['super_admin', 'admin'])) {
           renderPayrollTable();
         }
       });

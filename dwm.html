@@ -263,7 +263,7 @@
           if (viewMode === 'Today') return a.date === today;
           if (viewMode === 'All') return true;
           
-          var actFy = typeof getFinancialYear === 'function' ? getFinancialYear(a.date) : '2025-26';
+          var actFy = typeof getFinancialYear === 'function' ? getFinancialYear(a.date) : '2026-27';
           return actFy === viewMode;
         });
 

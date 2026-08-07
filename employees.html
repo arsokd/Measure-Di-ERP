@@ -22,20 +22,26 @@
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
         <div>
           <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Employee Master Administration</h1>
-          <p class="text-sm text-slate-500 mt-1">Manage corporate personnel, reporting hierarchy, roles, active status & login credentials</p>
+          <p class="text-sm text-slate-500 mt-1">Manage corporate personnel, reporting hierarchy, roles, active status, Mobile ID & login credentials</p>
         </div>
 
-        <button onclick="openEmployeeModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          <span>+ Add New Employee</span>
-        </button>
+        <div class="flex items-center space-x-3">
+          <button onclick="openSetPasswordModalPrompt()" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+            <span>🔑 Set / Change Passwords</span>
+          </button>
+          <button onclick="openEmployeeModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>+ Add New Employee</span>
+          </button>
+        </div>
       </div>
 
       <!-- Employee Master Table -->
       <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden space-y-4">
         <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h2 class="text-lg font-bold text-slate-900">All Company Employees</h2>
-          <input type="text" id="emp-search-input" oninput="renderEmployeesTable()" placeholder="Search by name, ID, or email..." class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <input type="text" id="emp-search-input" oninput="renderEmployeesTable()" placeholder="Search by name, ID, email, or mobile..." class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs w-72 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
         </div>
 
         <div class="overflow-x-auto">
@@ -45,7 +51,7 @@
                 <th class="py-3 px-4">Employee ID & Name</th>
                 <th class="py-3 px-4">Designation & Vertical</th>
                 <th class="py-3 px-4">Reports To</th>
-                <th class="py-3 px-4">Email & Phone</th>
+                <th class="py-3 px-4">Email & Mobile Phone</th>
                 <th class="py-3 px-4 text-center">Role</th>
                 <th class="py-3 px-4 text-center">Active Status</th>
                 <th class="py-3 px-4 text-center">Login Management</th>
@@ -253,36 +259,51 @@
       </div>
     </div>
 
-    <!-- Modal: Create Login -->
-    <div id="create-login-modal-emp" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <!-- Modal: Set Employee Password (Admin / Super Admin / Developer) -->
+    <div id="set-password-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
-        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="text-base font-bold text-slate-900" id="create-login-emp-title">Create Login Credentials</h3>
-          <button onclick="closeCreateLoginModalEmp()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+        <div class="px-6 py-4 bg-amber-600 text-white flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+            <h3 class="text-base font-bold text-white">🔑 Set Employee Password</h3>
+          </div>
+          <button onclick="closeSetPasswordModal()" class="text-amber-200 hover:text-white text-lg font-bold">&times;</button>
         </div>
 
-        <form onsubmit="handleCreateLoginSubmitEmp(event)" class="p-6 space-y-4">
-          <input type="hidden" id="login-modal-doc-id" />
-
+        <form onsubmit="handleSaveEmployeePassword(event)" class="p-6 space-y-4">
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Employee Email</label>
-            <input type="email" id="login-modal-email" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-600 font-semibold cursor-not-allowed" />
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Select Employee *</label>
+            <select id="pass-modal-emp-select" onchange="updatePassModalDetails()" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <!-- Populated dynamically -->
+            </select>
           </div>
 
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Temporary Password</label>
-            <div class="flex space-x-2">
-              <input type="text" id="login-modal-pass" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900" />
-              <button type="button" onclick="genPassEmp()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl shrink-0">
-                Generate
-              </button>
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+            <div class="flex justify-between">
+              <span class="text-slate-500">Mobile ID (Login):</span>
+              <span class="font-mono font-bold text-indigo-700" id="pass-modal-mobile">9176699747</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Corporate Email:</span>
+              <span class="font-mono text-slate-800" id="pass-modal-email">ravi@measuredi.com</span>
             </div>
           </div>
 
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">New Password *</label>
+            <div class="flex space-x-2">
+              <input type="text" id="pass-modal-input" required value="MeasureDI@123" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+              <button type="button" onclick="document.getElementById('pass-modal-input').value='MeasureDI@123'" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl shrink-0 cursor-pointer" title="Reset to Default">
+                Default
+              </button>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1">Default password preset: <span class="font-mono font-bold">MeasureDI@123</span></p>
+          </div>
+
           <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
-            <button type="button" onclick="closeCreateLoginModalEmp()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
-            <button type="submit" id="create-login-btn-submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer">
-              Create Login
+            <button type="button" onclick="closeSetPasswordModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer">
+              Save Password
             </button>
           </div>
         </form>
@@ -291,7 +312,7 @@
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        if (checkAuth(['admin'])) {
+        if (checkAuth(['super_admin', 'admin'])) {
           renderEmployeesTable();
         }
       });
@@ -306,6 +327,7 @@
           return e.fullName.toLowerCase().includes(searchQuery) ||
                  e.employeeId.toLowerCase().includes(searchQuery) ||
                  e.email.toLowerCase().includes(searchQuery) ||
+                 (e.mobile || '').toLowerCase().includes(searchQuery) ||
                  e.vertical.toLowerCase().includes(searchQuery);
         });
 
@@ -328,17 +350,17 @@
             </button>
           `;
 
-          // Login Management Buttons
-          var loginMgmtHtml = "";
-          if (!emp.uid) {
-            loginMgmtHtml = `<button onclick="openCreateLoginModalEmp('${emp.id}', '${emp.fullName}', '${emp.email}')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-[11px] rounded-lg shadow-xs transition-colors cursor-pointer">
-              + Create Login
-            </button>`;
-          } else {
-            loginMgmtHtml = `<button onclick="handleResetPasswordEmp('${emp.email}')" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] rounded-lg transition-colors cursor-pointer">
-              Reset Password
-            </button>`;
-          }
+          // Login Management Buttons (Mobile ID & Password Access)
+          var mobileDisplay = emp.mobile || 'No Mobile ID';
+          var passDisplay = emp.password ? emp.password : 'MeasureDI@123';
+          var loginMgmtHtml = `
+            <div class="flex flex-col items-center space-y-1">
+              <span class="px-2 py-0.5 bg-slate-100 text-slate-800 border border-slate-200 rounded font-mono font-bold text-[10px]" title="Mobile ID">${mobileDisplay}</span>
+              <button onclick="openSetPasswordModalPrompt('${emp.id}')" class="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[10px] rounded shadow-2xs transition-colors cursor-pointer flex items-center space-x-1">
+                <span>🔑 Set Password</span>
+              </button>
+            </div>
+          `;
 
           var tr = document.createElement('tr');
           tr.className = "hover:bg-slate-50 transition-colors";
@@ -353,8 +375,8 @@
             </td>
             <td class="py-3 px-4 text-slate-600 font-medium">${managerName}</td>
             <td class="py-3 px-4 text-slate-600">
-              <div>${emp.email}</div>
-              <div class="text-[10px] text-slate-400">${emp.mobile}</div>
+              <div class="font-medium text-slate-800">${emp.email}</div>
+              <div class="text-[11px] font-bold font-mono text-indigo-700 flex items-center space-x-1 mt-0.5"><span class="text-[10px]">📱</span><span>${emp.mobile || 'No Mobile'}</span></div>
             </td>
             <td class="py-3 px-4 text-center">
               <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${emp.role === 'super_admin' ? 'bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-300' : emp.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-300' : emp.role === 'manager' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-slate-100 text-slate-700'}">${emp.role ? emp.role.replace('_', ' ') : 'staff'}</span>
@@ -598,16 +620,56 @@
         }
       }
 
-      function handleResetPasswordEmp(email) {
-        if (confirm("Send a password reset email to " + email + "?")) {
-          if (typeof auth !== 'undefined' && auth && auth.sendPasswordResetEmail) {
-            auth.sendPasswordResetEmail(email)
-              .then(function() { alert("Password reset email sent to " + email + "."); })
-              .catch(function() { alert("Password reset email sent to " + email + "."); });
-          } else {
-            alert("Password reset email sent to " + email + ".");
-          }
+      function openSetPasswordModalPrompt(targetDocId) {
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+        var select = document.getElementById('pass-modal-emp-select');
+        select.innerHTML = "";
+
+        employees.forEach(function(e) {
+          var opt = document.createElement('option');
+          opt.value = e.id;
+          opt.innerText = e.fullName + " (" + e.employeeId + " • " + (e.mobile || 'No Mobile') + ")";
+          if (targetDocId && e.id === targetDocId) opt.selected = true;
+          select.appendChild(opt);
+        });
+
+        updatePassModalDetails();
+        document.getElementById('set-password-modal').classList.remove('hidden');
+      }
+
+      function closeSetPasswordModal() {
+        document.getElementById('set-password-modal').classList.add('hidden');
+      }
+
+      function updatePassModalDetails() {
+        var docId = document.getElementById('pass-modal-emp-select').value;
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+        var emp = employees.find(function(e) { return e.id === docId; });
+        if (emp) {
+          document.getElementById('pass-modal-mobile').innerText = emp.mobile || '--';
+          document.getElementById('pass-modal-email').innerText = emp.email || '--';
+          document.getElementById('pass-modal-input').value = emp.password || "MeasureDI@123";
         }
+      }
+
+      function handleSaveEmployeePassword(e) {
+        e.preventDefault();
+        var docId = document.getElementById('pass-modal-emp-select').value;
+        var newPass = document.getElementById('pass-modal-input').value.trim();
+
+        if (!newPass) {
+          alert("Please enter a valid password.");
+          return;
+        }
+
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+        var emp = employees.find(function(e) { return e.id === docId; });
+
+        window.RevOpsStore.updateItem('employees', docId, { password: newPass });
+
+        alert("✅ Password Successfully Updated!\n\nEmployee: " + (emp ? emp.fullName : '') + "\nMobile ID: " + (emp ? emp.mobile : '') + "\nNew Password: " + newPass + "\n\nThe employee can now log in using their Mobile Number and this password.");
+        closeSetPasswordModal();
+        renderEmployeesTable();
       }
     </script>
   </body>

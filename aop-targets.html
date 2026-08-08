@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Measure DI RevOps - Company & Vertical AOP Targets</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/src/index.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/seed-data.js"></script>
     <script src="auth-guard.js"></script>
   </head>
   <body class="bg-slate-50 min-h-screen text-slate-800">
@@ -368,19 +370,19 @@
               var tr = document.createElement('tr');
               tr.className = "hover:bg-slate-50 transition-colors";
               tr.innerHTML = `
-                <td class="py-3 px-4 font-bold text-slate-900">${item.lineItem || item.vertical || 'AOP Line'}</td>
+                <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(item.lineItem || item.vertical || 'AOP Line')}</td>
                 <td class="py-3 px-4">
-                  <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold text-[10px]">${item.vertical || 'Sales'}</span>
+                  <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold text-[10px]">${escapeHtml(item.vertical || 'Sales')}</span>
                 </td>
-                <td class="py-3 px-4 text-slate-600 max-w-xs truncate" title="${item.subVertical || ''}">${item.subVertical || '--'}</td>
+                <td class="py-3 px-4 text-slate-600 max-w-xs truncate" title="${escapeHtml(item.subVertical || '')}">${escapeHtml(item.subVertical || '--')}</td>
                 <td class="py-3 px-4 text-right font-black text-slate-900">${formatINR(item.annualTarget || 0)}</td>
                 <td class="py-3 px-4">
-                  <div class="font-bold text-indigo-700">${ownerName} (${item.ownerEmployeeId || 'E-001'})</div>
-                  <div class="text-[10px] text-slate-500">${ownerDesig}</div>
+                  <div class="font-bold text-indigo-700">${escapeHtml(ownerName)} (${escapeHtml(item.ownerEmployeeId || 'E-001')})</div>
+                  <div class="text-[10px] text-slate-500">${escapeHtml(ownerDesig)}</div>
                 </td>
                 <td class="py-3 px-4 text-slate-600">
-                  <div class="font-medium text-slate-800 text-[11px]">${item.rollupType || 'Leaf target'}</div>
-                  <div class="text-[10px] text-slate-400 truncate max-w-xs" title="${item.splitBasis || item.notes || ''}">${item.splitBasis || item.notes || ''}</div>
+                  <div class="font-medium text-slate-800 text-[11px]">${escapeHtml(item.rollupType || 'Leaf target')}</div>
+                  <div class="text-[10px] text-slate-400 truncate max-w-xs" title="${escapeHtml(item.splitBasis || item.notes || '')}">${escapeHtml(item.splitBasis || item.notes || '')}</div>
                 </td>
               `;
               topSheetTbody.appendChild(tr);

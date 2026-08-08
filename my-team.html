@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Measure DI RevOps - My Team</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/src/index.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/seed-data.js"></script>
     <script src="auth-guard.js"></script>
   </head>
   <body class="bg-slate-50 min-h-screen text-slate-800">
@@ -299,11 +301,11 @@
           // 4. Login status (UID)
           var loginBtnHtml = "";
           if (!member.uid) {
-            loginBtnHtml = `<button onclick="openCreateLoginModal('${member.id}', '${member.fullName}', '${member.email}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer">
+            loginBtnHtml = `<button onclick="openCreateLoginModal('${escapeHtml(member.id)}', '${escapeHtml(member.fullName)}', '${escapeHtml(member.email)}')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer">
               + Create Login
             </button>`;
           } else {
-            loginBtnHtml = `<button onclick="handleResetPassword('${member.email}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors cursor-pointer">
+            loginBtnHtml = `<button onclick="handleResetPassword('${escapeHtml(member.email)}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors cursor-pointer">
               Reset Password
             </button>`;
           }
@@ -315,12 +317,12 @@
               <div class="flex items-center justify-between mb-3">
                 <div class="flex items-center space-x-3">
                   <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm shadow-xs">
-                    ${member.fullName.charAt(0)}
+                    ${escapeHtml(member.fullName.charAt(0))}
                   </div>
                   <div>
-                    <h3 class="text-base font-bold text-slate-900 leading-tight">${member.fullName}</h3>
-                    <p class="text-xs text-slate-500">${member.designation} &bull; ${member.vertical}</p>
-                    <p class="text-[11px] font-bold font-mono text-indigo-700 mt-0.5">📱 ${member.mobile || 'No Mobile'}</p>
+                    <h3 class="text-base font-bold text-slate-900 leading-tight">${escapeHtml(member.fullName)}</h3>
+                    <p class="text-xs text-slate-500">${escapeHtml(member.designation)} &bull; ${escapeHtml(member.vertical)}</p>
+                    <p class="text-[11px] font-bold font-mono text-indigo-700 mt-0.5">📱 ${escapeHtml(member.mobile || 'No Mobile')}</p>
                   </div>
                 </div>
                 <span class="px-2.5 py-1 rounded-full text-xs font-bold ${kpiBadgeClass}">${kpiPct}% KPI</span>
@@ -343,7 +345,7 @@
             </div>
 
             <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <a href="my-scorecard.html?employeeId=${member.employeeId}" class="text-xs font-bold text-indigo-600 hover:underline">
+              <a href="my-scorecard.html?employeeId=${escapeHtml(member.employeeId)}" class="text-xs font-bold text-indigo-600 hover:underline">
                 View Scorecard &rarr;
               </a>
               ${loginBtnHtml}

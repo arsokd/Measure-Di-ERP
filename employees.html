@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Measure DI RevOps - Employee Master</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/src/index.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/seed-data.js"></script>
     <script src="auth-guard.js"></script>
   </head>
   <body class="bg-slate-50 min-h-screen text-slate-800">
@@ -354,12 +356,11 @@
           `;
 
           // Login Management Buttons (Mobile ID & Password Access)
-          var mobileDisplay = emp.mobile || 'No Mobile ID';
-          var passDisplay = emp.password ? emp.password : 'MeasureDI@123';
+          var mobileDisplay = escapeHtml(emp.mobile || 'No Mobile ID');
           var loginMgmtHtml = `
             <div class="flex flex-col items-center space-y-1">
               <span class="px-2 py-0.5 bg-slate-100 text-slate-800 border border-slate-200 rounded font-mono font-bold text-[10px]" title="Mobile ID">${mobileDisplay}</span>
-              <button onclick="openSetPasswordModalPrompt('${emp.id}')" class="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[10px] rounded shadow-2xs transition-colors cursor-pointer flex items-center space-x-1">
+              <button onclick="openSetPasswordModalPrompt('${escapeHtml(emp.id)}')" class="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[10px] rounded shadow-2xs transition-colors cursor-pointer flex items-center space-x-1">
                 <span>🔑 Set Password</span>
               </button>
             </div>
@@ -369,27 +370,27 @@
           tr.className = "hover:bg-slate-50 transition-colors";
           tr.innerHTML = `
             <td class="py-3 px-4 font-semibold text-slate-900">
-              <div class="font-bold text-slate-900">${emp.fullName}</div>
-              <div class="text-[10px] text-slate-400 font-mono">${emp.employeeId}</div>
+              <div class="font-bold text-slate-900">${escapeHtml(emp.fullName)}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(emp.employeeId)}</div>
             </td>
             <td class="py-3 px-4 text-slate-700">
-              <div class="font-medium text-slate-800">${emp.designation}</div>
-              <div class="text-[10px] text-slate-500">${emp.vertical}</div>
+              <div class="font-medium text-slate-800">${escapeHtml(emp.designation)}</div>
+              <div class="text-[10px] text-slate-500">${escapeHtml(emp.vertical)}</div>
             </td>
-            <td class="py-3 px-4 text-slate-600 font-medium">${managerName}</td>
+            <td class="py-3 px-4 text-slate-600 font-medium">${escapeHtml(managerName)}</td>
             <td class="py-3 px-4 text-slate-600">
-              <div class="font-medium text-slate-800">${emp.email}</div>
-              <div class="text-[11px] font-bold font-mono text-indigo-700 flex items-center space-x-1 mt-0.5"><span class="text-[10px]">📱</span><span>${emp.mobile || 'No Mobile'}</span></div>
+              <div class="font-medium text-slate-800">${escapeHtml(emp.email)}</div>
+              <div class="text-[11px] font-bold font-mono text-indigo-700 flex items-center space-x-1 mt-0.5"><span class="text-[10px]">📱</span><span>${escapeHtml(emp.mobile || 'No Mobile')}</span></div>
             </td>
             <td class="py-3 px-4 text-center">
-              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${emp.role === 'super_admin' ? 'bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-300' : emp.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-300' : emp.role === 'manager' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-slate-100 text-slate-700'}">${emp.role ? emp.role.replace('_', ' ') : 'staff'}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${emp.role === 'super_admin' ? 'bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-300' : emp.role === 'admin' ? 'bg-purple-100 text-purple-800 border border-purple-300' : emp.role === 'manager' ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-slate-100 text-slate-700'}">${escapeHtml(emp.role ? emp.role.replace('_', ' ') : 'staff')}</span>
             </td>
             <td class="py-3 px-4 text-center">${toggleHtml}</td>
             <td class="py-3 px-4 text-center">${loginMgmtHtml}</td>
             <td class="py-3 px-4 text-center space-x-2">
-              <button onclick="viewDigitalFile('${emp.id}')" class="text-emerald-600 hover:text-emerald-800 font-bold hover:underline">File</button>
-              <button onclick="editEmployee('${emp.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
-              <button onclick="deleteEmployee('${emp.id}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
+              <button onclick="viewDigitalFile('${escapeHtml(emp.id)}')" class="text-emerald-600 hover:text-emerald-800 font-bold hover:underline">File</button>
+              <button onclick="editEmployee('${escapeHtml(emp.id)}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
+              <button onclick="deleteEmployee('${escapeHtml(emp.id)}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
             </td>
           `;
           tbody.appendChild(tr);

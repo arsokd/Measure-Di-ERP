@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Measure DI RevOps - Orders & Revenue Management</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/src/index.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/seed-data.js"></script>
     <script src="auth-guard.js"></script>
   </head>
   <body class="bg-slate-50 min-h-screen text-slate-800">
@@ -326,7 +328,7 @@
           var contribs = ord.contributors || [{ employeeId: ord.employeeId, employeeName: ord.employeeName, contributionPct: 100 }];
           var contribChips = "";
           contribs.forEach(function(c) {
-            contribChips += `<span class="inline-block px-2 py-0.5 mr-1 mb-1 rounded bg-slate-100 border border-slate-200 text-[10px] font-semibold text-slate-700">${c.employeeName || c.employeeId}: <strong>${c.contributionPct}%</strong></span>`;
+            contribChips += `<span class="inline-block px-2 py-0.5 mr-1 mb-1 rounded bg-slate-100 border border-slate-200 text-[10px] font-semibold text-slate-700">${escapeHtml(c.employeeName || c.employeeId)}: <strong>${escapeHtml(c.contributionPct)}%</strong></span>`;
           });
 
           var statusPill = "bg-emerald-100 text-emerald-800";
@@ -337,19 +339,19 @@
           var tr = document.createElement('tr');
           tr.className = "hover:bg-slate-50 transition-colors";
           tr.innerHTML = `
-            <td class="py-3 px-4 font-bold text-slate-900">${ord.customerName}</td>
-            <td class="py-3 px-4 font-medium text-slate-700">${ord.vertical}</td>
+            <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(ord.customerName)}</td>
+            <td class="py-3 px-4 font-medium text-slate-700">${escapeHtml(ord.vertical)}</td>
             <td class="py-3 px-4 text-right font-black text-slate-900">${formatINR(ord.orderValue)}</td>
             <td class="py-3 px-4">${contribChips}</td>
             <td class="py-3 px-4 text-right text-slate-600 font-medium">${formatINR(ord.gstAmount || 0)}</td>
-            <td class="py-3 px-4 font-mono text-slate-600">${ord.invoiceNumber || '--'}</td>
-            <td class="py-3 px-4 text-slate-500 font-mono">${ord.orderDate}</td>
+            <td class="py-3 px-4 font-mono text-slate-600">${escapeHtml(ord.invoiceNumber || '--')}</td>
+            <td class="py-3 px-4 text-slate-500 font-mono">${escapeHtml(ord.orderDate)}</td>
             <td class="py-3 px-4 text-center">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusPill}">${ord.status}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusPill}">${escapeHtml(ord.status)}</span>
             </td>
             <td class="py-3 px-4 text-center space-x-2">
-              <button onclick="editOrder('${ord.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
-              <button onclick="deleteOrder('${ord.id}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
+              <button onclick="editOrder('${escapeHtml(ord.id)}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
+              <button onclick="deleteOrder('${escapeHtml(ord.id)}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
             </td>
           `;
           tbody.appendChild(tr);

@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Measure DI RevOps - My Scorecard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/src/index.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/seed-data.js"></script>
     <script src="auth-guard.js"></script>
   </head>
   <body class="bg-slate-50 min-h-screen text-slate-800">
@@ -194,7 +196,7 @@
 
         // Title and Read-Only state
         document.getElementById('scorecard-title').innerText = targetEmp.fullName + "'s Scorecard";
-        document.getElementById('scorecard-subtitle').innerHTML = targetEmp.designation + " &bull; " + targetEmp.vertical + " &bull; Employee ID: " + targetEmp.employeeId;
+        document.getElementById('scorecard-subtitle').innerHTML = escapeHtml(targetEmp.designation) + " &bull; " + escapeHtml(targetEmp.vertical) + " &bull; Employee ID: " + escapeHtml(targetEmp.employeeId);
 
         var readOnlyBadge = document.getElementById('read-only-badge');
         if (isReadOnlyView) {
@@ -365,13 +367,13 @@
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
                   <div>
                     <div class="flex items-center space-x-2">
-                      <h3 class="text-base font-bold text-slate-900">${kra.kraName}</h3>
-                      <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-600">${kra.kpiType || 'Target'}</span>
+                      <h3 class="text-base font-bold text-slate-900">${escapeHtml(kra.kraName)}</h3>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-600">${escapeHtml(kra.kpiType || 'Target')}</span>
                     </div>
-                    <p class="text-xs text-slate-500">${kra.aopLine || 'AOP Target Line'}</p>
+                    <p class="text-xs text-slate-500">${escapeHtml(kra.aopLine || 'AOP Target Line')}</p>
                   </div>
                   <div class="flex items-center space-x-3">
-                    <span class="text-xs font-semibold text-slate-500">Weight: <strong class="text-slate-800">${weight}%</strong></span>
+                    <span class="text-xs font-semibold text-slate-500">Weight: <strong class="text-slate-800">${escapeHtml(weight)}%</strong></span>
                     <span class="px-3 py-1 rounded-full text-xs font-bold ${badgeColor}">${pctAchieved}% Achieved</span>
                   </div>
                 </div>
@@ -379,11 +381,11 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl text-xs">
                   <div>
                     <span class="text-slate-500 block">Target Value:</span>
-                    <span class="text-sm font-bold text-slate-900">${formatTarget}</span>
+                    <span class="text-sm font-bold text-slate-900">${escapeHtml(formatTarget)}</span>
                   </div>
                   <div>
                     <span class="text-slate-500 block">Achieved Value:</span>
-                    <span class="text-sm font-bold text-indigo-600">${formatAchieved}</span>
+                    <span class="text-sm font-bold text-indigo-600">${escapeHtml(formatAchieved)}</span>
                   </div>
                   <div>
                     <span class="text-slate-500 block">Weighted Contribution:</span>
@@ -393,7 +395,7 @@
 
                 <div class="text-xs text-slate-600 bg-amber-50/50 p-3 rounded-lg border border-amber-100 flex items-start space-x-2">
                   <span class="text-amber-600 font-bold shrink-0">Daily Control:</span>
-                  <span>${kra.dailyControl || 'Maintain daily activity discipline'}</span>
+                  <span>${escapeHtml(kra.dailyControl || 'Maintain daily activity discipline')}</span>
                 </div>
               </div>
             `;
@@ -489,8 +491,8 @@
               <div class="flex items-start space-x-2 bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/60">
                 <span class="w-2 h-2 rounded-full bg-indigo-400 mt-1 shrink-0"></span>
                 <div>
-                  <div class="font-bold text-slate-200">${k.kraName}:</div>
-                  <div class="text-slate-300 mt-0.5">${k.dailyControl || 'Maintain daily discipline'}</div>
+                  <div class="font-bold text-slate-200">${escapeHtml(k.kraName)}:</div>
+                  <div class="text-slate-300 mt-0.5">${escapeHtml(k.dailyControl || 'Maintain daily discipline')}</div>
                 </div>
               </div>
             `;

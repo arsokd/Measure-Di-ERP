@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Measure DI RevOps - Payment Collections</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/src/index.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/seed-data.js"></script>
     <script src="auth-guard.js"></script>
   </head>
   <body class="bg-slate-50 min-h-screen text-slate-800">
@@ -252,20 +254,20 @@
           var tr = document.createElement('tr');
           tr.className = "hover:bg-slate-50 transition-colors";
           tr.innerHTML = `
-            <td class="py-3 px-4 font-bold text-slate-900">${p.customerName}</td>
-            <td class="py-3 px-4 font-mono text-slate-600">${p.invoiceNumber || '--'}</td>
+            <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(p.customerName)}</td>
+            <td class="py-3 px-4 font-mono text-slate-600">${escapeHtml(p.invoiceNumber || '--')}</td>
             <td class="py-3 px-4 text-right font-black text-slate-900">${formatINR(p.amount)}</td>
             <td class="py-3 px-4 text-slate-700">
-              <span class="font-semibold">${p.paymentMode}</span>
-              ${p.utrNumber ? `<span class="block text-[10px] text-slate-400 font-mono">Ref: ${p.utrNumber}</span>` : ''}
+              <span class="font-semibold">${escapeHtml(p.paymentMode)}</span>
+              ${p.utrNumber ? `<span class="block text-[10px] text-slate-400 font-mono">Ref: ${escapeHtml(p.utrNumber)}</span>` : ''}
             </td>
-            <td class="py-3 px-4 text-slate-500 font-mono">${p.paymentDate}</td>
+            <td class="py-3 px-4 text-slate-500 font-mono">${escapeHtml(p.paymentDate)}</td>
             <td class="py-3 px-4 text-center">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusPill}">${p.status}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusPill}">${escapeHtml(p.status)}</span>
             </td>
             <td class="py-3 px-4 text-center space-x-2">
-              <button onclick="editPayment('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
-              <button onclick="deletePayment('${p.id}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
+              <button onclick="editPayment('${escapeHtml(p.id)}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
+              <button onclick="deletePayment('${escapeHtml(p.id)}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
             </td>
           `;
           tbody.appendChild(tr);

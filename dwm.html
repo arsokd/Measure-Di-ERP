@@ -4,11 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Measure DI RevOps - Daily Work Management (DWM)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/src/index.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="firebase-config.js"></script>
+    <script src="js/firebase-init.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/seed-data.js"></script>
     <script src="auth-guard.js"></script>
   </head>
   <body class="bg-slate-50 min-h-screen text-slate-800">
@@ -286,9 +288,9 @@
             }
 
             tr.innerHTML = `
-              <td class="py-3 px-4 font-semibold text-slate-900">${act.activityDescription}</td>
+              <td class="py-3 px-4 font-semibold text-slate-900">${escapeHtml(act.activityDescription)}</td>
               <td class="py-3 px-4 text-slate-600">
-                <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-[10px]">${act.linkedKra}</span>
+                <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-[10px]">${escapeHtml(act.linkedKra)}</span>
               </td>
               <td class="py-3 px-4 text-center">
                 <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Planned</span>
@@ -318,12 +320,12 @@
             var disabledAttr = isOwnDwm ? "" : "disabled";
 
             tr.innerHTML = `
-              <td class="py-3 px-4 font-semibold text-slate-900">${act.activityDescription}</td>
+              <td class="py-3 px-4 font-semibold text-slate-900">${escapeHtml(act.activityDescription)}</td>
               <td class="py-3 px-4">
-                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold text-[10px]">${act.linkedKra}</span>
+                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold text-[10px]">${escapeHtml(act.linkedKra)}</span>
               </td>
               <td class="py-3 px-4">
-                <select ${disabledAttr} onchange="updateActivityAccomplishment('${act.id}', this.value, 'acc-remarks-${act.id}')" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select ${disabledAttr} onchange="updateActivityAccomplishment('${escapeHtml(act.id)}', this.value, 'acc-remarks-${escapeHtml(act.id)}')" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   <option value="Pending" ${act.accomplishmentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
                   <option value="Done" ${act.accomplishmentStatus === 'Done' ? 'selected' : ''}>Done</option>
                   <option value="Partial" ${act.accomplishmentStatus === 'Partial' ? 'selected' : ''}>Partial</option>
@@ -331,7 +333,7 @@
                 </select>
               </td>
               <td class="py-3 px-4">
-                <input ${disabledAttr} type="text" id="acc-remarks-${act.id}" value="${act.accomplishmentRemarks || ''}" onblur="updateActivityAccomplishment('${act.id}', null, 'acc-remarks-${act.id}')" placeholder="Add remarks..." class="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <input ${disabledAttr} type="text" id="acc-remarks-${escapeHtml(act.id)}" value="${escapeHtml(act.accomplishmentRemarks || '')}" onblur="updateActivityAccomplishment('${escapeHtml(act.id)}', null, 'acc-remarks-${escapeHtml(act.id)}')" placeholder="Add remarks..." class="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </td>
             `;
             secBTbody.appendChild(tr);

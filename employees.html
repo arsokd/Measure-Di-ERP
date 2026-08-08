@@ -357,12 +357,16 @@
 
           // Login Management Buttons (Mobile ID & Password Access)
           var mobileDisplay = escapeHtml(emp.mobile || 'No Mobile ID');
+          var userRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('userRole') : null;
+          var canResetPass = (userRole === 'super_admin' || userRole === 'admin');
           var loginMgmtHtml = `
             <div class="flex flex-col items-center space-y-1">
               <span class="px-2 py-0.5 bg-slate-100 text-slate-800 border border-slate-200 rounded font-mono font-bold text-[10px]" title="Mobile ID">${mobileDisplay}</span>
-              <button onclick="openSetPasswordModalPrompt('${escapeHtml(emp.id)}')" class="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[10px] rounded shadow-2xs transition-colors cursor-pointer flex items-center space-x-1">
-                <span>🔑 Set Password</span>
-              </button>
+              ${canResetPass ? `
+                <button onclick="openSetPasswordModalPrompt('${escapeHtml(emp.id)}')" class="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[10px] rounded shadow-2xs transition-colors cursor-pointer flex items-center space-x-1">
+                  <span>🔑 Reset Password</span>
+                </button>
+              ` : ''}
             </div>
           `;
 
@@ -653,6 +657,12 @@
       }
 
       function openSetPasswordModalPrompt(targetDocId) {
+        var userRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('userRole') : null;
+        if (userRole !== 'super_admin' && userRole !== 'admin') {
+          alert("Access denied. Only Super Admin or Admin can reset passwords.");
+          return;
+        }
+
         var employees = window.RevOpsStore.getCollection('employees') || [];
         var select = document.getElementById('pass-modal-emp-select');
         select.innerHTML = "";
@@ -680,12 +690,18 @@
         if (emp) {
           document.getElementById('pass-modal-mobile').innerText = emp.mobile || '--';
           document.getElementById('pass-modal-email').innerText = emp.email || '--';
-          document.getElementById('pass-modal-input').value = emp.password || "MeasureDI@123";
+          document.getElementById('pass-modal-input').value = "MeasureDI@123";
         }
       }
 
       function handleSaveEmployeePassword(e) {
         e.preventDefault();
+        var userRole = (typeof localStorage !== 'undefined') ? localStorage.getItem('userRole') : null;
+        if (userRole !== 'super_admin' && userRole !== 'admin') {
+          alert("Access denied. Only Super Admin or Admin can reset passwords.");
+          return;
+        }
+
         var docId = document.getElementById('pass-modal-emp-select').value;
         var newPass = document.getElementById('pass-modal-input').value.trim();
 
@@ -697,9 +713,7 @@
         var employees = window.RevOpsStore.getCollection('employees') || [];
         var emp = employees.find(function(e) { return e.id === docId; });
 
-        window.RevOpsStore.updateItem('employees', docId, { password: newPass });
-
-        alert("✅ Password Successfully Updated!\n\nEmployee: " + (emp ? emp.fullName : '') + "\nMobile ID: " + (emp ? emp.mobile : '') + "\nNew Password: " + newPass + "\n\nThe employee can now log in using their Mobile Number and this password.");
+        alert("⚠️ Cloud Function Required for Password Reset\n\nEmployee: " + (emp ? emp.fullName : '') + "\nFirebase Auth UID: " + (emp ? (emp.uid || 'N/A') : 'N/A') + "\n\nNote: Resetting live Firebase Auth passwords for existing user accounts requires a backend Cloud Function with Firebase Admin SDK permissions (`admin.auth().updateUser`). This environment does not store plaintext passwords.");
         closeSetPasswordModal();
         renderEmployeesTable();
       }

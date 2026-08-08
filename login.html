@@ -43,12 +43,12 @@
 
         <form id="login-form" class="space-y-5" onsubmit="handleLoginSubmit(event)">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Mobile ID or Corporate Email</label>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Mobile Number</label>
             <div class="relative">
-              <input type="text" id="login-id" required placeholder="9840629928 or measuredichennai@gmail.com" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#982B68] focus:bg-white transition-all pl-10 font-medium" />
+              <input type="text" id="login-id" required placeholder="9840629928" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#982B68] focus:bg-white transition-all pl-10 font-medium" />
               <svg class="w-5 h-5 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
             </div>
-            <p class="text-[11px] text-slate-500 mt-1">💡 Login using your 10-digit Mobile Number (Mobile ID) or Corporate Email</p>
+            <p class="text-[11px] text-slate-500 mt-1">💡 Login using your 10-digit Mobile Number</p>
           </div>
 
           <div>
@@ -160,7 +160,7 @@
         var passwordInput = document.getElementById('login-password').value;
 
         if (!loginInput) {
-          showError("Please enter your Mobile ID or Corporate Email.");
+          showError("Please enter your Mobile Number.");
           setLoading(false);
           return;
         }
@@ -221,38 +221,7 @@
       }
 
       function handleForgotPassword() {
-        var loginInput = (document.getElementById('login-id').value || '').trim();
-        if (!loginInput) {
-          showError("Please enter your corporate email address or Mobile ID first.");
-          return;
-        }
-        var employees = [];
-        try { employees = window.RevOpsStore.getCollection('employees') || []; } catch(e) {}
-        var match = employees.find(function(emp) {
-          if (!emp) return false;
-          var empEmailLower = (emp.email || '').toLowerCase().trim();
-          var empMobileDigits = (emp.mobile || '').replace(/\D/g, '');
-          var digitsOnly = loginInput.replace(/\D/g, '');
-          if (empEmailLower && empEmailLower === loginInput.toLowerCase()) return true;
-          if (digitsOnly && digitsOnly.length >= 7 && empMobileDigits && empMobileDigits.indexOf(digitsOnly) !== -1) return true;
-          return false;
-        });
-        var emailToSend = (match && match.email) ? match.email : (loginInput.includes('@') ? loginInput : '');
-        if (!emailToSend) {
-          showError("Please enter a valid corporate email address for password reset.");
-          return;
-        }
-        if (typeof auth !== 'undefined' && auth && auth.sendPasswordResetEmail) {
-          auth.sendPasswordResetEmail(emailToSend)
-            .then(function() {
-              alert("Password reset email sent to " + emailToSend + ". Please check your inbox.");
-            })
-            .catch(function(err) {
-              showError("Failed to send password reset email: " + (err.message || err));
-            });
-        } else {
-          showError("Authentication service is unavailable.");
-        }
+        showError("Contact your Admin or Super Admin to reset your password.");
       }
     </script>
   </body>

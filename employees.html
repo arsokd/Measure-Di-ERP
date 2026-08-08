@@ -140,13 +140,16 @@
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Role *</label>
-              <select id="inp-role" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="staff">Staff</option>
-                <option value="manager">Manager</option>
-                <option value="admin">Admin</option>
-                <option value="super_admin">Super Admin</option>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">System Access Role *</label>
+              <select id="inp-role" required onchange="updateRoleAccessHint()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="super_admin">⚡ Super Admin (MD / Board View - Full Access)</option>
+                <option value="admin">👑 Admin (VP / Operations - All Departments)</option>
+                <option value="manager">📊 Manager (Vertical Head - Team Access)</option>
+                <option value="staff">👤 Staff (Field Engineer / Exec - Own Records Only)</option>
               </select>
+              <p id="role-access-hint" class="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-100 p-2 rounded-lg mt-1 font-medium">
+                💡 <strong>Super Admin Access:</strong> Unrestricted visibility across Executive RevOps Dashboard, Payroll CTC, Company Financials, and All Employee Scorecards.
+              </p>
             </div>
 
             <div>
@@ -398,6 +401,21 @@
         renderEmployeesTable();
       }
 
+      function updateRoleAccessHint() {
+        var r = document.getElementById('inp-role').value;
+        var hint = document.getElementById('role-access-hint');
+        if (!hint) return;
+        if (r === 'super_admin') {
+          hint.innerHTML = '💡 <strong>Super Admin Access:</strong> Unrestricted visibility across Executive RevOps Dashboard, Payroll CTC, Company Financials, and All Employee Scorecards.';
+        } else if (r === 'admin') {
+          hint.innerHTML = '💡 <strong>Admin Access:</strong> Operational Head. Full visibility across Leads, Orders, Expenses, Service Tickets, and All Teams.';
+        } else if (r === 'manager') {
+          hint.innerHTML = '💡 <strong>Manager Access:</strong> Vertical / Department Manager. Access to Direct Reports, Team Scorecards, DWM Approvals, and Vertical Orders.';
+        } else {
+          hint.innerHTML = '💡 <strong>Staff Access:</strong> Individual Contributor. Strictly restricted to Own Scorecard, Assigned Leads/Tickets, and Personal DWM/Expense Logs.';
+        }
+      }
+
       function openEmployeeModal() {
         document.getElementById('emp-doc-id').value = "";
         document.getElementById('emp-modal-title').innerText = "Add New Employee";
@@ -412,6 +430,7 @@
         document.getElementById('inp-mobile').value = "";
         document.getElementById('inp-location').value = "";
         document.getElementById('inp-role').value = "staff";
+        updateRoleAccessHint();
         document.getElementById('inp-aop-target').value = 10000000;
         document.getElementById('inp-monthly-ctc').value = 75000;
         document.getElementById('inp-bank-name').value = "HDFC Bank";
@@ -457,6 +476,7 @@
         document.getElementById('inp-mobile').value = emp.mobile;
         document.getElementById('inp-location').value = emp.location || '';
         document.getElementById('inp-role').value = emp.role || 'staff';
+        updateRoleAccessHint();
         document.getElementById('inp-aop-target').value = (emp.primaryAopTarget !== undefined && emp.primaryAopTarget !== null) ? emp.primaryAopTarget : 0;
         document.getElementById('inp-monthly-ctc').value = emp.monthlyCtc || 75000;
         document.getElementById('inp-bank-name').value = emp.bankName || 'HDFC Bank';

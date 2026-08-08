@@ -4,7 +4,7 @@ service cloud.firestore {
     
     // Helper function to get the current user's employee document
     function getUserData() {
-      return get(/databases/$(database)/documents/employees/$(request.auth.uid)).data;
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
     
     // Helper function to check if user is authenticated

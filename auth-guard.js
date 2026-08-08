@@ -252,8 +252,10 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
     document.body.classList.add('md:pl-64', 'pt-14', 'pb-16', 'md:pb-6');
   }
 
-  // Populate User Switcher Dropdown
+  // Populate User Switcher Dropdown (Super Admin only)
   setTimeout(function() {
+    var currentRole = localStorage.getItem('userRole');
+    if (currentRole !== 'super_admin') return;
     var switcherList = document.getElementById('user-switcher-list');
     var switcherListDesktop = document.getElementById('user-switcher-list-desktop');
     if (window.RevOpsStore) {
@@ -337,6 +339,8 @@ function toggleMobileNavDrawer() {
 
 // Feature 1: Session Switcher Handler
 function switchActiveUserSession(targetEmpId) {
+  var currentRole = localStorage.getItem('userRole');
+  if (currentRole !== 'super_admin') return;
   if (!window.RevOpsStore) return;
   var emps = window.RevOpsStore.getCollection('employees') || [];
   var targetUser = emps.find(function(e) { return e.employeeId === targetEmpId; });
@@ -720,24 +724,31 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
 
       <!-- Right: User Switcher, Data Sync, Logout -->
       <div class="flex items-center space-x-2">
-        <!-- Switch Session User Button -->
-        <div class="relative">
-          <button type="button" onclick="var m=document.getElementById('topbar-user-menu'); if(m) m.classList.toggle('hidden');" class="py-1 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold flex items-center space-x-1.5 cursor-pointer border border-slate-700 transition-colors">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            <span class="truncate max-w-[120px]">${userName}</span>
-            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-          </button>
-          <!-- Popup List -->
-          <div id="topbar-user-menu" class="hidden absolute right-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-2 z-50">
-            <div class="text-[10px] font-black uppercase text-slate-400 tracking-wider px-2 py-1 border-b border-slate-800 mb-1 flex items-center justify-between">
-              <span>Switch Session User (200 Roster)</span>
-              <span class="text-[9px] text-emerald-400 font-bold">RBAC</span>
-            </div>
-            <div class="space-y-1 max-h-52 overflow-y-auto" id="user-switcher-list">
-              <!-- Populated dynamically via JS -->
+        ${userRole === 'super_admin' ? `
+          <!-- Switch Session User Button -->
+          <div class="relative">
+            <button type="button" onclick="var m=document.getElementById('topbar-user-menu'); if(m) m.classList.toggle('hidden');" class="py-1 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold flex items-center space-x-1.5 cursor-pointer border border-slate-700 transition-colors">
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span class="truncate max-w-[120px]">${userName}</span>
+              <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <!-- Popup List -->
+            <div id="topbar-user-menu" class="hidden absolute right-0 top-full mt-1 w-64 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-2 z-50">
+              <div class="text-[10px] font-black uppercase text-slate-400 tracking-wider px-2 py-1 border-b border-slate-800 mb-1 flex items-center justify-between">
+                <span>Switch Session User (200 Roster)</span>
+                <span class="text-[9px] text-emerald-400 font-bold">RBAC</span>
+              </div>
+              <div class="space-y-1 max-h-52 overflow-y-auto" id="user-switcher-list">
+                <!-- Populated dynamically via JS -->
+              </div>
             </div>
           </div>
-        </div>
+        ` : `
+          <div class="py-1 px-2.5 bg-slate-800 text-slate-200 rounded-lg text-xs font-bold flex items-center space-x-1.5 border border-slate-700">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span class="truncate max-w-[120px]">${userName}</span>
+          </div>
+        `}
 
         <a href="Measure_DI_RevOps_Client_Demo_Guide.pdf" download="Measure_DI_RevOps_Client_Demo_Guide.pdf" target="_blank" class="hidden sm:flex py-1 px-2.5 text-xs font-bold text-sky-300 hover:text-white bg-sky-950/60 hover:bg-sky-900 border border-sky-800/80 rounded-lg transition-colors items-center space-x-1 cursor-pointer" title="Download Application PDF Guide">
           <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -801,22 +812,24 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
             </div>
           </div>
 
-          <!-- Switch Session User Button -->
-          <button type="button" onclick="var m=document.getElementById('sidebar-user-menu-desktop'); if(m) m.classList.toggle('hidden');" class="mt-2 w-full py-1 px-2 bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold flex items-center justify-between cursor-pointer border border-slate-600/50 transition-colors">
-            <span>Switch Session User</span>
-            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-          </button>
+          ${userRole === 'super_admin' ? `
+            <!-- Switch Session User Button -->
+            <button type="button" onclick="var m=document.getElementById('sidebar-user-menu-desktop'); if(m) m.classList.toggle('hidden');" class="mt-2 w-full py-1 px-2 bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold flex items-center justify-between cursor-pointer border border-slate-600/50 transition-colors">
+              <span>Switch Session User</span>
+              <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
 
-          <!-- Desktop User Switcher Popup Menu -->
-          <div id="sidebar-user-menu-desktop" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-2 z-50">
-            <div class="text-[10px] font-black uppercase text-slate-400 tracking-wider px-2 py-1 border-b border-slate-800 mb-1 flex items-center justify-between">
-              <span>Roster Select (200 Members)</span>
-              <span class="text-[9px] text-emerald-400 font-bold">RBAC</span>
+            <!-- Desktop User Switcher Popup Menu -->
+            <div id="sidebar-user-menu-desktop" class="hidden absolute left-0 right-0 top-full mt-1 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-2 z-50">
+              <div class="text-[10px] font-black uppercase text-slate-400 tracking-wider px-2 py-1 border-b border-slate-800 mb-1 flex items-center justify-between">
+                <span>Roster Select (200 Members)</span>
+                <span class="text-[9px] text-emerald-400 font-bold">RBAC</span>
+              </div>
+              <div class="space-y-1 max-h-52 overflow-y-auto" id="user-switcher-list-desktop">
+                <!-- Populated dynamically via JS -->
+              </div>
             </div>
-            <div class="space-y-1 max-h-52 overflow-y-auto" id="user-switcher-list-desktop">
-              <!-- Populated dynamically via JS -->
-            </div>
-          </div>
+          ` : ''}
         </div>
       </div>
 

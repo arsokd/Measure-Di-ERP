@@ -49,15 +49,40 @@ window.RevOpsStore = {
   },
 
   saveCollection: function(colName, items) {
-    localStorage.setItem(colName, JSON.stringify(items));
+    try {
+      localStorage.setItem(colName, JSON.stringify(items));
+      return true;
+    } catch(e) {
+      console.error("localStorage.setItem failed for " + colName + ":", e);
+      return false;
+    }
   },
 
   setCollection: function(colName, items) {
-    this.saveCollection(colName, items);
+    return this.saveCollection(colName, items);
+  },
+
+  showSyncWarningBanner: function(msg) {
+    var message = msg || "Saved locally, but couldn't reach the server";
+    var banner = document.getElementById('sync-warning-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'sync-warning-banner';
+      banner.className = 'fixed top-16 right-4 z-50 p-4 rounded-xl bg-amber-500/90 border border-amber-400 text-slate-900 text-xs font-bold shadow-2xl flex items-center space-x-2 transition-all duration-300';
+      banner.innerHTML = '<svg class="w-4 h-4 text-slate-900 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><span id="sync-warning-banner-text">' + message + '</span>';
+      document.body.appendChild(banner);
+    } else {
+      var textEl = document.getElementById('sync-warning-banner-text');
+      if (textEl) textEl.innerText = message;
+      banner.classList.remove('hidden');
+    }
+    setTimeout(function() {
+      if (banner) banner.classList.add('hidden');
+    }, 4000);
   },
 
   saveRecord: function(colName, record) {
-    if (!record || typeof record !== 'object') return Promise.resolve(null);
+    if (!record || typeof record !== 'object') return Promise.resolve({ record: null, synced: false });
     var sanitized = this.sanitizeRecord(record);
     if (!sanitized.id) {
       sanitized.id = colName.substring(0, 3) + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
@@ -74,20 +99,24 @@ window.RevOpsStore = {
 
     if (this.isFirebaseAvailable()) {
       try {
+        var self = this;
         return window.db.collection(colName).doc(sanitized.id).set(sanitized, { merge: true })
           .then(function() {
-            return sanitized;
+            return { record: sanitized, synced: true };
           })
           .catch(function(err) {
             console.error("Firestore saveRecord error for " + colName + "/" + sanitized.id + ":", err);
-            return sanitized;
+            self.showSyncWarningBanner();
+            return { record: sanitized, synced: false };
           });
       } catch (e) {
         console.error("Exception in saveRecord for " + colName + ":", e);
-        return Promise.resolve(sanitized);
+        this.showSyncWarningBanner();
+        return Promise.resolve({ record: sanitized, synced: false });
       }
     }
-    return Promise.resolve(sanitized);
+    this.showSyncWarningBanner();
+    return Promise.resolve({ record: sanitized, synced: false });
   },
 
   deleteRecord: function(colName, id) {
@@ -99,20 +128,24 @@ window.RevOpsStore = {
 
     if (this.isFirebaseAvailable()) {
       try {
+        var self = this;
         return window.db.collection(colName).doc(id).delete()
           .then(function() {
-            return true;
+            return { id: id, synced: true };
           })
           .catch(function(err) {
             console.error("Firestore deleteRecord error for " + colName + "/" + id + ":", err);
-            return false;
+            self.showSyncWarningBanner();
+            return { id: id, synced: false };
           });
       } catch (e) {
         console.error("Exception in deleteRecord for " + colName + ":", e);
-        return Promise.resolve(false);
+        this.showSyncWarningBanner();
+        return Promise.resolve({ id: id, synced: false });
       }
     }
-    return Promise.resolve(true);
+    this.showSyncWarningBanner();
+    return Promise.resolve({ id: id, synced: false });
   },
 
   addItem: function(colName, item) {
@@ -151,30 +184,35 @@ window.RevOpsStore = {
 
       var query = window.db.collection(colName);
 
-      if (userRole === 'staff' && empId) {
-        if (colName === 'attendance' || colName === 'dwmActivities') {
-          query = query.where('employeeId', '==', empId);
-        }
+      var staffScopedCols = ['attendance', 'dwmActivities', 'leads', 'orders', 'expenses', 'reviews', 'travelApprovals'];
+      if (userRole === 'staff' && empId && staffScopedCols.indexOf(colName) !== -1) {
+        query = query.where('employeeId', '==', empId);
       }
 
       return query.onSnapshot(function(snapshot) {
-        var remoteItems = [];
-        snapshot.forEach(function(doc) {
-          var data = doc.data();
-          data.id = doc.id;
-          remoteItems.push(data);
+        var localItems = window.RevOpsStore.getCollection(colName) || [];
+
+        snapshot.docChanges().forEach(function(change) {
+          var data = change.doc.data();
+          data.id = change.doc.id;
+          var idx = localItems.findIndex(function(it) {
+            return it.id === data.id || it.docId === data.id;
+          });
+          if (change.type === 'added' || change.type === 'modified') {
+            if (idx >= 0) {
+              localItems[idx] = Object.assign({}, localItems[idx], data);
+            } else {
+              localItems.push(data);
+            }
+          } else if (change.type === 'removed') {
+            if (idx >= 0) {
+              localItems.splice(idx, 1);
+            }
+          }
         });
 
-        if (userRole === 'staff' && empId && (colName === 'attendance' || colName === 'dwmActivities')) {
-          var existing = window.RevOpsStore.getCollection(colName) || [];
-          var otherItems = existing.filter(function(it) { return it.employeeId !== empId; });
-          var merged = otherItems.concat(remoteItems);
-          localStorage.setItem(colName, JSON.stringify(merged));
-          if (typeof onDataUpdated === 'function') onDataUpdated(merged);
-        } else {
-          localStorage.setItem(colName, JSON.stringify(remoteItems));
-          if (typeof onDataUpdated === 'function') onDataUpdated(remoteItems);
-        }
+        window.RevOpsStore.saveCollection(colName, localItems);
+        if (typeof onDataUpdated === 'function') onDataUpdated(localItems);
       }, function(err) {
         console.warn("Firestore snapshot listener error for " + colName + ":", err.message || err);
       });

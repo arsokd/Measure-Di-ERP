@@ -166,7 +166,12 @@
         }
 
         var digitsOnly = loginInput.replace(/\D/g, '');
-        var lowerInput = loginInput.toLowerCase();
+
+        if (loginInput.includes('@') || digitsOnly.length < 10) {
+          showError("Please enter a valid 10-digit mobile number.");
+          setLoading(false);
+          return;
+        }
 
         // Query employees from local store / Firestore
         var employees = [];
@@ -179,17 +184,13 @@
         var match = employees.find(function(emp) {
           if (!emp) return false;
           var empMobileDigits = (emp.mobile || '').replace(/\D/g, '');
-          var empEmailLower = (emp.email || '').toLowerCase().trim();
-          var empIdLower = (emp.employeeId || '').toLowerCase().trim();
 
-          if (digitsOnly && digitsOnly.length >= 7 && empMobileDigits && (empMobileDigits.indexOf(digitsOnly) !== -1 || digitsOnly.indexOf(empMobileDigits) !== -1)) return true;
-          if (empEmailLower && empEmailLower === lowerInput) return true;
-          if (empIdLower && empIdLower === lowerInput) return true;
+          if (digitsOnly && empMobileDigits && (empMobileDigits.indexOf(digitsOnly) !== -1 || digitsOnly.indexOf(empMobileDigits) !== -1)) return true;
           return false;
         });
 
         if (!match) {
-          showError("No account found for that mobile number or email.");
+          showError("No account found for that mobile number.");
           setLoading(false);
           return;
         }
@@ -211,7 +212,7 @@
               processLoginForEmployee(targetEmp);
             })
             .catch(function(err) {
-              showError("Incorrect email/mobile or password.");
+              showError("Incorrect Mobile Number or Password.");
               setLoading(false);
             });
         } else {

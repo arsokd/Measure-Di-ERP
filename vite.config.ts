@@ -1,11 +1,54 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
-export default defineConfig(() => {
+function netlifyFunctionsDevPlugin() {
   return {
-    plugins: [react(), tailwindcss()],
+    name: 'netlify-functions-dev',
+    configureServer(server: any) {
+      server.middlewares.use((req: any, res: any, next: any) => {
+        if (req.url?.startsWith('/.netlify/functions/reset-password')) {
+          let body = '';
+          req.on('data', (chunk: any) => { body += chunk; });
+          req.on('end', async () => {
+            try {
+              const { handler } = await import('./netlify/functions/reset-password.js');
+              const event = {
+                httpMethod: req.method,
+                headers: req.headers,
+                body: body
+              };
+              const result = await handler(event);
+              res.statusCode = result.statusCode || 200;
+              if (result.headers) {
+                for (const [key, value] of Object.entries(result.headers)) {
+                  res.setHeader(key, value as string);
+                }
+              }
+              res.end(result.body);
+            } catch (err: any) {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: err.message || String(err) }));
+            }
+          });
+          return;
+        }
+        next();
+      });
+    }
+  };
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  if (env.FIREBASE_SERVICE_ACCOUNT_KEY && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+    process.env.FIREBASE_SERVICE_ACCOUNT_KEY = env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  }
+
+  return {
+    plugins: [react(), tailwindcss(), netlifyFunctionsDevPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

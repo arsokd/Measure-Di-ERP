@@ -214,7 +214,13 @@
                 processLoginForEmployee(empToSave);
               })
               .catch(function(err) {
-                showError("Incorrect Mobile Number or Password.");
+                if (err.code === 'auth/user-not-found') {
+                  showError("No Firebase account found for mobile " + digitsOnly + ". Please create " + digitsOnly + "@measuredi.com in Firebase or link it in Employee Master.");
+                } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+                  showError("Incorrect Password for mobile number " + digitsOnly + ".");
+                } else {
+                  showError("Login failed: " + (err.message || "Incorrect Mobile Number or Password."));
+                }
                 setLoading(false);
               });
           } else {

@@ -34,6 +34,11 @@
               <option value="2024-25">FY 2024-25</option>
               <option value="All">All Time (2024 - 2026)</option>
             </select>
+          <button onclick="downloadTallyXML()" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <span>Download Tally XML (CA Audit)</span>
+          </button>
+
           <button onclick="exportToCSV('orders')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span>Export Orders CSV</span>
@@ -70,6 +75,32 @@
           <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Attendance Rate</span>
           <div class="text-3xl font-black text-blue-600 mt-1" id="rpt-att-rate">96%</div>
           <p class="text-xs text-slate-400 mt-1">Punch In & Out Completion</p>
+        </div>
+      </div>
+
+      <!-- Statutory Financial Statements & Tally XML Audit Banner -->
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-lg border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div class="space-y-1.5 max-w-2xl">
+          <div class="flex items-center space-x-2">
+            <span class="px-2.5 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-black uppercase tracking-wider rounded-md border border-amber-500/30">CA & Statutory Audit Ready</span>
+            <span class="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider rounded-md border border-emerald-500/30">Tally Prime & ERP 9 XML</span>
+          </div>
+          <h2 class="text-xl font-black text-white tracking-tight">Statutory Financial Statements & Tally XML Export</h2>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Access statutory Profit & Loss Statements, Balance Sheets, and Cash Flow Reports directly in the app. Download Tally-compliant XML files with mapped ledgers, sales vouchers, and expense payments for direct import into Tally Prime or Tally ERP 9 for Chartered Accountant (CA) statutory audits.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 shrink-0">
+          <a href="/expenses.html?tab=fin-statements" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center space-x-2 cursor-pointer border border-indigo-400/30">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            <span>View Financial Statements (P&amp;L, BS, Cash Flow)</span>
+          </a>
+
+          <button onclick="downloadTallyXML()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center space-x-2 cursor-pointer border border-emerald-400/30">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span>Download Tally XML File</span>
+          </button>
         </div>
       </div>
 
@@ -250,6 +281,197 @@
         a.download = "Measure_DI_" + type + "_export.csv";
         a.click();
         window.URL.revokeObjectURL(url);
+      }
+
+      /* TALLY XML EXPORT FUNCTION FOR CA AUDIT */
+      function downloadTallyXML(selectedFy) {
+        if (!selectedFy) {
+          var fySelect = document.getElementById('rpt-fy-select');
+          selectedFy = fySelect ? fySelect.value : '2026-27';
+        }
+
+        var companyName = "Measure DI Technologies Private Limited";
+        var orders = window.RevOpsStore.getCollection('orders') || [];
+        var expenses = window.RevOpsStore.getCollection('expenses') || [];
+
+        var filteredOrders = orders.filter(function(o) {
+          if (selectedFy === 'All') return true;
+          var fy = typeof getFinancialYear === 'function' ? getFinancialYear(o.orderDate) : '2026-27';
+          return fy === selectedFy;
+        });
+
+        var filteredExpenses = expenses.filter(function(e) {
+          if (selectedFy === 'All') return true;
+          var fy = typeof getFinancialYear === 'function' ? getFinancialYear(e.date) : '2026-27';
+          return fy === selectedFy;
+        });
+
+        function escapeXML(str) {
+          if (!str) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+        }
+
+        function formatTallyDate(dateStr) {
+          if (!dateStr) return '20260401';
+          var clean = dateStr.replace(/-/g, '');
+          if (clean.length === 8) return clean;
+          return '20260401';
+        }
+
+        var xml = `<?xml version="1.0" encoding="UTF-8"?>
+<ENVELOPE>
+  <HEADER>
+    <TALLYREQUEST>Import Data</TALLYREQUEST>
+  </HEADER>
+  <BODY>
+    <IMPORTDATA>
+      <REQUESTDESC>
+        <REPORTNAME>All Masters and Vouchers</REPORTNAME>
+        <STATICVARIABLES>
+          <SVCURRENTCOMPANY>${escapeXML(companyName)}</SVCURRENTCOMPANY>
+        </STATICVARIABLES>
+      </REQUESTDESC>
+      <REQUESTDATA>
+        <!-- MASTER LEDGERS FOR TALLY PRIME / ERP 9 -->
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <LEDGER NAME="Sales - RevOps Commercial" RESERVEDNAME="">
+            <PARENT>Sales Accounts</PARENT>
+            <ISBILLWISEON>Yes</ISBILLWISEON>
+            <AFFECTSSTOCK>No</AFFECTSSTOCK>
+          </LEDGER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <LEDGER NAME="Direct COGS &amp; Project Execution" RESERVEDNAME="">
+            <PARENT>Direct Expenses</PARENT>
+            <AFFECTSSTOCK>No</AFFECTSSTOCK>
+          </LEDGER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <LEDGER NAME="Employee Salaries &amp; Payroll" RESERVEDNAME="">
+            <PARENT>Indirect Expenses</PARENT>
+          </LEDGER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <LEDGER NAME="Field Travel &amp; Daily Allowances" RESERVEDNAME="">
+            <PARENT>Indirect Expenses</PARENT>
+          </LEDGER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <LEDGER NAME="Admin &amp; Office Overhead" RESERVEDNAME="">
+            <PARENT>Indirect Expenses</PARENT>
+          </LEDGER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <LEDGER NAME="Sundry Debtors - Client Receivables" RESERVEDNAME="">
+            <PARENT>Sundry Debtors</PARENT>
+            <ISBILLWISEON>Yes</ISBILLWISEON>
+          </LEDGER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <LEDGER NAME="Sundry Creditors - Vendors &amp; Subcontractors" RESERVEDNAME="">
+            <PARENT>Sundry Creditors</PARENT>
+            <ISBILLWISEON>Yes</ISBILLWISEON>
+          </LEDGER>
+        </TALLYMESSAGE>
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <LEDGER NAME="HDFC Bank Operating Account" RESERVEDNAME="">
+            <PARENT>Bank Accounts</PARENT>
+          </LEDGER>
+        </TALLYMESSAGE>
+`;
+
+        // Sales Vouchers
+        filteredOrders.forEach(function(o, idx) {
+          if (o.status === "Won") {
+            var dateFormatted = formatTallyDate(o.orderDate || '2026-04-01');
+            var val = Number(o.orderValue) || 0;
+            var invNo = o.orderId || ('INV-2026-' + (1000 + idx));
+            var client = o.customerName || 'Client Customer';
+
+            xml += `
+        <!-- Sales Voucher: ${escapeXML(invNo)} -->
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <VOUCHER VCHTYPE="Sales" ACTION="Create" OBJVIEW="Accounting Voucher View">
+            <DATE>${dateFormatted}</DATE>
+            <NARRATION>RevOps Commercial Order ${escapeXML(o.orderId || '')} - Client: ${escapeXML(client)} (${escapeXML(o.vertical || 'Commercial')})</NARRATION>
+            <VOUCHERTYPENAME>Sales</VOUCHERTYPENAME>
+            <VOUCHERNUMBER>${escapeXML(invNo)}</VOUCHERNUMBER>
+            <PARTYLEDGERNAME>Sundry Debtors - Client Receivables</PARTYLEDGERNAME>
+            <PERSISTEDVIEW>Accounting Voucher View</PERSISTEDVIEW>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>Sundry Debtors - Client Receivables</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+              <AMOUNT>-${val}</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>Sales - RevOps Commercial</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+              <AMOUNT>${val}</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>`;
+          }
+        });
+
+        // Expense Vouchers
+        filteredExpenses.forEach(function(exp, idx) {
+          if (exp.status === "Approved") {
+            var dateFormatted = formatTallyDate(exp.date || '2026-04-01');
+            var val = Number(exp.amount) || 0;
+            var vNo = exp.voucherNo || ('VOUCH-' + (1000 + idx));
+            var payee = exp.payee || 'Vendor / Employee';
+            var cat = exp.category || 'Admin';
+
+            var expLedger = "Admin &amp; Office Overhead";
+            if (cat === 'Travelling') expLedger = "Field Travel &amp; Daily Allowances";
+            if (cat === 'Project Expenses') expLedger = "Direct COGS &amp; Project Execution";
+            if (cat === 'Salary Advance') expLedger = "Employee Salaries &amp; Payroll";
+
+            xml += `
+        <!-- Expense Voucher: ${escapeXML(vNo)} -->
+        <TALLYMESSAGE xmlns:UDF="TallyUDF">
+          <VOUCHER VCHTYPE="Payment" ACTION="Create" OBJVIEW="Accounting Voucher View">
+            <DATE>${dateFormatted}</DATE>
+            <NARRATION>RevOps Expense ${escapeXML(vNo)} - Payee: ${escapeXML(payee)} [${escapeXML(cat)}] - ${escapeXML(exp.remarks || '')}</NARRATION>
+            <VOUCHERTYPENAME>Payment</VOUCHERTYPENAME>
+            <VOUCHERNUMBER>${escapeXML(vNo)}</VOUCHERNUMBER>
+            <PARTYLEDGERNAME>HDFC Bank Operating Account</PARTYLEDGERNAME>
+            <PERSISTEDVIEW>Accounting Voucher View</PERSISTEDVIEW>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>${expLedger}</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>Yes</ISDEEMEDPOSITIVE>
+              <AMOUNT>-${val}</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+            <ALLLEDGERENTRIES.LIST>
+              <LEDGERNAME>HDFC Bank Operating Account</LEDGERNAME>
+              <ISDEEMEDPOSITIVE>No</ISDEEMEDPOSITIVE>
+              <AMOUNT>${val}</AMOUNT>
+            </ALLLEDGERENTRIES.LIST>
+          </VOUCHER>
+        </TALLYMESSAGE>`;
+          }
+        });
+
+        xml += `
+      </REQUESTDATA>
+    </IMPORTDATA>
+  </BODY>
+</ENVELOPE>`;
+
+        var blob = new Blob([xml], { type: "application/xml;charset=utf-8;" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "Measure_DI_Tally_Audit_Import_" + selectedFy.replace(/\s+/g, '_') + ".xml";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
     </script>
   </body>

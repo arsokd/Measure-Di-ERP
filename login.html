@@ -184,40 +184,92 @@
         var match = employees.find(function(emp) {
           if (!emp) return false;
           var empMobileDigits = (emp.mobile || '').replace(/\D/g, '');
-
           if (digitsOnly && empMobileDigits && (empMobileDigits.indexOf(digitsOnly) !== -1 || digitsOnly.indexOf(empMobileDigits) !== -1)) return true;
           return false;
         });
 
-        if (!match) {
-          showError("No account found for that mobile number.");
-          setLoading(false);
-          return;
+        function performFirebaseAuth(targetEmail, targetEmp) {
+          if (typeof auth !== 'undefined' && auth && auth.signInWithEmailAndPassword) {
+            auth.signInWithEmailAndPassword(targetEmail, passwordInput)
+              .then(function(userCred) {
+                var uid = userCred.user ? userCred.user.uid : null;
+                var empToSave = targetEmp || {
+                  id: 'emp_' + digitsOnly,
+                  name: userCred.user.displayName || ('User ' + digitsOnly),
+                  mobile: digitsOnly,
+                  email: targetEmail,
+                  role: 'staff',
+                  designation: 'Field Engineer',
+                  department: 'Operations'
+                };
+
+                if (uid && window.db) {
+                  window.db.collection('users').doc(uid).set({
+                    employeeId: empToSave.employeeId || empToSave.id || '',
+                    role: empToSave.role || 'staff'
+                  }, { merge: true }).catch(function(err) {
+                    console.warn("Error updating users mapping on login:", err);
+                  });
+                }
+                processLoginForEmployee(empToSave);
+              })
+              .catch(function(err) {
+                showError("Incorrect Mobile Number or Password.");
+                setLoading(false);
+              });
+          } else {
+            showError("Authentication service unavailable.");
+            setLoading(false);
+          }
         }
 
-        if (typeof auth !== 'undefined' && auth && auth.signInWithEmailAndPassword && match.email) {
-          auth.signInWithEmailAndPassword(match.email, passwordInput)
-            .then(function(userCred) {
-              var uid = userCred.user ? userCred.user.uid : null;
-              var firestoreEmp = employees.find(function(e) { return (uid && e.uid === uid) || e.email === match.email; });
-              var targetEmp = firestoreEmp || match;
-              if (uid && window.db) {
-                window.db.collection('users').doc(uid).set({
-                  employeeId: targetEmp.employeeId || '',
-                  role: targetEmp.role || 'staff'
-                }, { merge: true }).catch(function(err) {
-                  console.warn("Error updating users mapping on login:", err);
-                });
-              }
-              processLoginForEmployee(targetEmp);
-            })
-            .catch(function(err) {
-              showError("Incorrect Mobile Number or Password.");
-              setLoading(false);
+        if (match) {
+          if ((match.customPassword || match.password) && passwordInput === (match.customPassword || match.password)) {
+            processLoginForEmployee(match);
+            return;
+          }
+          if (match.email) {
+            performFirebaseAuth(match.email, match);
+            return;
+          }
+        }
+
+        // If not found in local store or password mismatch, search Firestore 'employees' collection directly
+        if (window.db && typeof window.db.collection === 'function') {
+          window.db.collection('employees').get().then(function(snapshot) {
+            var firestoreEmployees = [];
+            snapshot.forEach(function(doc) {
+              var data = doc.data() || {};
+              data.docId = doc.id;
+              firestoreEmployees.push(data);
             });
+
+            var fsMatch = firestoreEmployees.find(function(emp) {
+              var empMobileDigits = (emp.mobile || '').replace(/\D/g, '');
+              return digitsOnly && empMobileDigits && (empMobileDigits.indexOf(digitsOnly) !== -1 || digitsOnly.indexOf(empMobileDigits) !== -1);
+            });
+
+            if (fsMatch) {
+              if ((fsMatch.customPassword || fsMatch.password) && passwordInput === (fsMatch.customPassword || fsMatch.password)) {
+                processLoginForEmployee(fsMatch);
+                return;
+              }
+              if (fsMatch.email) {
+                performFirebaseAuth(fsMatch.email, fsMatch);
+                return;
+              }
+            }
+
+            // Try fallback direct mobile email login e.g. 8939821707@measuredi.com
+            var fallbackEmail = digitsOnly + '@measuredi.com';
+            performFirebaseAuth(fallbackEmail, null);
+          }).catch(function(err) {
+            var fallbackEmail = digitsOnly + '@measuredi.com';
+            performFirebaseAuth(fallbackEmail, null);
+          });
         } else {
-          showError("Authentication service unavailable.");
-          setLoading(false);
+          var fallbackEmail = digitsOnly + '@measuredi.com';
+          performFirebaseAuth(fallbackEmail, null);
         }
       }
 

@@ -2,6 +2,17 @@
 
 window.RevOpsStore = window.RevOpsStore || {};
 
+if (typeof window.getFormattedToday !== 'function') {
+  window.getFormattedToday = function() {
+    var now = new Date();
+    var dd = String(now.getDate()).padStart(2, '0');
+    var mm = String(now.getMonth() + 1).padStart(2, '0');
+    var yyyy = now.getFullYear();
+    return dd + '/' + mm + '/' + yyyy;
+  };
+}
+var getFormattedToday = window.getFormattedToday;
+
 window.RevOpsStore.initSeedData = function() {
     var checkCols = ['employees', 'orders', 'leads', 'serviceTickets', 'aopTargets', 'kraTargets', 'expenses', 'payments', 'payroll', 'attendance', 'dwmActivities', 'reviews', 'projectsMaster'];
     var hasEmptyCols = checkCols.some(function(colName) {
@@ -22289,12 +22300,14 @@ if (typeof window !== "undefined") {
   if (typeof window.RevOpsStore.initSeedData === "function") {
     window.RevOpsStore.initSeedData();
   }
-  document.addEventListener('DOMContentLoaded', function() {
-    if (window.RevOpsStore && typeof window.RevOpsStore.initSeedData === "function") {
-      window.RevOpsStore.initSeedData();
-    }
-    setTimeout(function() {
-      if (window.RevOpsStore && window.RevOpsStore.initSync) window.RevOpsStore.initSync();
-    }, 300);
-  });
+  if (typeof document !== "undefined") {
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.RevOpsStore && typeof window.RevOpsStore.initSeedData === "function") {
+        window.RevOpsStore.initSeedData();
+      }
+      setTimeout(function() {
+        if (window.RevOpsStore && window.RevOpsStore.initSync) window.RevOpsStore.initSync();
+      }, 300);
+    });
+  }
 }

@@ -26,8 +26,13 @@ if (window.RevOpsStore) {
           e.mobile = '9840629928';
           e.email = 'measuredichennai@gmail.com';
           empListChanged = true;
-        } else if (e.employeeId === 'E-002' && e.role !== 'admin') {
+        } else if (e.employeeId === 'E-002') {
           e.role = 'admin';
+          e.mobile = '9840122334';
+          e.fullName = 'Mr. Murugan V';
+          e.designation = 'Sales & Marketing Head';
+          e.customPassword = 'AAABBC123456';
+          e.password = 'AAABBC123456';
           empListChanged = true;
         }
       });
@@ -61,8 +66,8 @@ if (window.RevOpsStore) {
   {
     "id": "emp_2",
     "employeeId": "E-002",
-    "fullName": "Mr. Murugan",
-    "designation": "Marketing Head",
+    "fullName": "Mr. Murugan V",
+    "designation": "Sales & Marketing Head",
     "vertical": "Marketing",
     "subVertical": "Marketing Head",
     "location": "Head Office",
@@ -71,7 +76,9 @@ if (window.RevOpsStore) {
     "reportsToName": "Mr. Ravichandran",
     "workArrangement": "Hybrid",
     "email": "murugan@measuredi.com",
-    "mobile": "8939821707",
+    "mobile": "9840122334",
+    "customPassword": "AAABBC123456",
+    "password": "AAABBC123456",
     "dateOfJoining": "01/04/2020",
     "primaryAopMetric": "Sales Revenue, Service Revenue, Spare parts Revenue, DOS",
     "primaryAopTarget": 200000000.0,

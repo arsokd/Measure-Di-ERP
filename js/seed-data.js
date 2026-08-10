@@ -1,14 +1,21 @@
 // js/seed-data.js - Measure DI RevOps Seed Data
 
-if (window.RevOpsStore) {
-  window.RevOpsStore.initSeedData = function() {
+window.RevOpsStore = window.RevOpsStore || {};
+
+window.RevOpsStore.initSeedData = function() {
     var checkCols = ['employees', 'orders', 'leads', 'serviceTickets', 'aopTargets', 'kraTargets', 'expenses', 'payments', 'payroll', 'attendance', 'dwmActivities', 'reviews', 'projectsMaster'];
     var hasEmptyCols = checkCols.some(function(colName) {
-      var arr = window.RevOpsStore.getCollection(colName);
+      var arr = (window.RevOpsStore && typeof window.RevOpsStore.getCollection === 'function') ? window.RevOpsStore.getCollection(colName) : null;
+      if (!arr || arr.length === 0) {
+        try {
+          var raw = localStorage.getItem(colName);
+          arr = raw ? JSON.parse(raw) : [];
+        } catch(e) { arr = []; }
+      }
       return !arr || arr.length === 0;
     });
 
-    if (!localStorage.getItem('revops_seeded_v24') || hasEmptyCols) {
+    if (!localStorage.getItem('revops_seeded_v25') || hasEmptyCols) {
       console.log("Seeding Google Sheets RevOps data for Measure DI Technologies...");
       
       
@@ -2059,6 +2066,139 @@ if (window.RevOpsStore) {
       var todayFormatted = getFormattedToday();
 
       var defaultOrders = [
+  {
+    "id": "ord_2026_01",
+    "customerName": "JSW Steel Works Vijayanagar",
+    "customerGstin": "29AAACJ1011A1Z2",
+    "vertical": "Sales",
+    "subVertical": "Project Sales",
+    "orderValue": 8500000,
+    "gstPct": 18,
+    "gstAmount": 1530000,
+    "totalInvoiceValue": 10030000,
+    "hsnCode": "8423",
+    "invoiceNumber": "INV/2026-27/001",
+    "orderDate": "15/04/2026",
+    "status": "Won",
+    "lossReason": "",
+    "remarks": "Automated Belt Scale weighing system supply and integration",
+    "contributors": [
+      { "employeeId": "E-002", "employeeName": "Mr. Murugan V", "contributionPct": 50 },
+      { "employeeId": "E-006", "employeeName": "Mathiarasu", "contributionPct": 50 }
+    ],
+    "contributorIds": ["E-002", "E-006"],
+    "isMultiContributor": true,
+    "employeeId": "E-002",
+    "employeeName": "Mr. Murugan V",
+    "createdAt": "2026-04-15T10:00:00",
+    "updatedAt": "2026-04-15T10:00:00"
+  },
+  {
+    "id": "ord_2026_02",
+    "customerName": "Tata Steel Kalinganagar",
+    "customerGstin": "21AAACT2341A1Z5",
+    "vertical": "Service/Parts",
+    "subVertical": "AMC Service",
+    "orderValue": 4200000,
+    "gstPct": 18,
+    "gstAmount": 756000,
+    "totalInvoiceValue": 4956000,
+    "hsnCode": "8423",
+    "invoiceNumber": "INV/2026-27/002",
+    "orderDate": "02/05/2026",
+    "status": "Won",
+    "lossReason": "",
+    "remarks": "Annual Maintenance Contract renewal for weighbridges & load cells",
+    "contributors": [
+      { "employeeId": "E-004", "employeeName": "Dipanwita", "contributionPct": 100 }
+    ],
+    "contributorIds": ["E-004"],
+    "isMultiContributor": false,
+    "employeeId": "E-004",
+    "employeeName": "Dipanwita",
+    "createdAt": "2026-05-02T10:00:00",
+    "updatedAt": "2026-05-02T10:00:00"
+  },
+  {
+    "id": "ord_2026_03",
+    "customerName": "Ultratech Cement Dhar Works",
+    "customerGstin": "23AAACU1234Y1Z7",
+    "vertical": "Sales",
+    "subVertical": "Onboard Sales",
+    "orderValue": 6800000,
+    "gstPct": 18,
+    "gstAmount": 1224000,
+    "totalInvoiceValue": 8024000,
+    "hsnCode": "8423",
+    "invoiceNumber": "INV/2026-27/003",
+    "orderDate": "18/06/2026",
+    "status": "Won",
+    "lossReason": "",
+    "remarks": "Onboard weighing systems for dumper fleet",
+    "contributors": [
+      { "employeeId": "E-003", "employeeName": "Subhashini", "contributionPct": 70 },
+      { "employeeId": "E-002", "employeeName": "Mr. Murugan V", "contributionPct": 30 }
+    ],
+    "contributorIds": ["E-003", "E-002"],
+    "isMultiContributor": true,
+    "employeeId": "E-003",
+    "employeeName": "Subhashini",
+    "createdAt": "2026-06-18T10:00:00",
+    "updatedAt": "2026-06-18T10:00:00"
+  },
+  {
+    "id": "ord_2026_04",
+    "customerName": "Hindalco Lapanga Smelter",
+    "customerGstin": "21AAACH3456W1Z8",
+    "vertical": "Service/Parts",
+    "subVertical": "OEM Spares",
+    "orderValue": 3150000,
+    "gstPct": 18,
+    "gstAmount": 567000,
+    "totalInvoiceValue": 3717000,
+    "hsnCode": "8423",
+    "invoiceNumber": "INV/2026-27/004",
+    "orderDate": "10/07/2026",
+    "status": "Won",
+    "lossReason": "",
+    "remarks": "OEM high precision load cells & spare indicators",
+    "contributors": [
+      { "employeeId": "E-007", "employeeName": "Sivakumar", "contributionPct": 100 }
+    ],
+    "contributorIds": ["E-007"],
+    "isMultiContributor": false,
+    "employeeId": "E-007",
+    "employeeName": "Sivakumar",
+    "createdAt": "2026-07-10T10:00:00",
+    "updatedAt": "2026-07-10T10:00:00"
+  },
+  {
+    "id": "ord_2026_05",
+    "customerName": "Caterpillar India Pvt Ltd",
+    "customerGstin": "33AAACC9900F1Z3",
+    "vertical": "Sales",
+    "subVertical": "Onboard Sales",
+    "orderValue": 9200000,
+    "gstPct": 18,
+    "gstAmount": 1656000,
+    "totalInvoiceValue": 10856000,
+    "hsnCode": "8423",
+    "invoiceNumber": "INV/2026-27/005",
+    "orderDate": "01/08/2026",
+    "status": "Won",
+    "lossReason": "",
+    "remarks": "Heavy mining dump truck payload monitoring order",
+    "contributors": [
+      { "employeeId": "E-002", "employeeName": "Mr. Murugan V", "contributionPct": 60 },
+      { "employeeId": "E-005", "employeeName": "Balaram", "contributionPct": 40 }
+    ],
+    "contributorIds": ["E-002", "E-005"],
+    "isMultiContributor": true,
+    "employeeId": "E-002",
+    "employeeName": "Mr. Murugan V",
+    "createdAt": "2026-08-01T10:00:00",
+    "updatedAt": "2026-08-01T10:00:00"
+  },
   {
     "id": "ord_139",
     "customerName": "JSW Cement Toranagallu",
@@ -22140,14 +22280,21 @@ if (window.RevOpsStore) {
         ]));
       }
 
-      localStorage.setItem('revops_seeded_v24', 'true');
-    }};
-}
+      localStorage.setItem('revops_seeded_v25', 'true');
+    }
+};
 
-
-if (typeof window !== "undefined" && window.RevOpsStore && typeof window.RevOpsStore.initSeedData === "function") {
-  window.RevOpsStore.initSeedData();
-  setTimeout(function() {
-    if (window.RevOpsStore.initSync) window.RevOpsStore.initSync();
-  }, 300);
+if (typeof window !== "undefined") {
+  window.RevOpsStore = window.RevOpsStore || {};
+  if (typeof window.RevOpsStore.initSeedData === "function") {
+    window.RevOpsStore.initSeedData();
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.RevOpsStore && typeof window.RevOpsStore.initSeedData === "function") {
+      window.RevOpsStore.initSeedData();
+    }
+    setTimeout(function() {
+      if (window.RevOpsStore && window.RevOpsStore.initSync) window.RevOpsStore.initSync();
+    }, 300);
+  });
 }

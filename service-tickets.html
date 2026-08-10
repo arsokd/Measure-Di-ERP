@@ -1142,14 +1142,20 @@
         var breachedCount = filtered.filter(function(t) { return checkSlaBreached(t); }).length;
         var breachRate = totalCount > 0 ? ((breachedCount / totalCount) * 100).toFixed(1) : '0.0';
 
-        // FTFR: % resolved without repeat
-        var repeatTicketIds = new Set();
+        // FTFR: % resolved without repeat defect
+        var repeatEquipmentKeys = new Set();
         repeatAlarms.forEach(function(a) {
-          a.ticketsList.forEach(function(t) { repeatTicketIds.add(t.id); });
+          var k = (a.customerName || '').toLowerCase().trim() + '___' + (a.equipmentSerial || '').toLowerCase().trim();
+          repeatEquipmentKeys.add(k);
         });
+
         var resolvedList = filtered.filter(function(t) { return t.status === 'Resolved' || t.status === 'Closed'; });
-        var firstTimeResolved = resolvedList.filter(function(t) { return !repeatTicketIds.has(t.id); }).length;
-        var ftfrRate = resolvedList.length > 0 ? ((firstTimeResolved / resolvedList.length) * 100).toFixed(1) : '92.0';
+        var firstTimeResolved = resolvedList.filter(function(t) {
+          var k = (t.customerName || '').toLowerCase().trim() + '___' + (t.equipmentSerial || '').toLowerCase().trim();
+          var isRepeat = repeatEquipmentKeys.has(k) || t.isRepetitiveDefect || (t.repeatCountIn30Days || 1) > 1;
+          return !isRepeat;
+        }).length;
+        var ftfrRate = resolvedList.length > 0 ? ((firstTimeResolved / resolvedList.length) * 100).toFixed(1) : '50.0';
 
         document.getElementById('kpi-total-tickets').textContent = totalCount;
         document.getElementById('kpi-open-breakdown').textContent = `${openCount} Open / In Progress`;

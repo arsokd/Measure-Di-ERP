@@ -1,6 +1,8 @@
 // js/store.js - Measure DI RevOps Global Store & Real-time Synchronization Engine
 
-window.RevOpsStore = {
+window.RevOpsStore = window.RevOpsStore || {};
+
+Object.assign(window.RevOpsStore, {
   isFirebaseAvailable: function() {
     return typeof window.db !== 'undefined' && window.db !== null && typeof window.db.collection === 'function';
   },
@@ -14,6 +16,7 @@ window.RevOpsStore = {
     localStorage.removeItem('revops_seeded_v19');
     localStorage.removeItem('revops_seeded_v21');
     localStorage.removeItem('revops_seeded_v24');
+    localStorage.removeItem('revops_seeded_v25');
     if (window.RevOpsStore.initSeedData) {
       window.RevOpsStore.initSeedData();
     }
@@ -301,7 +304,7 @@ window.RevOpsStore = {
       if (typeof callback === 'function') callback(count, null);
     }
   }
-};
+});
 
 // Global Helpers
 function getFormattedToday() {

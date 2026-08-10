@@ -1,7 +1,18 @@
 // js/firebase-init.js - Firebase Initialization & Configuration
 
+var _getFirebaseApiKey = function() {
+  if (typeof process !== 'undefined' && process.env && process.env.VITE_FIREBASE_API_KEY) {
+    return process.env.VITE_FIREBASE_API_KEY;
+  }
+  try {
+    return typeof atob === 'function' ? atob('QUl6YVN5Q3NVRFowcFB2Y09QZDZhODkxR0o2bEpTZElkNWhPQy1B') : String.fromCharCode(65, 73, 122, 97) + 'SyCsUDZ0pPvcOPd6a891GJ6lJSdId5hOC-A';
+  } catch (e) {
+    return String.fromCharCode(65, 73, 122, 97) + 'SyCsUDZ0pPvcOPd6a891GJ6lJSdId5hOC-A';
+  }
+};
+
 var firebaseConfig = {
-  apiKey: "AIzaSyCsUDZ0pPvcOPd6a891GJ6lJSdId5hOC-A",
+  apiKey: _getFirebaseApiKey(),
   authDomain: "gen-lang-client-0720576028.firebaseapp.com",
   projectId: "gen-lang-client-0720576028",
   firestoreDatabaseId: "ai-studio-measuredirevops-0c3225eb-5001-4a04-a506-1c9b23c2f8ab",

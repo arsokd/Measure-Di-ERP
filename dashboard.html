@@ -462,7 +462,7 @@
         if (window.RevOpsStore && window.RevOpsStore.initSeedData) {
           window.RevOpsStore.initSeedData();
         }
-        if (typeof checkAuth === 'function' && checkAuth(['super_admin', 'admin'])) {
+        if (typeof checkAuth === 'function' && checkAuth(['super_admin', 'admin', 'manager', 'staff'])) {
           populateEmployeeDropdown();
           renderDashboardData();
           renderLiveActivityStream();

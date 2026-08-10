@@ -136,6 +136,19 @@ function checkAuth(allowedRoles) {
       currentEmp.role = 'admin';
       empUpdated = true;
     }
+
+    // Keep active session role, name, email and ID synchronized
+    if (currentEmp.role && localStorage.getItem('userRole') !== currentEmp.role) {
+      localStorage.setItem('userRole', currentEmp.role);
+      userRole = currentEmp.role;
+    }
+    if (currentEmp.fullName && localStorage.getItem('userName') !== currentEmp.fullName) {
+      localStorage.setItem('userName', currentEmp.fullName);
+    }
+    if (currentEmp.email && localStorage.getItem('userEmail') !== currentEmp.email) {
+      localStorage.setItem('userEmail', currentEmp.email);
+    }
+
     if (empUpdated && window.RevOpsStore && window.RevOpsStore.saveCollection) {
       try {
         window.RevOpsStore.saveCollection('employees', employees);

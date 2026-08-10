@@ -207,8 +207,8 @@
         var match = employees.find(function(emp) {
           if (!emp) return false;
           var empMobileDigits = (emp.mobile || '').replace(/\D/g, '');
-          if (digitsOnly && empMobileDigits && (empMobileDigits.indexOf(digitsOnly) !== -1 || digitsOnly.indexOf(empMobileDigits) !== -1)) return true;
-          if ((emp.employeeId === 'E-001' || emp.employeeId === 'E-002') && (digitsOnly === '9840122334' || digitsOnly === '8939821707' || digitsOnly === '9840629928')) return true;
+          if (digitsOnly && digitsOnly.length >= 7 && empMobileDigits && (empMobileDigits === digitsOnly || empMobileDigits.endsWith(digitsOnly) || digitsOnly.endsWith(empMobileDigits))) return true;
+          if (emp.employeeId && emp.employeeId.toLowerCase() === loginInput.toLowerCase()) return true;
           if (emp.email && emp.email.toLowerCase() === loginInput.toLowerCase()) return true;
           return false;
         });

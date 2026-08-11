@@ -134,7 +134,7 @@
           return;
         }
 
-        var assignedRole = emp.role || (emp.employeeId === 'E-001' ? 'super_admin' : (emp.employeeId === 'E-002' ? 'admin' : 'admin'));
+        var assignedRole = emp.role || ((emp.employeeId === 'E-001' || emp.employeeId === 'E-002') ? 'super_admin' : 'admin');
         var empName = emp.fullName || emp.name || 'User';
         var empEmail = emp.email || (emp.mobile ? emp.mobile + '@measuredi.com' : 'user@measuredi.com');
         var empId = emp.employeeId || emp.id || ('E-' + (emp.mobile || '002'));
@@ -196,7 +196,7 @@
         if (!employees || employees.length === 0) {
           employees = [
             { id: "emp_1", employeeId: "E-001", fullName: "Mr. Ravichandran", role: "super_admin", mobile: "9840629928", email: "measuredichennai@gmail.com", password: "AAABBC123456", customPassword: "AAABBC123456", isActive: true },
-            { id: "emp_2", employeeId: "E-002", fullName: "Mr. Murugan V", role: "admin", mobile: "9840122334", email: "murugan@measuredi.com", password: "AAABBC123456", customPassword: "AAABBC123456", isActive: true },
+            { id: "emp_2", employeeId: "E-002", fullName: "Mr. Murugan V", role: "super_admin", mobile: "9840122334", email: "murugan@measuredi.com", password: "AAABBC123456", customPassword: "AAABBC123456", isActive: true },
             { id: "emp_3", employeeId: "E-003", fullName: "Mrs. Anitha", role: "admin", mobile: "8939821717", email: "anitha@measuredi.com", password: "AAABBC123456", customPassword: "AAABBC123456", isActive: true },
             { id: "emp_4", employeeId: "E-004", fullName: "Mrs. Subhashini", role: "manager", mobile: "8939821732", email: "subha@measuredi.com", password: "AAABBC123456", customPassword: "AAABBC123456", isActive: true },
             { id: "emp_5", employeeId: "E-005", fullName: "Ms. Dipa", role: "staff", mobile: "8939821723", email: "dipanwita@measuredi.com", password: "AAABBC123456", customPassword: "AAABBC123456", isActive: true }

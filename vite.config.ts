@@ -65,6 +65,7 @@ export default defineConfig(({ mode }) => {
           kraTargets: path.resolve(__dirname, 'kra-targets.html'),
           aopTargets: path.resolve(__dirname, 'aop-targets.html'),
           leads: path.resolve(__dirname, 'leads.html'),
+          quotations: path.resolve(__dirname, 'quotations.html'),
           orders: path.resolve(__dirname, 'orders.html'),
           payments: path.resolve(__dirname, 'payments.html'),
           dwm: path.resolve(__dirname, 'dwm.html'),

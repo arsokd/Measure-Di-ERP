@@ -264,6 +264,9 @@
             </td>
             <td class="py-3 px-4 font-medium text-slate-600">${escapeHtml(l.employeeName || l.employeeId)}</td>
             <td class="py-3 px-4 text-center space-x-2">
+              <a href="quotations.html?leadId=${escapeHtml(l.id)}" class="inline-flex items-center space-x-1 px-2 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[10px] font-bold transition-colors">
+                <span>📑 Quote</span>
+              </a>
               <button onclick="editLead('${escapeHtml(l.id)}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
               <button onclick="deleteLead('${escapeHtml(l.id)}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
             </td>

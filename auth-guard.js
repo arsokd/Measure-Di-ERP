@@ -222,6 +222,7 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
   // Categories definitions
   var salesItems = [
     { title: "Leads & Pipeline", path: "leads.html", desc: "CRM pipeline, stage conversions & deals", icon: "📈", show: true },
+    { title: "Quotations & Approvals", path: "quotations.html", desc: "Itemized quotes, discount threshold approvals & revisions", icon: "📑", show: true },
     { title: "Orders & Contracts", path: "orders.html", desc: "Customer orders, SLA & fulfillment", icon: "📦", show: true },
     { title: "Payments & Collections", path: "payments.html", desc: "AR collections & milestone invoicing", icon: "💳", show: true }
   ];
@@ -583,7 +584,7 @@ function executeDataExportJSON() {
   var col = document.getElementById('data-export-collection')?.value || 'all';
   var exportData = {};
   if (col === 'all') {
-    var cols = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews'];
+    var cols = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews', 'quotations', 'expenses', 'serviceTickets'];
     cols.forEach(function(c) {
       exportData[c] = window.RevOpsStore.getCollection(c) || [];
     });
@@ -727,7 +728,7 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
       <!-- Middle: Horizontal Category Dropdown Menus (Desktop / Tablet) -->
       <nav class="hidden md:flex items-center space-x-1.5">
         ${isAdmin ? `<a href="dashboard.html" class="${currentPath === 'dashboard.html' ? 'px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[#982B68] text-white shadow-xs' : 'px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all'}">📊 Dashboard</a>` : ''}
-        ${renderTopDropdown("Sales", "📈", salesItems, ['leads.html', 'orders.html', 'payments.html'])}
+        ${renderTopDropdown("Sales", "📈", salesItems, ['leads.html', 'quotations.html', 'orders.html', 'payments.html'])}
         ${renderTopDropdown("Service & Quality", "🛠️", serviceItems, ['service-tickets.html'])}
         ${renderTopDropdown("Finance", "💰", financeItems, ['expenses.html', 'payroll.html'])}
         ${renderTopDropdown("People & HR", "👥", hrItems, ['employees.html', 'attendance.html', 'my-team.html'])}

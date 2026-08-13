@@ -22291,6 +22291,295 @@ window.RevOpsStore.initSeedData = function() {
         ]));
       }
 
+      var existingQuotes = [];
+      try { existingQuotes = JSON.parse(localStorage.getItem('quotations') || '[]'); } catch(e) {}
+      if (!existingQuotes || existingQuotes.length === 0) {
+        localStorage.setItem('quotations', JSON.stringify([
+          {
+            id: 'QT-2026-001-R1',
+            quoteNumber: 'QT-2026-001',
+            revision: 1,
+            parentQuoteId: null,
+            leadId: 'LD-2026-001',
+            customerName: 'L&T Construction Equipment Division',
+            contactPerson: 'Mr. S. K. Raman',
+            email: 'skraman@lnt.com',
+            mobile: '9840112233',
+            address: 'Mount Poonamallee Road, Manapakkam, Chennai - 600089',
+            vertical: 'Equipment Sales',
+            employeeId: 'E-002',
+            employeeName: 'Mr. Murugan V',
+            createdDate: '02/08/2026',
+            validityDays: 30,
+            expiryDate: '01/09/2026',
+            financialYear: '2026-27',
+            items: [
+              {
+                itemId: 'ITEM-101',
+                description: 'Measure DI Heavy-Duty 100T Digital Weighbridge System',
+                hsnCode: '842389',
+                qty: 1,
+                unitPrice: 1200000,
+                lineDiscountPercent: 10,
+                taxPercent: 18,
+                lineSubtotal: 1080000,
+                lineTax: 194400,
+                lineTotal: 1274400
+              },
+              {
+                itemId: 'ITEM-102',
+                description: 'Installation, Calibration & Legal Metrology Stamping',
+                hsnCode: '998719',
+                qty: 1,
+                unitPrice: 150000,
+                lineDiscountPercent: 0,
+                taxPercent: 18,
+                lineSubtotal: 150000,
+                lineTax: 27000,
+                lineTotal: 177000
+              }
+            ],
+            grossSubtotal: 1350000,
+            overallDiscountPercent: 8.89,
+            overallDiscountAmount: 120000,
+            netSubtotal: 1230000,
+            taxAmount: 221400,
+            grandTotal: 1451400,
+            approvalThreshold: 15,
+            requiredApproverRole: 'none',
+            status: 'Approved',
+            approvalHistory: [
+              {
+                approverId: 'E-002',
+                approverName: 'Mr. Murugan V',
+                approverRole: 'admin',
+                action: 'Auto-Approved',
+                timestamp: '02/08/2026 11:15 AM',
+                remarks: 'Discount of 8.89% is within standard rep threshold (<=15%). Auto-approved.'
+              }
+            ],
+            termsAndConditions: '1. 50% advance along with Purchase Order.\n2. 40% against dispatch inspection.\n3. 10% post commissioning.\n4. Price inclusive of 1-year warranty.',
+            convertedOrderId: null
+          },
+          {
+            id: 'QT-2026-002-R1',
+            quoteNumber: 'QT-2026-002',
+            revision: 1,
+            parentQuoteId: null,
+            leadId: 'LD-2026-002',
+            customerName: 'TATA Steel Project & Infrastructure',
+            contactPerson: 'Mr. Rajesh Verma',
+            email: 'rverma@tatasteel.com',
+            mobile: '9840223344',
+            address: 'Kalinganagar Industrial Complex, Odisha',
+            vertical: 'Steel Projects',
+            employeeId: 'E-002',
+            employeeName: 'Mr. Murugan V',
+            createdDate: '08/08/2026',
+            validityDays: 30,
+            expiryDate: '07/09/2026',
+            financialYear: '2026-27',
+            items: [
+              {
+                itemId: 'ITEM-201',
+                description: 'Custom Automation Sensor Skid Assembly with PLC Panel',
+                hsnCode: '842390',
+                qty: 2,
+                unitPrice: 1800000,
+                lineDiscountPercent: 20,
+                taxPercent: 18,
+                lineSubtotal: 2880000,
+                lineTax: 518400,
+                lineTotal: 3398400
+              }
+            ],
+            grossSubtotal: 3600000,
+            overallDiscountPercent: 20,
+            overallDiscountAmount: 720000,
+            netSubtotal: 2880000,
+            taxAmount: 518400,
+            grandTotal: 3398400,
+            approvalThreshold: 15,
+            requiredApproverRole: 'admin',
+            status: 'Pending Approval',
+            approvalHistory: [
+              {
+                approverId: 'E-002',
+                approverName: 'Mr. Murugan V',
+                approverRole: 'staff',
+                action: 'Submitted for Approval',
+                timestamp: '08/08/2026 02:45 PM',
+                remarks: '20% discount requested to match competitive tender bid from Avery Weightronix.'
+              }
+            ],
+            termsAndConditions: '1. 40% advance along with PO.\n2. 50% against delivery at site.\n3. 10% after successful commissioning.',
+            convertedOrderId: null
+          },
+          {
+            id: 'QT-2026-003-R1',
+            quoteNumber: 'QT-2026-003',
+            revision: 1,
+            parentQuoteId: null,
+            leadId: 'LD-2026-003',
+            customerName: 'Hyundai Motor India Plant Phase 2',
+            contactPerson: 'Mr. K. Seung',
+            email: 'kseung@hyundai-india.com',
+            mobile: '9840334455',
+            address: 'SIPCOT Industrial Park, Irrungattukottai, Sriperumbudur',
+            vertical: 'Equipment Sales',
+            employeeId: 'E-003',
+            employeeName: 'Mrs. Anitha',
+            createdDate: '10/08/2026',
+            validityDays: 30,
+            expiryDate: '09/09/2026',
+            financialYear: '2026-27',
+            items: [
+              {
+                itemId: 'ITEM-301',
+                description: 'High-Speed Automated Industrial Checkweigher Unit',
+                hsnCode: '842381',
+                qty: 1,
+                unitPrice: 2500000,
+                lineDiscountPercent: 28,
+                taxPercent: 18,
+                lineSubtotal: 1800000,
+                lineTax: 324000,
+                lineTotal: 2124000
+              }
+            ],
+            grossSubtotal: 2500000,
+            overallDiscountPercent: 28,
+            overallDiscountAmount: 700000,
+            netSubtotal: 1800000,
+            taxAmount: 324000,
+            grandTotal: 2124000,
+            approvalThreshold: 25,
+            requiredApproverRole: 'super_admin',
+            status: 'Pending Approval',
+            approvalHistory: [
+              {
+                approverId: 'E-003',
+                approverName: 'Mrs. Anitha',
+                approverRole: 'admin',
+                action: 'Submitted for Executive Approval',
+                timestamp: '10/08/2026 04:20 PM',
+                remarks: '28% heavy discount requested for strategic entry into Hyundai Automotive line. Escalated to MD (Mr. Ravichandran).'
+              }
+            ],
+            termsAndConditions: '1. 30% advance along with PO.\n2. 60% against dispatch.\n3. 10% after 30-day trial run.',
+            convertedOrderId: null
+          },
+          {
+            id: 'QT-2026-004-R2',
+            quoteNumber: 'QT-2026-004',
+            revision: 2,
+            parentQuoteId: 'QT-2026-004-R1',
+            leadId: 'LD-2026-004',
+            customerName: 'Godrej & Boyce Manufacturing Co',
+            contactPerson: 'Mr. V. Anand',
+            email: 'vanand@godrej.com',
+            mobile: '9840445566',
+            address: 'Pirojshanagar, Vikhroli, Mumbai - 400079',
+            vertical: 'Service',
+            employeeId: 'E-004',
+            employeeName: 'Mrs. Subhashini',
+            createdDate: '05/08/2026',
+            validityDays: 30,
+            expiryDate: '04/09/2026',
+            financialYear: '2026-27',
+            items: [
+              {
+                itemId: 'ITEM-401',
+                description: 'Annual Comprehensive Calibration & Maintenance Contract (AMC)',
+                hsnCode: '998719',
+                qty: 1,
+                unitPrice: 450000,
+                lineDiscountPercent: 12,
+                taxPercent: 18,
+                lineSubtotal: 396000,
+                lineTax: 71280,
+                lineTotal: 467280
+              }
+            ],
+            grossSubtotal: 450000,
+            overallDiscountPercent: 12,
+            overallDiscountAmount: 54000,
+            netSubtotal: 396000,
+            taxAmount: 71280,
+            grandTotal: 467280,
+            approvalThreshold: 15,
+            requiredApproverRole: 'none',
+            status: 'Sent to Customer',
+            approvalHistory: [
+              {
+                approverId: 'E-004',
+                approverName: 'Mrs. Subhashini',
+                approverRole: 'manager',
+                action: 'Revision Created & Approved',
+                timestamp: '05/08/2026 03:10 PM',
+                remarks: 'Revision 2 generated with updated maintenance scope and 12% discount.'
+              }
+            ],
+            termsAndConditions: '1. 100% payment annually in advance.\n2. Quarterly scheduled preventive maintenance visits included.',
+            convertedOrderId: null
+          },
+          {
+            id: 'QT-2026-005-R1',
+            quoteNumber: 'QT-2026-005',
+            revision: 1,
+            parentQuoteId: null,
+            leadId: 'LD-2026-005',
+            customerName: 'Saint-Gobain Glass India',
+            contactPerson: 'Mr. N. Sundaram',
+            email: 'nsundaram@saint-gobain.com',
+            mobile: '9840556677',
+            address: 'SIPCOT Industrial Park, Sriperumbudur',
+            vertical: 'Equipment Sales',
+            employeeId: 'E-005',
+            employeeName: 'Ms. Dipa',
+            createdDate: '01/08/2026',
+            validityDays: 30,
+            expiryDate: '31/08/2026',
+            financialYear: '2026-27',
+            items: [
+              {
+                itemId: 'ITEM-501',
+                description: 'Precision Load Cell Array - 50T Load Capacity',
+                hsnCode: '842390',
+                qty: 4,
+                unitPrice: 212500,
+                lineDiscountPercent: 15,
+                taxPercent: 18,
+                lineSubtotal: 722500,
+                lineTax: 130050,
+                lineTotal: 852550
+              }
+            ],
+            grossSubtotal: 850000,
+            overallDiscountPercent: 15,
+            overallDiscountAmount: 127500,
+            netSubtotal: 722500,
+            taxAmount: 130050,
+            grandTotal: 852550,
+            approvalThreshold: 15,
+            requiredApproverRole: 'none',
+            status: 'Converted to Order',
+            approvalHistory: [
+              {
+                approverId: 'E-002',
+                approverName: 'Mr. Murugan V',
+                approverRole: 'admin',
+                action: 'Approved & Converted',
+                timestamp: '01/08/2026 05:00 PM',
+                remarks: 'Quote accepted by customer and converted to Sales Order ORD-2026-088.'
+              }
+            ],
+            termsAndConditions: '1. 50% advance, 50% on delivery.\n2. Warranty: 12 months from installation.',
+            convertedOrderId: 'ORD-2026-088'
+          }
+        ]));
+      }
+
       localStorage.setItem('revops_seeded_v25', 'true');
     }
 };

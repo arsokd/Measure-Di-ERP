@@ -223,8 +223,10 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
   var salesItems = [
     { title: "Leads & Pipeline", path: "leads.html", desc: "CRM pipeline, stage conversions & deals", icon: "📈", show: true },
     { title: "Quotations & Approvals", path: "quotations.html", desc: "Itemized quotes, discount threshold approvals & revisions", icon: "📑", show: true },
+    { title: "Invoices & Approvals", path: "invoices.html", desc: "Tax & proforma invoices, senior approval & client dispatch", icon: "🧾", show: true },
     { title: "Orders & Contracts", path: "orders.html", desc: "Customer orders, SLA & fulfillment", icon: "📦", show: true },
-    { title: "Payments & Collections", path: "payments.html", desc: "AR collections & milestone invoicing", icon: "💳", show: true }
+    { title: "Payments & Collections", path: "payments.html", desc: "AR collections & milestone invoicing", icon: "💳", show: true },
+    { title: "Master Data & Bulk Upload", path: "master-data.html", desc: "Client, Project, Employee & Spare Parts bulk upload", icon: "🗄️", show: true }
   ];
 
   var financeItems = [
@@ -431,13 +433,22 @@ function openDataImportExportModal() {
           <div>
             <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Target Collection</label>
             <select id="data-import-collection" class="w-full bg-slate-900 text-white text-xs border border-slate-700 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-emerald-500">
-              <option value="employees">Employees Roster</option>
-              <option value="orders">Orders & Revenue Contracts</option>
-              <option value="dwmActivities">DWM Daily Task Logs</option>
-              <option value="leads">CRM Leads & Deals</option>
-              <option value="payments">Payment Collections (AR)</option>
-              <option value="attendance">Attendance Records</option>
-              <option value="kraTargets">KRA Targets</option>
+              <optgroup label="Core Master Datasets">
+                <option value="clientsMaster">Clients Master (GSTIN, Terms, Contacts)</option>
+                <option value="projectsMaster">Projects Master (Automation & Turnkey)</option>
+                <option value="employees">Employees Directory (Hierarchy & Roles)</option>
+                <option value="sparePartsMaster">Spare Parts & Products Master (HSN, Prices)</option>
+              </optgroup>
+              <optgroup label="Commercial & Operations">
+                <option value="invoices">Invoices & Proformas</option>
+                <option value="quotations">Quotations & Price Bids</option>
+                <option value="orders">Orders & Contracts</option>
+                <option value="dwmActivities">DWM Daily Task Logs</option>
+                <option value="leads">CRM Leads & Deals</option>
+                <option value="payments">Payment Collections (AR)</option>
+                <option value="attendance">Attendance Records</option>
+                <option value="kraTargets">KRA Targets</option>
+              </optgroup>
             </select>
           </div>
 
@@ -451,9 +462,12 @@ function openDataImportExportModal() {
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
               <span>Upload to Firestore</span>
             </button>
-            <button onclick="downloadCSVTemplate()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold px-3 py-2 rounded-lg transition-colors cursor-pointer" title="Download Template CSV">
+            <button onclick="downloadCSVTemplate()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold px-3 py-2 rounded-lg transition-colors cursor-pointer" title="Download Prescribed Format CSV">
               Template CSV
             </button>
+            <a href="master-data.html" class="bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 font-semibold px-3 py-2 rounded-lg transition-colors flex items-center gap-1" title="Open Full Master Data Hub">
+              Master Hub ↗
+            </a>
           </div>
 
           <div id="data-import-status-msg" class="text-[11px] hidden p-2 rounded-lg"></div>
@@ -470,7 +484,12 @@ function openDataImportExportModal() {
             <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Export Collection</label>
             <select id="data-export-collection" class="w-full bg-slate-900 text-white text-xs border border-slate-700 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-sky-500">
               <option value="all">Full System Backup (All Collections)</option>
+              <option value="clientsMaster">Clients Master</option>
+              <option value="projectsMaster">Projects Master</option>
+              <option value="sparePartsMaster">Spare Parts Master</option>
               <option value="employees">Employees Directory</option>
+              <option value="invoices">Invoices & Proformas</option>
+              <option value="quotations">Quotations & Approvals</option>
               <option value="orders">Orders & Contracts</option>
               <option value="dwmActivities">DWM Task Entries</option>
               <option value="leads">CRM Pipeline</option>
@@ -505,21 +524,53 @@ function openDataImportExportModal() {
 // Data Import Helpers
 function downloadCSVTemplate() {
   var col = document.getElementById('data-import-collection')?.value || 'employees';
-  var csvContent = "data:text/csv;charset=utf-8,";
-  if (col === 'employees') {
-    csvContent += "employeeId,name,email,role,designation,department,reportingManager\n";
-    csvContent += "E-201,Ramesh Patel,ramesh@measuredi.com,staff,Service Engineer,Service/Parts,E-003\n";
+  var csvContent = "";
+  var filename = col + "_template.csv";
+
+  if (col === 'clientsMaster') {
+    var tmpl = window.RevOpsStore?.getPrescribedCsvTemplate ? window.RevOpsStore.getPrescribedCsvTemplate('clients') : null;
+    if (tmpl) {
+      csvContent = tmpl.headers + "\n" + tmpl.sampleRows.join("\n");
+      filename = tmpl.filename;
+    } else {
+      csvContent = "clientCode,clientName,gstin,contactPerson,email,phone,address,city,state,vertical,creditPeriodDays\nCL-001,JSW Steel Limited,29AAACJ1011A1Z2,Mr. Raghunath Verma,r.verma@jsw.in,9840112233,Toranagallu Slag Yard,Ballari,Karnataka,Sales,30\n";
+    }
+  } else if (col === 'projectsMaster') {
+    var tmpl = window.RevOpsStore?.getPrescribedCsvTemplate ? window.RevOpsStore.getPrescribedCsvTemplate('projects') : null;
+    if (tmpl) {
+      csvContent = tmpl.headers + "\n" + tmpl.sampleRows.join("\n");
+      filename = tmpl.filename;
+    } else {
+      csvContent = "projectCode,projectName,clientName,vertical,projectValue,startDate,targetCompletionDate,projectManagerName,status,budgetINR\nPRJ-2026-01,JSW Slag Yard Dynamic Crane Scale Automation,JSW Steel Limited,Projects,4500000,01/04/2026,30/09/2026,Mr. Murugan V,In Execution,3800000\n";
+    }
+  } else if (col === 'sparePartsMaster') {
+    var tmpl = window.RevOpsStore?.getPrescribedCsvTemplate ? window.RevOpsStore.getPrescribedCsvTemplate('spareParts') : null;
+    if (tmpl) {
+      csvContent = tmpl.headers + "\n" + tmpl.sampleRows.join("\n");
+      filename = tmpl.filename;
+    } else {
+      csvContent = "partNumber,partName,category,compatibleModel,hsnCode,unitPrice,gstPercent,uom,stockQty,minReorderLevel,leadTimeDays\nSP-LC-50T,High Precision 50-Ton Shear Beam Load Cell,Load Cells,Crane Scales CS-50T,90318000,45000,18,Nos,24,5,7\n";
+    }
+  } else if (col === 'employees') {
+    var tmpl = window.RevOpsStore?.getPrescribedCsvTemplate ? window.RevOpsStore.getPrescribedCsvTemplate('employees') : null;
+    if (tmpl) {
+      csvContent = tmpl.headers + "\n" + tmpl.sampleRows.join("\n");
+      filename = tmpl.filename;
+    } else {
+      csvContent = "employeeId,fullName,designation,vertical,reportsTo,reportsToName,email,mobile,role,workArrangement,dateOfJoining,isActive\nE-006,Senthil Nathan,Senior Field Engineer,Projects & production,E-003,Mrs. Anitha,senthil@measuredi.com,9840667788,staff,Site / On-Field,01/06/2021,true\n";
+    }
   } else if (col === 'orders') {
-    csvContent += "orderId,customerName,vertical,amount,financialYear,orderDate,status\n";
-    csvContent += "ORD-2026-99,JSW Steel,Sales,1500000,2025-26,02/08/2026,Booked\n";
+    csvContent = "orderId,customerName,vertical,amount,financialYear,orderDate,status\nORD-2026-99,JSW Steel,Sales,1500000,2026-27,02/08/2026,Booked\n";
+  } else if (col === 'invoices') {
+    csvContent = "invoiceNumber,invoiceType,customerName,customerGstin,vertical,taxableValue,taxAmount,grandTotal,status,dueDate\nINV/2026-27/088,Tax Invoice,Tata Steel Limited,20AAACT2702H1ZQ,Projects,500000,90000,590000,Approved,30/09/2026\n";
   } else {
-    csvContent += "id,title,category,date,status,employeeId\n";
-    csvContent += "101,Customer Site Visit,Service/Parts,02/08/2026,Completed,E-004\n";
+    csvContent = "id,title,category,date,status,employeeId\n101,Customer Site Visit,Service/Parts,02/08/2026,Completed,E-004\n";
   }
-  var encodedUri = encodeURI(csvContent);
+
+  var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   var link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", col + "_template.csv");
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute("download", filename);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

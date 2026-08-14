@@ -51,6 +51,47 @@
         </div>
       </div>
 
+      <!-- SECTION 0: Daily Productivity Score Card -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Daily Productivity Score</div>
+          <div class="flex items-baseline space-x-2 mt-2">
+            <span id="stat-dwm-score" class="text-3xl font-black text-indigo-600">0%</span>
+            <span id="stat-dwm-score-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">Pending</span>
+          </div>
+          <div class="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
+            <div id="stat-dwm-progress" class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Productive Hours Logged</div>
+          <div class="flex items-baseline space-x-2 mt-2">
+            <span id="stat-dwm-hours" class="text-3xl font-black text-slate-900">0.0</span>
+            <span class="text-xs font-semibold text-slate-500">/ 8.0 hrs standard</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-3">Target: 8.0 Hours / Shift</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Special Assignments</div>
+          <div class="flex items-baseline space-x-2 mt-2">
+            <span id="stat-dwm-special" class="text-3xl font-black text-purple-600">0.0</span>
+            <span class="text-xs font-semibold text-slate-500">hrs</span>
+          </div>
+          <p class="text-xs text-purple-600 mt-3 font-medium">Training, Meetings, Audits</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200">
+          <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Activities Completed</div>
+          <div class="flex items-baseline space-x-2 mt-2">
+            <span id="stat-dwm-done-count" class="text-3xl font-black text-emerald-600">0</span>
+            <span id="stat-dwm-total-count" class="text-xs font-semibold text-slate-500">/ 0 total</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-3" id="stat-dwm-status-summary">Attendance Synced</p>
+        </div>
+      </div>
+
       <!-- Reference Box: Daily Control Points from KRAs -->
       <div class="bg-slate-100 p-5 rounded-2xl border border-slate-200 space-y-2">
         <div class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center space-x-2">
@@ -73,7 +114,10 @@
             <p class="text-xs text-slate-500">Fill this in the morning before punching in for attendance</p>
           </div>
 
-          <div id="add-plan-btn-wrapper">
+          <div id="add-plan-btn-wrapper" class="flex items-center space-x-2">
+            <button onclick="openAddSpecialAssignmentModal()" class="px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs rounded-xl border border-purple-200 transition-colors flex items-center space-x-1 cursor-pointer">
+              <span>⭐ Special Assignment</span>
+            </button>
             <button onclick="openAddActivityModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
               <span>+ Add Activity</span>
@@ -141,29 +185,58 @@
 
     </main>
 
-    <!-- Modal: Add Activity -->
+    <!-- Modal: Add Activity / Special Assignment -->
     <div id="add-activity-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
         <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="text-base font-bold text-slate-900">Add DWM Activity for Today</h3>
+          <div class="flex items-center space-x-2">
+            <h3 id="modal-activity-title" class="text-base font-bold text-slate-900">Add DWM Activity for Today</h3>
+            <span id="modal-activity-badge" class="hidden px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">Special Assignment</span>
+          </div>
           <button onclick="closeAddActivityModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
         </div>
 
         <form onsubmit="handleSaveActivity(event)" class="p-6 space-y-4">
+          <input type="hidden" id="inp-is-special" value="false" />
+
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">What will you do today? *</label>
-            <textarea id="activity-desc" required rows="3" placeholder="e.g. Visit JSW Steel Slag Yard for Crane Scale pre-commissioning check" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Activity Type / Category *</label>
+            <select id="activity-category-select" onchange="onActivityCategoryChange()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="Standard KRA Activity">Standard Daily KRA Activity</option>
+              <option value="Full Day Training">⭐ Full Day Training / Workshop (8.0 hrs)</option>
+              <option value="Full Day Meeting">⭐ Full Day Meeting / Review / Audit (8.0 hrs)</option>
+              <option value="Client Emergency Call">⭐ Client Emergency Site Support (Breakdown)</option>
+              <option value="Special Assignment">⭐ Other Special Assignment (Management Directive)</option>
+            </select>
           </div>
 
           <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Activity Description *</label>
+            <textarea id="activity-desc" required rows="3" placeholder="e.g. Full day training on High-Capacity Crane Scale Load Cell calibration or JSW Steel Slag Yard site inspection" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Estimated Hours Logged *</label>
+              <input type="number" id="activity-hours" step="0.5" min="0.5" max="16" value="2.0" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Impact on Productivity</label>
+              <div id="productivity-credit-badge" class="px-3 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold">
+                KRA Linked Progress
+              </div>
+            </div>
+          </div>
+
+          <div id="kra-field-section">
             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Which KRA does this activity serve? *</label>
             <div id="kra-dropdown-wrapper">
-              <select id="activity-kra-select" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <select id="activity-kra-select" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <!-- Populated dynamically -->
               </select>
             </div>
             <div id="no-kra-warning" class="hidden mt-1 text-xs text-rose-600 bg-rose-50 p-3 rounded-lg border border-rose-200">
-              No KRAs assigned to you yet — ask your manager or admin to set these up in KRA/KPI Targets before you can log activities.
+              No KRAs assigned to you yet — ask your manager to set up targets. You can still log Special Assignments!
             </div>
           </div>
 
@@ -201,7 +274,7 @@
           employees.forEach(function(e) {
             var opt = document.createElement('option');
             opt.value = e.employeeId;
-            opt.innerText = e.fullName + " (" + e.employeeId + ")";
+            opt.innerText = e.fullName + " (" + e.employeeId + " - " + (e.vertical || 'General') + ")";
             if (e.employeeId === myEmpId) opt.selected = true;
             dropdown.appendChild(opt);
           });
@@ -243,14 +316,14 @@
         // 1. Render Daily Control Points Box
         var dcContainer = document.getElementById('daily-control-points-container');
         if (empKras.length === 0) {
-          dcContainer.innerHTML = `<div class="text-slate-500 italic col-span-2">No KRAs assigned yet.</div>`;
+          dcContainer.innerHTML = `<div class="text-slate-500 italic col-span-2">No KRAs assigned yet. (Special assignments can still be logged).</div>`;
         } else {
           var dcHtml = "";
           empKras.forEach(function(k) {
             dcHtml += `
               <div class="bg-white p-2.5 rounded-xl border border-slate-200">
-                <span class="font-bold text-slate-800">${k.kraName}:</span>
-                <span class="text-slate-600"> ${k.dailyControl || 'Maintain daily discipline'}</span>
+                <span class="font-bold text-slate-800">${escapeHtml(k.kraName)}:</span>
+                <span class="text-slate-600"> ${escapeHtml(k.dailyControl || 'Maintain daily discipline')}</span>
               </div>
             `;
           });
@@ -269,28 +342,68 @@
           return actFy === viewMode;
         });
 
+        // 3. Calculate Productivity Score & Update Metrics
+        var prodStats = window.RevOpsStore.calculateDailyProductivity(todayActivities, 8.0);
+        document.getElementById('stat-dwm-score').innerText = prodStats.productivityScore + "%";
+        document.getElementById('stat-dwm-hours').innerText = prodStats.productiveHours;
+        document.getElementById('stat-dwm-special').innerText = prodStats.specialAssignmentHours;
+        document.getElementById('stat-dwm-progress').style.width = Math.min(100, prodStats.productivityScore) + "%";
+
+        var scoreBadge = document.getElementById('stat-dwm-score-badge');
+        if (prodStats.productivityScore >= 90) {
+          scoreBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800";
+          scoreBadge.innerText = "⭐ High Productivity";
+          document.getElementById('stat-dwm-progress').className = "bg-emerald-600 h-full rounded-full transition-all duration-300";
+        } else if (prodStats.productivityScore >= 60) {
+          scoreBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800";
+          scoreBadge.innerText = "Good Progress";
+          document.getElementById('stat-dwm-progress').className = "bg-indigo-600 h-full rounded-full transition-all duration-300";
+        } else if (prodStats.productivityScore > 0) {
+          scoreBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800";
+          scoreBadge.innerText = "In Progress";
+          document.getElementById('stat-dwm-progress').className = "bg-amber-500 h-full rounded-full transition-all duration-300";
+        } else {
+          scoreBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600";
+          scoreBadge.innerText = "Pending";
+          document.getElementById('stat-dwm-progress').className = "bg-slate-400 h-full rounded-full transition-all duration-300";
+        }
+
+        var doneActs = todayActivities.filter(function(a) { return a.accomplishmentStatus === 'Done' || a.accomplishmentStatus === 'Completed'; }).length;
+        document.getElementById('stat-dwm-done-count').innerText = doneActs;
+        document.getElementById('stat-dwm-total-count').innerText = "/ " + todayActivities.length + " total";
+
         // SECTION A Tbody
         var secATbody = document.getElementById('section-a-tbody');
         secATbody.innerHTML = "";
 
         if (todayActivities.length === 0) {
-          secATbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-400">No DWM activities planned for today yet. Click "+ Add Activity" above to create your plan.</td></tr>`;
+          secATbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-400">No DWM activities planned for today yet. Click "+ Add Activity" or "⭐ Special Assignment" above to start.</td></tr>`;
         } else {
           todayActivities.forEach(function(act) {
             var tr = document.createElement('tr');
             tr.className = "hover:bg-slate-50 transition-colors";
             
             var deleteBtn = "";
-            if (isOwnDwm && act.accomplishmentStatus === 'Pending') {
+            if (isOwnDwm && (act.accomplishmentStatus === 'Pending' || !act.accomplishmentStatus)) {
               deleteBtn = `<button onclick="deleteDwmActivity('${act.id}')" class="text-rose-600 hover:text-rose-800 font-semibold hover:underline">Delete</button>`;
             } else {
               deleteBtn = `<span class="text-slate-400 text-[10px]">Locked</span>`;
             }
 
+            var isSpecial = act.isSpecialAssignment || act.category === 'Full Day Training' || act.category === 'Full Day Meeting' || act.category === 'Special Assignment' || act.category === 'Client Emergency Call';
+            var specialPill = isSpecial ? `<span class="ml-2 px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 text-[10px] font-bold">⭐ ${escapeHtml(act.category || 'Special')}</span>` : '';
+            var hoursLabel = act.hoursSpent ? `<span class="text-slate-400 font-normal ml-1">(${act.hoursSpent} hrs)</span>` : '';
+
             tr.innerHTML = `
-              <td class="py-3 px-4 font-semibold text-slate-900">${escapeHtml(act.activityDescription)}</td>
+              <td class="py-3 px-4 font-semibold text-slate-900">
+                <div class="flex items-center">
+                  <span>${escapeHtml(act.activityDescription)}</span>
+                  ${specialPill}
+                  ${hoursLabel}
+                </div>
+              </td>
               <td class="py-3 px-4 text-slate-600">
-                <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-[10px]">${escapeHtml(act.linkedKra)}</span>
+                <span class="px-2 py-0.5 rounded ${isSpecial ? 'bg-purple-50 text-purple-700' : 'bg-indigo-50 text-indigo-700'} font-bold text-[10px]">${escapeHtml(act.linkedKra || 'Special Assignment')}</span>
               </td>
               <td class="py-3 px-4 text-center">
                 <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Planned</span>
@@ -318,18 +431,26 @@
             tr.className = "hover:bg-slate-50 transition-colors";
 
             var disabledAttr = isOwnDwm ? "" : "disabled";
+            var isSpecial = act.isSpecialAssignment || act.category === 'Full Day Training' || act.category === 'Full Day Meeting' || act.category === 'Special Assignment' || act.category === 'Client Emergency Call';
+            var specialPill = isSpecial ? `<span class="ml-2 px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 text-[10px] font-bold">⭐ Special</span>` : '';
 
             tr.innerHTML = `
-              <td class="py-3 px-4 font-semibold text-slate-900">${escapeHtml(act.activityDescription)}</td>
+              <td class="py-3 px-4 font-semibold text-slate-900">
+                <div class="flex items-center">
+                  <span>${escapeHtml(act.activityDescription)}</span>
+                  ${specialPill}
+                  ${act.hoursSpent ? `<span class="text-slate-400 font-normal ml-1">(${act.hoursSpent}h)</span>` : ''}
+                </div>
+              </td>
               <td class="py-3 px-4">
-                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold text-[10px]">${escapeHtml(act.linkedKra)}</span>
+                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold text-[10px]">${escapeHtml(act.linkedKra || 'Special Assignment')}</span>
               </td>
               <td class="py-3 px-4">
                 <select ${disabledAttr} onchange="updateActivityAccomplishment('${escapeHtml(act.id)}', this.value, 'acc-remarks-${escapeHtml(act.id)}')" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   <option value="Pending" ${act.accomplishmentStatus === 'Pending' ? 'selected' : ''}>Pending</option>
-                  <option value="Done" ${act.accomplishmentStatus === 'Done' ? 'selected' : ''}>Done</option>
-                  <option value="Partial" ${act.accomplishmentStatus === 'Partial' ? 'selected' : ''}>Partial</option>
-                  <option value="Not Done" ${act.accomplishmentStatus === 'Not Done' ? 'selected' : ''}>Not Done</option>
+                  <option value="Done" ${act.accomplishmentStatus === 'Done' ? 'selected' : ''}>Done (100%)</option>
+                  <option value="Partial" ${act.accomplishmentStatus === 'Partial' ? 'selected' : ''}>Partial (70%)</option>
+                  <option value="Not Done" ${act.accomplishmentStatus === 'Not Done' ? 'selected' : ''}>Not Done (0%)</option>
                 </select>
               </td>
               <td class="py-3 px-4">
@@ -342,7 +463,7 @@
 
         document.getElementById('accomplishment-progress-summary').innerText = updatedCount + " of " + todayActivities.length + " activities updated";
 
-        // 3. Render 7-Day History Strip
+        // 4. Render 7-Day History Strip
         renderHistoryStrip(empId, dwmActivities);
       }
 
@@ -394,6 +515,43 @@
         }
       }
 
+      function onActivityCategoryChange() {
+        var cat = document.getElementById('activity-category-select').value;
+        var hoursInp = document.getElementById('activity-hours');
+        var creditBadge = document.getElementById('productivity-credit-badge');
+        var kraSection = document.getElementById('kra-field-section');
+        var kraSelect = document.getElementById('activity-kra-select');
+        var isSpecialInp = document.getElementById('inp-is-special');
+
+        if (cat === 'Full Day Training' || cat === 'Full Day Meeting') {
+          hoursInp.value = 8.0;
+          creditBadge.className = "px-3 py-2 bg-purple-100 text-purple-800 rounded-xl text-xs font-bold";
+          creditBadge.innerText = "⭐ 100% Full Day Credit (8h)";
+          kraSection.classList.add('opacity-50');
+          kraSelect.required = false;
+          isSpecialInp.value = "true";
+        } else if (cat === 'Client Emergency Call' || cat === 'Special Assignment') {
+          if (Number(hoursInp.value) < 4) hoursInp.value = 4.0;
+          creditBadge.className = "px-3 py-2 bg-purple-100 text-purple-800 rounded-xl text-xs font-bold";
+          creditBadge.innerText = "⭐ Full Org Credit (" + hoursInp.value + "h)";
+          kraSection.classList.add('opacity-50');
+          kraSelect.required = false;
+          isSpecialInp.value = "true";
+        } else {
+          creditBadge.className = "px-3 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold";
+          creditBadge.innerText = "KRA Linked Progress";
+          kraSection.classList.remove('opacity-50');
+          kraSelect.required = true;
+          isSpecialInp.value = "false";
+        }
+      }
+
+      function openAddSpecialAssignmentModal() {
+        openAddActivityModal();
+        document.getElementById('activity-category-select').value = "Full Day Training";
+        onActivityCategoryChange();
+      }
+
       function openAddActivityModal() {
         var kras = window.RevOpsStore.getCollection('kraTargets') || [];
         var myEmpId = localStorage.getItem('employeeId');
@@ -405,14 +563,9 @@
         var saveBtn = document.getElementById('save-activity-btn');
 
         if (myKras.length === 0) {
-          wrapper.classList.add('hidden');
           warning.classList.remove('hidden');
-          saveBtn.disabled = true;
         } else {
-          wrapper.classList.remove('hidden');
           warning.classList.add('hidden');
-          saveBtn.disabled = false;
-
           select.innerHTML = "";
           myKras.forEach(function(k) {
             var opt = document.createElement('option');
@@ -424,7 +577,12 @@
           });
         }
 
+        document.getElementById('activity-category-select').value = "Standard KRA Activity";
         document.getElementById('activity-desc').value = "";
+        document.getElementById('activity-hours').value = "2.0";
+        document.getElementById('inp-is-special').value = "false";
+        onActivityCategoryChange();
+
         document.getElementById('add-activity-modal').classList.remove('hidden');
       }
 
@@ -435,22 +593,30 @@
       function handleSaveActivity(e) {
         e.preventDefault();
         var desc = document.getElementById('activity-desc').value.trim();
+        var cat = document.getElementById('activity-category-select').value;
+        var hours = Number(document.getElementById('activity-hours').value) || 2.0;
         var select = document.getElementById('activity-kra-select');
+        var isSpecial = (cat !== 'Standard KRA Activity');
         
         if (!desc) {
           alert("Please describe what you plan to do.");
           return;
         }
 
-        var selectedOpt = select.options[select.selectedIndex];
-        if (!selectedOpt) {
-          alert("Please select a valid Linked KRA.");
-          return;
-        }
+        var kraId = 'kra_special';
+        var kraName = 'Special Assignment (' + cat + ')';
+        var aopLine = 'Organizational Priority';
 
-        var kraId = select.value;
-        var kraName = selectedOpt.getAttribute('data-kra-name');
-        var aopLine = selectedOpt.getAttribute('data-aop-line');
+        if (!isSpecial) {
+          var selectedOpt = select.options[select.selectedIndex];
+          if (!selectedOpt) {
+            alert("Please select a valid Linked KRA or choose a Special Assignment category.");
+            return;
+          }
+          kraId = select.value;
+          kraName = selectedOpt.getAttribute('data-kra-name');
+          aopLine = selectedOpt.getAttribute('data-aop-line');
+        }
 
         var employees = window.RevOpsStore.getCollection('employees') || [];
         var myEmpId = localStorage.getItem('employeeId');
@@ -461,6 +627,9 @@
           employeeName: myEmp ? myEmp.fullName : 'User',
           date: getFormattedToday(),
           activityDescription: desc,
+          category: cat,
+          isSpecialAssignment: isSpecial,
+          hoursSpent: hours,
           linkedKraId: kraId,
           linkedKra: kraName,
           linkedAopLine: aopLine,

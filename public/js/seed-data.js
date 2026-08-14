@@ -22580,7 +22580,193 @@ window.RevOpsStore.initSeedData = function() {
         ]));
       }
 
+      if (!localStorage.getItem('clientsMaster') || JSON.parse(localStorage.getItem('clientsMaster') || '[]').length === 0) {
+        localStorage.setItem('clientsMaster', JSON.stringify([
+          {
+            id: 'client_1',
+            clientCode: 'CL-001',
+            clientName: 'JSW Steel Limited',
+            gstin: '29AAACJ1011A1Z2',
+            contactPerson: 'Mr. Raghunath Verma',
+            email: 'r.verma@jsw.in',
+            phone: '9840112233',
+            address: 'Toranagallu Slag Yard, Vidyanagar',
+            city: 'Ballari',
+            state: 'Karnataka',
+            vertical: 'Sales',
+            creditPeriodDays: 30,
+            accountManagerId: 'E-002',
+            accountManagerName: 'Mr. Murugan V',
+            isActive: true
+          },
+          {
+            id: 'client_2',
+            clientCode: 'CL-002',
+            clientName: 'Tata Steel Limited',
+            gstin: '20AAACT2702H1ZQ',
+            contactPerson: 'Mr. Amitav Sen',
+            email: 'amitav.sen@tatasteel.com',
+            phone: '9840223344',
+            address: 'Jamshedpur Steel Works',
+            city: 'Jamshedpur',
+            state: 'Jharkhand',
+            vertical: 'Projects',
+            creditPeriodDays: 45,
+            accountManagerId: 'E-003',
+            accountManagerName: 'Mrs. Anitha',
+            isActive: true
+          },
+          {
+            id: 'client_3',
+            clientCode: 'CL-003',
+            clientName: 'UltraTech Cement Ltd',
+            gstin: '27AAACU0147L1ZF',
+            contactPerson: 'Mr. Suresh Pillai',
+            email: 'suresh.p@ultratech.adityabirla.com',
+            phone: '9840334455',
+            address: 'Awarpur Cement Works',
+            city: 'Chandrapur',
+            state: 'Maharashtra',
+            vertical: 'Service/Parts',
+            creditPeriodDays: 30,
+            accountManagerId: 'E-005',
+            accountManagerName: 'Ms. Dipa',
+            isActive: true
+          },
+          {
+            id: 'client_4',
+            clientCode: 'CL-004',
+            clientName: 'Bharat Heavy Electricals (BHEL)',
+            gstin: '33AAACB1234A1Z5',
+            contactPerson: 'Mr. K. Natarajan',
+            email: 'natarajan@bhel.in',
+            phone: '9840445566',
+            address: 'Boiler Plant HPBP Complex',
+            city: 'Trichy',
+            state: 'Tamil Nadu',
+            vertical: 'Projects',
+            creditPeriodDays: 60,
+            accountManagerId: 'E-001',
+            accountManagerName: 'Mr. Ravichandran',
+            isActive: true
+          },
+          {
+            id: 'client_5',
+            clientCode: 'CL-005',
+            clientName: 'Saint-Gobain India Private Limited',
+            gstin: '33AAACS1234C1Z8',
+            contactPerson: 'Mr. Ramesh Krishnan',
+            email: 'ramesh.k@saint-gobain.com',
+            phone: '9840556677',
+            address: 'World Glass Complex, SIPCOT Industrial Park',
+            city: 'Sriperumbudur',
+            state: 'Tamil Nadu',
+            vertical: 'Sales',
+            creditPeriodDays: 30,
+            accountManagerId: 'E-002',
+            accountManagerName: 'Mr. Murugan V',
+            isActive: true
+          }
+        ]));
+      }
+
+      if (!localStorage.getItem('sparePartsMaster') || JSON.parse(localStorage.getItem('sparePartsMaster') || '[]').length === 0) {
+        localStorage.setItem('sparePartsMaster', JSON.stringify([
+          {
+            id: 'sp_1',
+            partNumber: 'SP-LC-50T',
+            partName: 'High Precision 50-Ton Shear Beam Load Cell (IP68)',
+            category: 'Load Cells & Transducers',
+            compatibleModel: 'Crane Scales CS-50T / CS-30T',
+            hsnCode: '90318000',
+            unitPrice: 45000,
+            gstPercent: 18,
+            uom: 'Nos',
+            stockQty: 24,
+            minReorderLevel: 5,
+            leadTimeDays: 7,
+            isActive: true
+          },
+          {
+            id: 'sp_2',
+            partNumber: 'SP-ENC-1000',
+            partName: 'Optical Rotary Encoder 1000 PPR Stainless Steel',
+            category: 'Sensors & Encoders',
+            compatibleModel: 'In-Motion Rail Weighers IMW-200',
+            hsnCode: '90319000',
+            unitPrice: 18500,
+            gstPercent: 18,
+            uom: 'Nos',
+            stockQty: 40,
+            minReorderLevel: 10,
+            leadTimeDays: 5,
+            isActive: true
+          },
+          {
+            id: 'sp_3',
+            partNumber: 'SP-DISP-7S',
+            partName: 'Industrial High-Brightness 6-Digit LED Display Indicator',
+            category: 'Displays & Terminals',
+            compatibleModel: 'Universal (All Measure DI Weighers)',
+            hsnCode: '85285900',
+            unitPrice: 28000,
+            gstPercent: 18,
+            uom: 'Nos',
+            stockQty: 18,
+            minReorderLevel: 4,
+            leadTimeDays: 10,
+            isActive: true
+          },
+          {
+            id: 'sp_4',
+            partNumber: 'SP-JB-04IP',
+            partName: 'IP68 Stainless Steel 4-Channel Analog Junction Box',
+            category: 'Junction Boxes & Wiring',
+            compatibleModel: 'Weighbridges & Hoppers WB-100',
+            hsnCode: '85369090',
+            unitPrice: 6500,
+            gstPercent: 18,
+            uom: 'Nos',
+            stockQty: 55,
+            minReorderLevel: 15,
+            leadTimeDays: 3,
+            isActive: true
+          },
+          {
+            id: 'sp_5',
+            partNumber: 'SP-LAS-SCAN',
+            partName: 'High-Speed Multi-Line Laser Surface Profiler Head',
+            category: 'Optical Metrology',
+            compatibleModel: 'Laser Scanners LS-200',
+            hsnCode: '90314900',
+            unitPrice: 145000,
+            gstPercent: 18,
+            uom: 'Sets',
+            stockQty: 8,
+            minReorderLevel: 2,
+            leadTimeDays: 21,
+            isActive: true
+          },
+          {
+            id: 'sp_6',
+            partNumber: 'SP-CAL-20T',
+            partName: 'Certified Class M1 20-Ton Heavy Calibration Test Block',
+            category: 'Calibration Standards',
+            compatibleModel: 'Heavy Crane & Pitless Weighbridge',
+            hsnCode: '90319000',
+            unitPrice: 85000,
+            gstPercent: 18,
+            uom: 'Nos',
+            stockQty: 6,
+            minReorderLevel: 1,
+            leadTimeDays: 14,
+            isActive: true
+          }
+        ]));
+      }
+
       localStorage.setItem('revops_seeded_v25', 'true');
+      localStorage.setItem('revops_seeded_v27', 'true');
     }
 };
 

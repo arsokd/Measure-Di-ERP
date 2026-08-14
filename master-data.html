@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Master Data & Bulk Upload Hub | Measure DI RevOps</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/seed-data.js"></script>
+  <script src="auth-guard.js"></script>
+</head>
+<body class="min-h-full bg-slate-950 text-slate-100 antialiased flex flex-col font-sans">
+  <div id="navbar-container"></div>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl backdrop-blur-md">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <span class="p-2 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-400 border border-indigo-500/30">
+            <i class="fa-solid fa-database text-lg"></i>
+          </span>
+          <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            Master Data & Bulk Upload Hub
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              Enterprise SOP
+            </span>
+          </h1>
+        </div>
+        <p class="text-xs text-slate-400">Central repository for Client, Project, Employee, and Spare Parts master datasets with prescribed bulk CSV uploading & real-time sync.</p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <button onclick="openBulkUploadModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/30 flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-file-csv text-sm"></i>
+          <span>Bulk Upload CSV</span>
+        </button>
+        <button onclick="downloadActiveTemplate()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-download text-sm"></i>
+          <span>Download Prescribed Template</span>
+        </button>
+        <button onclick="openAddSingleModal()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-900/30 flex items-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-plus text-sm"></i>
+          <span>Add New Record</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Master Data Selector Tabs & Metrics Bar -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <!-- Clients Tab -->
+      <button onclick="switchMasterTab('clients')" id="tab-btn-clients" class="master-tab-btn active p-4 rounded-xl border text-left transition-all relative overflow-hidden bg-slate-900/90 border-indigo-500/60 shadow-lg shadow-indigo-950/40">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Client Master</span>
+          <span class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-building"></i>
+          </span>
+        </div>
+        <div class="text-2xl font-black text-white" id="count-clients">0</div>
+        <div class="text-[11px] text-slate-400 mt-1">GSTIN, Contacts & Credit Terms</div>
+      </button>
+
+      <!-- Projects Tab -->
+      <button onclick="switchMasterTab('projects')" id="tab-btn-projects" class="master-tab-btn p-4 rounded-xl border text-left transition-all relative overflow-hidden bg-slate-900/40 border-slate-800 hover:border-slate-700">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Project Master</span>
+          <span class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-diagram-project"></i>
+          </span>
+        </div>
+        <div class="text-2xl font-black text-white" id="count-projects">0</div>
+        <div class="text-[11px] text-slate-400 mt-1">Turnkey Automation & Budgets</div>
+      </button>
+
+      <!-- Employees Tab -->
+      <button onclick="switchMasterTab('employees')" id="tab-btn-employees" class="master-tab-btn p-4 rounded-xl border text-left transition-all relative overflow-hidden bg-slate-900/40 border-slate-800 hover:border-slate-700">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Employee Master</span>
+          <span class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-users"></i>
+          </span>
+        </div>
+        <div class="text-2xl font-black text-white" id="count-employees">0</div>
+        <div class="text-[11px] text-slate-400 mt-1">Hierarchy, Roles & Verticals</div>
+      </button>
+
+      <!-- Spare Parts Tab -->
+      <button onclick="switchMasterTab('spareParts')" id="tab-btn-spareParts" class="master-tab-btn p-4 rounded-xl border text-left transition-all relative overflow-hidden bg-slate-900/40 border-slate-800 hover:border-slate-700">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Spare Parts & Products</span>
+          <span class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-gears"></i>
+          </span>
+        </div>
+        <div class="text-2xl font-black text-white" id="count-spareParts">0</div>
+        <div class="text-[11px] text-slate-400 mt-1">HSN Codes, Prices & Stock</div>
+      </button>
+    </div>
+
+    <!-- Active Master Workbench Table Container -->
+    <div class="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl overflow-hidden backdrop-blur-sm">
+      
+      <!-- Table Filter Bar -->
+      <div class="p-4 border-b border-slate-800 flex flex-col md:flex-row items-center justify-between gap-3">
+        <div class="flex items-center gap-3 w-full md:w-auto">
+          <div class="relative flex-1 md:w-80">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+            <input type="text" id="master-search-input" onkeyup="filterMasterTable()" placeholder="Search records by code, name, client, etc..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+          </div>
+          <select id="master-vertical-filter" onchange="filterMasterTable()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+            <option value="all">All Verticals / Categories</option>
+            <option value="Sales">Sales</option>
+            <option value="Projects">Projects</option>
+            <option value="Service/Parts">Service & Spare Parts</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2 w-full md:w-auto justify-end text-xs text-slate-400">
+          <span id="filtered-count-label">Showing 0 records</span>
+          <button onclick="exportCurrentMasterCSV()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-semibold flex items-center gap-1.5 transition-colors cursor-pointer" title="Export Current Table as CSV">
+            <i class="fa-solid fa-file-export"></i>
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dynamic Table Rendering Container -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300 border-collapse">
+          <thead id="master-table-header" class="bg-slate-950/60 text-slate-400 uppercase tracking-wider text-[10px] font-bold border-b border-slate-800">
+            <!-- Rendered by JS -->
+          </thead>
+          <tbody id="master-table-body" class="divide-y divide-slate-800/60">
+            <!-- Rendered by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State Container -->
+      <div id="master-empty-state" class="hidden py-12 text-center space-y-3">
+        <div class="w-12 h-12 rounded-2xl bg-slate-800/80 text-slate-500 flex items-center justify-center mx-auto text-xl">
+          <i class="fa-solid fa-box-open"></i>
+        </div>
+        <div class="text-sm font-bold text-slate-300">No master records found</div>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto">Upload a bulk CSV file or click "Add New Record" to register master entries.</p>
+        <button onclick="openBulkUploadModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold inline-flex items-center gap-2">
+          <i class="fa-solid fa-file-csv"></i>
+          <span>Upload Bulk Master CSV</span>
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal 1: Bulk CSV Upload & Interactive Validation -->
+  <div id="bulk-upload-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-4xl shadow-2xl p-6 text-slate-200 space-y-5 my-8">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-600/30 text-emerald-400 font-bold flex items-center justify-center text-lg border border-emerald-500/40">
+            <i class="fa-solid fa-file-csv"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>Bulk Master Data Upload Engine</span>
+              <span id="bulk-modal-target-badge" class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Client Master</span>
+            </h3>
+            <p class="text-xs text-slate-400">Upload bulk CSV files with prescribed schemas, field validation & atomic Firestore sync.</p>
+          </div>
+        </div>
+        <button onclick="closeBulkUploadModal()" class="p-1 text-slate-400 hover:text-white text-2xl font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <!-- Collection Target Selector & Template Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Target Master Entity</label>
+            <select id="bulk-entity-select" onchange="onBulkEntityChange()" class="w-full bg-slate-900 text-white border border-slate-700 rounded-lg p-2 focus:ring-1 focus:ring-emerald-500">
+              <option value="clients">Clients Master (GSTIN, Terms, Contacts)</option>
+              <option value="projects">Projects Master (Automation & Turnkey)</option>
+              <option value="employees">Employees Master (Hierarchy & Roles)</option>
+              <option value="spareParts">Spare Parts & Products (HSN & Prices)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Prescribed CSV Template</label>
+            <button onclick="downloadActiveTemplate()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg p-2 font-bold flex items-center justify-center gap-2 transition-colors">
+              <i class="fa-solid fa-file-arrow-down text-emerald-400"></i>
+              <span>Download Schema Template</span>
+            </button>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Select / Drop CSV File</label>
+            <input type="file" id="bulk-csv-input" accept=".csv" onchange="previewCSVData(event)" class="w-full bg-slate-900 text-slate-300 border border-slate-700 rounded-lg p-1.5 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-500 cursor-pointer">
+          </div>
+        </div>
+
+        <!-- Prescribed Format Schema Hint Box -->
+        <div id="schema-hint-box" class="bg-indigo-950/30 border border-indigo-800/40 rounded-xl p-3 text-[11px] text-indigo-300 space-y-1">
+          <div class="font-bold flex items-center gap-1.5 text-indigo-200">
+            <i class="fa-solid fa-circle-info text-xs"></i>
+            <span>Prescribed CSV Column Headers:</span>
+          </div>
+          <div id="schema-columns-display" class="font-mono text-[10px] text-indigo-200/90 break-all bg-indigo-950/60 p-2 rounded border border-indigo-800/50">
+            clientCode,clientName,gstin,contactPerson,email,phone,address,city,state,vertical,creditPeriodDays
+          </div>
+        </div>
+
+        <!-- Pre-Upload Validation Preview Table -->
+        <div id="bulk-preview-wrapper" class="hidden space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-200 flex items-center gap-2">
+              <span>Data Validation Preview</span>
+              <span id="preview-badge" class="px-2 py-0.5 bg-sky-950 text-sky-300 rounded text-[10px] font-bold border border-sky-800">0 Rows Detected</span>
+            </span>
+            <span id="preview-validation-status" class="text-emerald-400 text-[11px] font-semibold flex items-center gap-1">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>All mandatory columns verified</span>
+            </span>
+          </div>
+
+          <div class="max-h-60 overflow-y-auto border border-slate-800 rounded-xl bg-slate-950">
+            <table class="w-full text-left text-[11px] text-slate-300">
+              <thead id="bulk-preview-thead" class="bg-slate-900 text-slate-400 text-[9px] uppercase font-bold sticky top-0 border-b border-slate-800">
+                <!-- Preview Headers -->
+              </thead>
+              <tbody id="bulk-preview-tbody" class="divide-y divide-slate-900">
+                <!-- Preview Rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Upload Status Message -->
+        <div id="bulk-status-message" class="hidden p-3 rounded-xl text-xs font-semibold"></div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="border-t border-slate-800 pt-4 flex items-center justify-between">
+        <span class="text-[11px] text-slate-500">Includes anti-XSS sanitization & Firebase Batch Commit</span>
+        <div class="flex items-center gap-2">
+          <button onclick="closeBulkUploadModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-colors">Cancel</button>
+          <button id="commit-bulk-btn" onclick="commitBulkUpload()" disabled class="px-5 py-2 bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-500 text-white rounded-xl font-bold transition-all shadow-md flex items-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>Commit Bulk Upload</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Add Single Master Record Modal -->
+  <div id="add-single-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-2xl shadow-2xl p-6 text-slate-200 space-y-4 my-8">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center gap-2" id="add-modal-title">
+          <i class="fa-solid fa-plus-circle text-indigo-400"></i>
+          <span>Add Master Record</span>
+        </h3>
+        <button onclick="closeAddSingleModal()" class="text-slate-400 hover:text-white text-2xl font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <form id="add-master-form" onsubmit="saveSingleMasterRecord(event)" class="space-y-4 text-xs">
+        <div id="add-form-fields" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Dynamic form fields injected based on active tab -->
+        </div>
+
+        <div class="border-t border-slate-800 pt-3 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeAddSingleModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-md shadow-indigo-900/30">Save Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    var currentMasterTab = 'clients';
+    var parsedBulkRecords = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check auth and render navbar
+      if (typeof checkAuth === 'function') {
+        checkAuth();
+      }
+      refreshAllMasterCounts();
+      renderMasterTable();
+    });
+
+    function switchMasterTab(tabName) {
+      currentMasterTab = tabName;
+      
+      // Update Tab Styles
+      document.querySelectorAll('.master-tab-btn').forEach(function(btn) {
+        btn.className = "master-tab-btn p-4 rounded-xl border text-left transition-all relative overflow-hidden bg-slate-900/40 border-slate-800 hover:border-slate-700";
+      });
+      var activeBtn = document.getElementById('tab-btn-' + tabName);
+      if (activeBtn) {
+        activeBtn.className = "master-tab-btn active p-4 rounded-xl border text-left transition-all relative overflow-hidden bg-slate-900/90 border-indigo-500/60 shadow-lg shadow-indigo-950/40";
+      }
+
+      // Reset Search & Filter
+      var searchInput = document.getElementById('master-search-input');
+      if (searchInput) searchInput.value = '';
+      
+      renderMasterTable();
+    }
+
+    function getCollectionNameForTab(tabName) {
+      if (tabName === 'clients') return 'clientsMaster';
+      if (tabName === 'projects') return 'projectsMaster';
+      if (tabName === 'employees') return 'employees';
+      if (tabName === 'spareParts') return 'sparePartsMaster';
+      return 'clientsMaster';
+    }
+
+    function refreshAllMasterCounts() {
+      if (!window.RevOpsStore) return;
+      var clients = window.RevOpsStore.getCollection('clientsMaster') || [];
+      var projects = window.RevOpsStore.getCollection('projectsMaster') || [];
+      var employees = window.RevOpsStore.getCollection('employees') || [];
+      var spareParts = window.RevOpsStore.getCollection('sparePartsMaster') || [];
+
+      document.getElementById('count-clients').textContent = clients.length;
+      document.getElementById('count-projects').textContent = projects.length;
+      document.getElementById('count-employees').textContent = employees.length;
+      document.getElementById('count-spareParts').textContent = spareParts.length;
+    }
+
+    function renderMasterTable() {
+      var colName = getCollectionNameForTab(currentMasterTab);
+      var items = (window.RevOpsStore && typeof window.RevOpsStore.getCollection === 'function') ? (window.RevOpsStore.getCollection(colName) || []) : [];
+      
+      var searchVal = (document.getElementById('master-search-input')?.value || '').toLowerCase().trim();
+      var vertFilter = document.getElementById('master-vertical-filter')?.value || 'all';
+
+      var filtered = items.filter(function(it) {
+        if (vertFilter !== 'all' && it.vertical && it.vertical.toLowerCase().indexOf(vertFilter.toLowerCase()) === -1) {
+          return false;
+        }
+        if (!searchVal) return true;
+        var str = JSON.stringify(it).toLowerCase();
+        return str.indexOf(searchVal) !== -1;
+      });
+
+      var label = document.getElementById('filtered-count-label');
+      if (label) label.textContent = "Showing " + filtered.length + " of " + items.length + " records";
+
+      var thead = document.getElementById('master-table-header');
+      var tbody = document.getElementById('master-table-body');
+      var emptyState = document.getElementById('master-empty-state');
+
+      if (filtered.length === 0) {
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+        if (emptyState) emptyState.classList.remove('hidden');
+        return;
+      }
+
+      if (emptyState) emptyState.classList.add('hidden');
+
+      if (currentMasterTab === 'clients') {
+        thead.innerHTML = `
+          <tr>
+            <th class="py-3 px-4">Client Code</th>
+            <th class="py-3 px-4">Company Name</th>
+            <th class="py-3 px-4">GSTIN</th>
+            <th class="py-3 px-4">Contact Person & Phone</th>
+            <th class="py-3 px-4">Location</th>
+            <th class="py-3 px-4">Vertical</th>
+            <th class="py-3 px-4">Credit Days</th>
+            <th class="py-3 px-4 text-right">Actions</th>
+          </tr>
+        `;
+        tbody.innerHTML = filtered.map(function(c) {
+          return `
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="py-3 px-4 font-mono font-bold text-indigo-400">${escapeHtml(c.clientCode || c.id || '-')}</td>
+              <td class="py-3 px-4 font-bold text-white">${escapeHtml(c.clientName || '-')}</td>
+              <td class="py-3 px-4 font-mono text-slate-400">${escapeHtml(c.gstin || '-')}</td>
+              <td class="py-3 px-4">
+                <div class="font-medium text-slate-200">${escapeHtml(c.contactPerson || '-')}</div>
+                <div class="text-[10px] text-slate-400">${escapeHtml(c.phone || c.email || '')}</div>
+              </td>
+              <td class="py-3 px-4 text-slate-400">${escapeHtml(c.city ? (c.city + ', ' + (c.state || '')) : (c.state || '-'))}</td>
+              <td class="py-3 px-4">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(c.vertical || 'Sales')}</span>
+              </td>
+              <td class="py-3 px-4 text-slate-300 font-semibold">${c.creditPeriodDays ? c.creditPeriodDays + ' Days' : '30 Days'}</td>
+              <td class="py-3 px-4 text-right">
+                <button onclick="deleteMasterItem('${c.id}')" class="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/50 rounded-lg transition-colors cursor-pointer" title="Delete Record">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } else if (currentMasterTab === 'projects') {
+        thead.innerHTML = `
+          <tr>
+            <th class="py-3 px-4">Project Code</th>
+            <th class="py-3 px-4">Project Name</th>
+            <th class="py-3 px-4">Client</th>
+            <th class="py-3 px-4">Value (INR)</th>
+            <th class="py-3 px-4">Project Manager</th>
+            <th class="py-3 px-4">Target Date</th>
+            <th class="py-3 px-4">Status</th>
+            <th class="py-3 px-4 text-right">Actions</th>
+          </tr>
+        `;
+        tbody.innerHTML = filtered.map(function(p) {
+          var val = formatINR(p.projectValue || p.budgetINR || 0);
+          return `
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="py-3 px-4 font-mono font-bold text-sky-400">${escapeHtml(p.projectCode || p.id || '-')}</td>
+              <td class="py-3 px-4 font-bold text-white">${escapeHtml(p.projectName || '-')}</td>
+              <td class="py-3 px-4 text-slate-300 font-medium">${escapeHtml(p.clientName || '-')}</td>
+              <td class="py-3 px-4 font-bold text-emerald-400">${val}</td>
+              <td class="py-3 px-4 text-slate-300">${escapeHtml(p.projectManagerName || '-')}</td>
+              <td class="py-3 px-4 text-slate-400">${escapeHtml(p.targetCompletionDate || '-')}</td>
+              <td class="py-3 px-4">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 text-sky-300 border border-sky-800">${escapeHtml(p.status || 'In Execution')}</span>
+              </td>
+              <td class="py-3 px-4 text-right">
+                <button onclick="deleteMasterItem('${p.id}')" class="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/50 rounded-lg transition-colors cursor-pointer" title="Delete Record">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } else if (currentMasterTab === 'employees') {
+        thead.innerHTML = `
+          <tr>
+            <th class="py-3 px-4">Emp ID</th>
+            <th class="py-3 px-4">Full Name</th>
+            <th class="py-3 px-4">Designation</th>
+            <th class="py-3 px-4">Vertical</th>
+            <th class="py-3 px-4">Reports To</th>
+            <th class="py-3 px-4">Email / Mobile</th>
+            <th class="py-3 px-4">Role</th>
+            <th class="py-3 px-4 text-right">Actions</th>
+          </tr>
+        `;
+        tbody.innerHTML = filtered.map(function(e) {
+          var roleClass = e.role === 'super_admin' ? 'bg-fuchsia-950 text-fuchsia-300 border-fuchsia-800' :
+                          e.role === 'admin' ? 'bg-purple-950 text-purple-300 border-purple-800' :
+                          e.role === 'manager' ? 'bg-blue-950 text-blue-300 border-blue-800' : 'bg-emerald-950 text-emerald-300 border-emerald-800';
+          return `
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="py-3 px-4 font-mono font-bold text-purple-400">${escapeHtml(e.employeeId || e.id || '-')}</td>
+              <td class="py-3 px-4 font-bold text-white">${escapeHtml(e.fullName || e.name || '-')}</td>
+              <td class="py-3 px-4 text-slate-300">${escapeHtml(e.designation || '-')}</td>
+              <td class="py-3 px-4 text-slate-400">${escapeHtml(e.vertical || '-')}</td>
+              <td class="py-3 px-4 text-slate-300">${escapeHtml(e.reportsToName || e.reportsTo || '-')}</td>
+              <td class="py-3 px-4">
+                <div class="text-slate-300">${escapeHtml(e.email || '-')}</div>
+                <div class="text-[10px] text-slate-500">${escapeHtml(e.mobile || '')}</div>
+              </td>
+              <td class="py-3 px-4">
+                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border ${roleClass}">${escapeHtml(e.role || 'staff')}</span>
+              </td>
+              <td class="py-3 px-4 text-right">
+                <button onclick="deleteMasterItem('${e.id}')" class="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/50 rounded-lg transition-colors cursor-pointer" title="Delete Record">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } else if (currentMasterTab === 'spareParts') {
+        thead.innerHTML = `
+          <tr>
+            <th class="py-3 px-4">Part / SKU #</th>
+            <th class="py-3 px-4">Part Description</th>
+            <th class="py-3 px-4">Category</th>
+            <th class="py-3 px-4">HSN Code</th>
+            <th class="py-3 px-4">Unit Price (INR)</th>
+            <th class="py-3 px-4">GST %</th>
+            <th class="py-3 px-4">Current Stock</th>
+            <th class="py-3 px-4 text-right">Actions</th>
+          </tr>
+        `;
+        tbody.innerHTML = filtered.map(function(s) {
+          var price = formatINR(s.unitPrice || 0);
+          var stock = Number(s.stockQty) || 0;
+          var minReorder = Number(s.minReorderLevel) || 0;
+          var isLow = stock <= minReorder;
+          return `
+            <tr class="hover:bg-slate-800/40 transition-colors">
+              <td class="py-3 px-4 font-mono font-bold text-amber-400">${escapeHtml(s.partNumber || s.id || '-')}</td>
+              <td class="py-3 px-4">
+                <div class="font-bold text-white">${escapeHtml(s.partName || '-')}</div>
+                <div class="text-[10px] text-slate-400">${escapeHtml(s.compatibleModel || '')}</div>
+              </td>
+              <td class="py-3 px-4 text-slate-300">${escapeHtml(s.category || '-')}</td>
+              <td class="py-3 px-4 font-mono text-slate-400">${escapeHtml(s.hsnCode || '90318000')}</td>
+              <td class="py-3 px-4 font-bold text-emerald-400">${price}</td>
+              <td class="py-3 px-4 text-slate-300 font-semibold">${s.gstPercent || 18}%</td>
+              <td class="py-3 px-4">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isLow ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'}">
+                  ${stock} ${s.uom || 'Nos'} ${isLow ? '(Low Stock)' : ''}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-right">
+                <button onclick="deleteMasterItem('${s.id}')" class="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-950/50 rounded-lg transition-colors cursor-pointer" title="Delete Record">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    function filterMasterTable() {
+      renderMasterTable();
+    }
+
+    function deleteMasterItem(id) {
+      if (!confirm("Are you sure you want to delete this master record?")) return;
+      var colName = getCollectionNameForTab(currentMasterTab);
+      if (window.RevOpsStore && typeof window.RevOpsStore.deleteRecord === 'function') {
+        window.RevOpsStore.deleteRecord(colName, id);
+        refreshAllMasterCounts();
+        renderMasterTable();
+      }
+    }
+
+    // Modal Handlers for Bulk Upload
+    function openBulkUploadModal() {
+      var modal = document.getElementById('bulk-upload-modal');
+      var entitySelect = document.getElementById('bulk-entity-select');
+      if (entitySelect) entitySelect.value = currentMasterTab;
+      onBulkEntityChange();
+      parsedBulkRecords = [];
+      document.getElementById('bulk-preview-wrapper').classList.add('hidden');
+      document.getElementById('bulk-status-message').classList.add('hidden');
+      document.getElementById('commit-bulk-btn').disabled = true;
+      document.getElementById('bulk-csv-input').value = '';
+      if (modal) modal.classList.remove('hidden');
+      if (modal) modal.classList.add('flex');
+    }
+
+    function closeBulkUploadModal() {
+      var modal = document.getElementById('bulk-upload-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function onBulkEntityChange() {
+      var entity = document.getElementById('bulk-entity-select').value;
+      var badge = document.getElementById('bulk-modal-target-badge');
+      var schemaDisplay = document.getElementById('schema-columns-display');
+
+      var tmpl = window.RevOpsStore?.getPrescribedCsvTemplate ? window.RevOpsStore.getPrescribedCsvTemplate(entity) : null;
+      if (tmpl) {
+        if (schemaDisplay) schemaDisplay.textContent = tmpl.headers;
+      }
+
+      var labels = {
+        clients: "Client Master",
+        projects: "Project Master",
+        employees: "Employee Master",
+        spareParts: "Spare Parts Master"
+      };
+      if (badge) badge.textContent = labels[entity] || entity;
+    }
+
+    function downloadActiveTemplate() {
+      var entity = document.getElementById('bulk-entity-select')?.value || currentMasterTab;
+      var tmpl = window.RevOpsStore?.getPrescribedCsvTemplate ? window.RevOpsStore.getPrescribedCsvTemplate(entity) : null;
+      if (!tmpl) return;
+
+      var csvContent = tmpl.headers + "\n" + tmpl.sampleRows.join("\n");
+      var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      var link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", tmpl.filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function previewCSVData(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var text = e.target.result;
+        var lines = text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+        if (lines.length < 2) {
+          alert("CSV file must contain a header line and at least one data row.");
+          return;
+        }
+
+        var headers = lines[0].split(',').map(function(h){ return h.replace(/^["']|["']$/g, '').trim(); });
+        parsedBulkRecords = [];
+
+        for (var i = 1; i < lines.length; i++) {
+          var row = lines[i].split(',').map(function(c){ return c.replace(/^["']|["']$/g, '').trim(); });
+          var record = {};
+          headers.forEach(function(h, idx) {
+            if (h && row[idx] !== undefined) {
+              record[h] = row[idx];
+            }
+          });
+          parsedBulkRecords.push(record);
+        }
+
+        // Render preview table
+        var previewWrapper = document.getElementById('bulk-preview-wrapper');
+        var previewThead = document.getElementById('bulk-preview-thead');
+        var previewTbody = document.getElementById('bulk-preview-tbody');
+        var previewBadge = document.getElementById('preview-badge');
+        var commitBtn = document.getElementById('commit-bulk-btn');
+
+        if (previewBadge) previewBadge.textContent = parsedBulkRecords.length + " Rows Detected";
+        if (previewThead) {
+          previewThead.innerHTML = `<tr>${headers.map(function(h){ return `<th class="py-2 px-3">${escapeHtml(h)}</th>`; }).join('')}</tr>`;
+        }
+        if (previewTbody) {
+          previewTbody.innerHTML = parsedBulkRecords.slice(0, 10).map(function(row) {
+            return `<tr>${headers.map(function(h){ return `<td class="py-2 px-3 border-b border-slate-900 text-slate-300 font-mono">${escapeHtml(row[h] || '')}</td>`; }).join('')}</tr>`;
+          }).join('');
+        }
+
+        if (previewWrapper) previewWrapper.classList.remove('hidden');
+        if (commitBtn) commitBtn.disabled = false;
+      };
+      reader.readAsText(file);
+    }
+
+    function commitBulkUpload() {
+      if (parsedBulkRecords.length === 0) return;
+      var entity = document.getElementById('bulk-entity-select').value;
+      var colName = getCollectionNameForTab(entity);
+      var statusMsg = document.getElementById('bulk-status-message');
+      var commitBtn = document.getElementById('commit-bulk-btn');
+
+      if (commitBtn) {
+        commitBtn.disabled = true;
+        commitBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Uploading to Firestore...';
+      }
+
+      if (window.RevOpsStore && typeof window.RevOpsStore.bulkUploadItems === 'function') {
+        window.RevOpsStore.bulkUploadItems(colName, parsedBulkRecords, function(count, err) {
+          if (commitBtn) {
+            commitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Upload Completed';
+          }
+          if (statusMsg) {
+            statusMsg.className = "p-3 rounded-xl text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800";
+            statusMsg.innerHTML = '<i class="fa-solid fa-circle-check mr-1.5"></i> Successfully imported ' + count + ' records into ' + colName + '! Real-time synchronized.';
+            statusMsg.classList.remove('hidden');
+          }
+          refreshAllMasterCounts();
+          renderMasterTable();
+          setTimeout(function() {
+            closeBulkUploadModal();
+          }, 1500);
+        });
+      }
+    }
+
+    // Modal Handlers for Single Master Record Creation
+    function openAddSingleModal() {
+      var modal = document.getElementById('add-single-modal');
+      var title = document.getElementById('add-modal-title');
+      var formFields = document.getElementById('add-form-fields');
+
+      if (currentMasterTab === 'clients') {
+        title.innerHTML = '<i class="fa-solid fa-building text-indigo-400"></i><span>Add Client Master Record</span>';
+        formFields.innerHTML = `
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Client Code *</label>
+            <input type="text" name="clientCode" required placeholder="CL-006" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Company / Client Name *</label>
+            <input type="text" name="clientName" required placeholder="e.g. Larsen & Toubro" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">GSTIN Number *</label>
+            <input type="text" name="gstin" required placeholder="33AAACL1234F1Z9" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Contact Person Name</label>
+            <input type="text" name="contactPerson" placeholder="Mr. Suresh Rao" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Email Address</label>
+            <input type="email" name="email" placeholder="procurement@client.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Phone / Mobile</label>
+            <input type="tel" name="phone" placeholder="9840112233" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">City & State</label>
+            <input type="text" name="city" placeholder="Chennai, Tamil Nadu" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Primary Vertical</label>
+            <select name="vertical" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+              <option value="Sales">Equipment Sales</option>
+              <option value="Projects">Projects & Production</option>
+              <option value="Service/Parts">Service & Spares</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Credit Terms (Days)</label>
+            <input type="number" name="creditPeriodDays" value="30" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+        `;
+      } else if (currentMasterTab === 'projects') {
+        title.innerHTML = '<i class="fa-solid fa-diagram-project text-sky-400"></i><span>Add Project Master Record</span>';
+        formFields.innerHTML = `
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Project Code *</label>
+            <input type="text" name="projectCode" required placeholder="PRJ-2026-06" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Project Name *</label>
+            <input type="text" name="projectName" required placeholder="Raw Material Conveyor Scale" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Client Name *</label>
+            <input type="text" name="clientName" required placeholder="JSW Steel Limited" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Project Value (INR) *</label>
+            <input type="number" name="projectValue" required placeholder="5000000" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Project Manager</label>
+            <input type="text" name="projectManagerName" placeholder="Mrs. Anitha" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Target Completion Date</label>
+            <input type="text" name="targetCompletionDate" placeholder="31/12/2026" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+        `;
+      } else if (currentMasterTab === 'spareParts') {
+        title.innerHTML = '<i class="fa-solid fa-gears text-amber-400"></i><span>Add Spare Part / Product Record</span>';
+        formFields.innerHTML = `
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Part / SKU Number *</label>
+            <input type="text" name="partNumber" required placeholder="SP-LC-10T" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Part Name / Description *</label>
+            <input type="text" name="partName" required placeholder="10T S-Type Precision Load Cell" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Category</label>
+            <input type="text" name="category" placeholder="Load Cells & Sensors" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">HSN Code *</label>
+            <input type="text" name="hsnCode" required value="90318000" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Unit Price (INR) *</label>
+            <input type="number" name="unitPrice" required placeholder="25000" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">GST Rate (%)</label>
+            <input type="number" name="gstPercent" value="18" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Current Stock Qty</label>
+            <input type="number" name="stockQty" value="10" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Unit of Measure (UOM)</label>
+            <input type="text" name="uom" value="Nos" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+        `;
+      } else {
+        title.innerHTML = '<i class="fa-solid fa-user-plus text-purple-400"></i><span>Add Employee Master Record</span>';
+        formFields.innerHTML = `
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Employee ID *</label>
+            <input type="text" name="employeeId" required placeholder="E-011" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Full Name *</label>
+            <input type="text" name="fullName" required placeholder="John Doe" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Designation</label>
+            <input type="text" name="designation" placeholder="Application Engineer" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Vertical / Department</label>
+            <input type="text" name="vertical" placeholder="Projects & production" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Email *</label>
+            <input type="email" name="email" required placeholder="john@measuredi.com" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Mobile</label>
+            <input type="tel" name="mobile" placeholder="9840112233" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">System Role</label>
+            <select name="role" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+              <option value="staff">Staff</option>
+              <option value="manager">Manager</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+        `;
+      }
+
+      if (modal) modal.classList.remove('hidden');
+      if (modal) modal.classList.add('flex');
+    }
+
+    function closeAddSingleModal() {
+      var modal = document.getElementById('add-single-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function saveSingleMasterRecord(event) {
+      event.preventDefault();
+      var form = event.target;
+      var formData = new FormData(form);
+      var record = {};
+      formData.forEach(function(val, key) {
+        record[key] = val;
+      });
+
+      var colName = getCollectionNameForTab(currentMasterTab);
+      if (window.RevOpsStore && typeof window.RevOpsStore.addItem === 'function') {
+        window.RevOpsStore.addItem(colName, record);
+        alert("Master record saved successfully!");
+        closeAddSingleModal();
+        refreshAllMasterCounts();
+        renderMasterTable();
+      }
+    }
+
+    function exportCurrentMasterCSV() {
+      var colName = getCollectionNameForTab(currentMasterTab);
+      var items = window.RevOpsStore ? window.RevOpsStore.getCollection(colName) : [];
+      if (!items || items.length === 0) {
+        alert("No records to export.");
+        return;
+      }
+      var keys = Object.keys(items[0]);
+      var csvLines = [];
+      csvLines.push(keys.join(','));
+      items.forEach(function(item) {
+        var row = keys.map(function(k) {
+          var val = item[k] !== undefined ? String(item[k]).replace(/"/g, '""') : '';
+          return '"' + val + '"';
+        });
+        csvLines.push(row.join(','));
+      });
+      var blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      var link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute("download", colName + "_export_" + new Date().toISOString().slice(0, 10) + ".csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>

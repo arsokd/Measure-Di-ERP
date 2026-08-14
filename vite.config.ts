@@ -77,6 +77,8 @@ export default defineConfig(({ mode }) => {
           expenses: path.resolve(__dirname, 'expenses.html'),
           payroll: path.resolve(__dirname, 'payroll.html'),
           serviceTickets: path.resolve(__dirname, 'service-tickets.html'),
+          invoices: path.resolve(__dirname, 'invoices.html'),
+          masterData: path.resolve(__dirname, 'master-data.html'),
         },
       },
     },

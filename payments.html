@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Measure DI RevOps - Payment Collections</title>
+    <title>Measure DI RevOps - Payment Collections, Receipts & Outstanding AR</title>
     <link rel="stylesheet" href="/src/index.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -23,68 +23,139 @@
       <!-- Header -->
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
         <div>
-          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Payment Collections & Receivables</h1>
-          <p class="text-sm text-slate-500 mt-1">Track customer cash inflows, bank transfers, cheque clearances & outstanding receivables</p>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Payment Collections & Receivables Management</h1>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">Finance Integrated</span>
+          </div>
+          <p class="text-sm text-slate-500 mt-1">Filtered Pending Invoices, Cash Receipts, Goodwill Discounts & Director-Approved Write-Offs</p>
         </div>
 
-        <button onclick="openPaymentModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          <span>+ Record Payment</span>
+        <div class="flex flex-wrap items-center gap-3">
+          <a href="invoices.html" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center space-x-1.5">
+            <span>🧾 Commercial Invoices</span>
+          </a>
+          <button onclick="openAdjustmentModal()" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer">
+            <span>⚖️ + Request Adjustment / Write-Off</span>
+          </button>
+          <button onclick="openPaymentModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>+ Record Payment Collection</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Director AR Authorization Alert Banner -->
+      <div id="director-approval-alert" class="hidden bg-gradient-to-r from-purple-50 via-amber-50 to-purple-50 border-2 border-purple-300 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-xl bg-purple-700 text-white flex items-center justify-center font-black text-xl shadow-xs shrink-0">
+            👑
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-purple-950 uppercase tracking-wide flex items-center gap-2">
+              <span>Director AR Authorization Required</span>
+              <span id="pending-director-count" class="px-2 py-0.5 bg-purple-700 text-white rounded-full text-[11px] font-black">0</span>
+            </h3>
+            <p class="text-xs text-purple-900 mt-0.5">Commercial invoice discounts, price goodwill reductions, or bad debt write-offs awaiting mandatory Director sign-off.</p>
+          </div>
+        </div>
+        <button onclick="switchPaymentView('adjustments')" class="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors shrink-0 cursor-pointer flex items-center space-x-1.5">
+          <span>Review & Authorize as Director &rarr;</span>
         </button>
       </div>
 
-      <!-- Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Cleared Collections</span>
-          <div class="text-3xl font-black text-emerald-600 mt-1" id="stat-collected-total">Rs.0</div>
-          <p class="text-xs text-slate-400 mt-1">Realized Cash Inflow</p>
+      <!-- 5 Financial Summary KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="bg-white p-4.5 rounded-2xl shadow-xs border border-slate-200 space-y-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Billed Revenue</span>
+          <div class="text-xl font-black text-slate-900" id="stat-billed-revenue">Rs.0</div>
+          <p class="text-[10px] text-slate-400">Across Approved Invoices</p>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Pending Cheque / Clearance</span>
-          <div class="text-3xl font-black text-amber-600 mt-1" id="stat-pending-total">Rs.0</div>
-          <p class="text-xs text-slate-400 mt-1">In Process / Post-Dated Cheques</p>
+        <div class="bg-white p-4.5 rounded-2xl shadow-xs border border-slate-200 space-y-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Realized Collections</span>
+          <div class="text-xl font-black text-emerald-600" id="stat-collected-total">Rs.0</div>
+          <p class="text-[10px] text-slate-400">Cleared in Bank + TDS Deductions</p>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Collection Transactions</span>
-          <div class="text-3xl font-black text-slate-900 mt-1" id="stat-trans-count">0</div>
-          <p class="text-xs text-slate-400 mt-1">Total Payment Entries</p>
+        <div class="bg-white p-4.5 rounded-2xl shadow-xs border border-slate-200 space-y-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-amber-600">Outstanding AR</span>
+          <div class="text-xl font-black text-amber-600" id="stat-outstanding-total">Rs.0</div>
+          <p class="text-[10px] text-slate-400">Pending Customer Settlements</p>
+        </div>
+
+        <div class="bg-white p-4.5 rounded-2xl shadow-xs border border-slate-200 space-y-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-rose-600">Overdue (>30d)</span>
+          <div class="text-xl font-black text-rose-600" id="stat-overdue-total">Rs.0</div>
+          <p class="text-[10px] text-slate-400" id="stat-overdue-detail">0 Invoices Pending Recovery</p>
+        </div>
+
+        <div class="bg-white p-4.5 rounded-2xl shadow-xs border border-slate-200 space-y-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-purple-700">Adjustments & Write-Offs</span>
+          <div class="text-xl font-black text-purple-700" id="stat-adjustments-total">Rs.0</div>
+          <p class="text-[10px] text-slate-400">Director Authorized</p>
         </div>
       </div>
 
-      <!-- Payments Table -->
+      <!-- Main Payments Workbench -->
       <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden space-y-4">
-        <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h2 class="text-lg font-bold text-slate-900">Payment Collection Transactions</h2>
-          
-          <div class="flex items-center space-x-3">
-            <select id="payment-fy-filter" onchange="renderPaymentsTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="2026-27" selected>FY 2026-27 (Current)</option>
-              <option value="2025-26">FY 2025-26</option>
-              <option value="2024-25">FY 2024-25</option>
-              <option value="All">All FYs (2024 - 2026)</option>
-            </select>
-            <div id="payment-filter-wrapper" class="hidden">
-              <select id="payment-emp-filter" onchange="renderPaymentsTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <!-- Populated dynamically -->
-              </select>
+        
+        <!-- Tab Navigation and Filter Controls -->
+        <div class="p-6 border-b border-slate-200 space-y-4">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            
+            <!-- View Tabs -->
+            <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs" id="payment-view-tabs">
+              <button onclick="switchPaymentView('transactions')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-pointer" data-view="transactions">
+                💳 Payment Receipts & Ledger (<span id="count-view-trans">0</span>)
+              </button>
+              <button onclick="switchPaymentView('client_ar')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer" data-view="client_ar">
+                👥 Client-wise Outstanding & Aging
+              </button>
+              <button onclick="switchPaymentView('project_ar')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer" data-view="project_ar">
+                📦 Project / Order-wise Receivables
+              </button>
+              <button onclick="switchPaymentView('salesrep_ar')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer" data-view="salesrep_ar">
+                🎯 Sales Person Recovery Performance
+              </button>
+              <button onclick="switchPaymentView('adjustments')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer" data-view="adjustments">
+                ⚖️ Adjustments & Director Write-Offs (<span id="count-view-adj">0</span>)
+              </button>
             </div>
-            <input type="text" id="payment-search-input" oninput="renderPaymentsTable()" placeholder="Search customer, invoice, UTR..." class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+
+            <!-- Filters -->
+            <div class="flex flex-wrap items-center gap-3">
+              <select id="payment-fy-filter" onchange="renderActivePaymentView()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="2026-27" selected>FY 2026-27 (Current)</option>
+                <option value="2025-26">FY 2025-26</option>
+                <option value="2024-25">FY 2024-25</option>
+                <option value="All">All FYs</option>
+              </select>
+
+              <div id="payment-filter-wrapper" class="hidden">
+                <select id="payment-emp-filter" onchange="renderActivePaymentView()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <option value="All">All Sales Representatives</option>
+                </select>
+              </div>
+
+              <input type="text" id="payment-search-input" oninput="renderActivePaymentView()" placeholder="Search customer, invoice, UTR, ref..." class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs w-60 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+
           </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- VIEW 1: Transactions & Receipts Table -->
+        <div id="view-section-transactions" class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Receipt # & Date</th>
                 <th class="py-3 px-4">Customer Name</th>
-                <th class="py-3 px-4">Invoice #</th>
-                <th class="py-3 px-4 text-right">Amount Collected (Rs.)</th>
+                <th class="py-3 px-4">Linked Invoice #</th>
+                <th class="py-3 px-4 text-right">Amount Received</th>
+                <th class="py-3 px-4 text-right">TDS Deducted</th>
                 <th class="py-3 px-4">Mode / UTR #</th>
-                <th class="py-3 px-4">Payment Date</th>
                 <th class="py-3 px-4 text-center">Status</th>
+                <th class="py-3 px-4 text-center">Receipt Dispatch</th>
                 <th class="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
@@ -93,86 +164,572 @@
             </tbody>
           </table>
         </div>
+
+        <!-- VIEW 2: Client-wise Outstanding & Aging Matrix -->
+        <div id="view-section-client_ar" class="hidden overflow-x-auto p-4">
+          <div class="mb-3 flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-700">Aging Schedule Analysis (International Standard Net 30/60/90 Days)</span>
+            <span class="text-[11px] text-slate-400">DSO: Days Sales Outstanding benchmarked to 30 days</span>
+          </div>
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Client / Organization</th>
+                <th class="py-3 px-4 text-right">Total Invoiced</th>
+                <th class="py-3 px-4 text-right">Collected (Cash+TDS)</th>
+                <th class="py-3 px-4 text-right">Outstanding (AR)</th>
+                <th class="py-3 px-4 text-right text-emerald-700">0 - 30 Days</th>
+                <th class="py-3 px-4 text-right text-amber-600">31 - 60 Days</th>
+                <th class="py-3 px-4 text-right text-orange-600">61 - 90 Days</th>
+                <th class="py-3 px-4 text-right text-rose-600">90+ Days (Overdue)</th>
+                <th class="py-3 px-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="client-ar-tbody" class="divide-y divide-slate-100 text-xs">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- VIEW 3: Project / Order-wise Receivables -->
+        <div id="view-section-project_ar" class="hidden overflow-x-auto p-4">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Project / Order Reference</th>
+                <th class="py-3 px-4">Client Name</th>
+                <th class="py-3 px-4 text-right">Contract Value</th>
+                <th class="py-3 px-4 text-right">Total Invoiced</th>
+                <th class="py-3 px-4 text-right">Realized Cash</th>
+                <th class="py-3 px-4 text-right">Unsettled Balance</th>
+                <th class="py-3 px-4 text-center w-36">Realization %</th>
+                <th class="py-3 px-4 text-center">Invoices</th>
+              </tr>
+            </thead>
+            <tbody id="project-ar-tbody" class="divide-y divide-slate-100 text-xs">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- VIEW 4: Sales Person Recovery Performance -->
+        <div id="view-section-salesrep_ar" class="hidden overflow-x-auto p-4">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Sales Representative</th>
+                <th class="py-3 px-4 text-center">Invoices Generated</th>
+                <th class="py-3 px-4 text-right">Billed Invoicing Value</th>
+                <th class="py-3 px-4 text-right">Cash Realized</th>
+                <th class="py-3 px-4 text-right">Pending Collections</th>
+                <th class="py-3 px-4 text-center w-40">Recovery Rate (%)</th>
+                <th class="py-3 px-4 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="salesrep-ar-tbody" class="divide-y divide-slate-100 text-xs">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- VIEW 5: AR Adjustments & Director-Approved Write-Offs -->
+        <div id="view-section-adjustments" class="hidden overflow-x-auto p-4 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-purple-50/60 p-4 rounded-xl border border-purple-200">
+            <div>
+              <h3 class="text-sm font-black text-purple-950 flex items-center gap-2">
+                <span>👑 Corporate AR Adjustments & Director Bad-Debt Write-Offs</span>
+                <span class="px-2 py-0.5 bg-purple-200 text-purple-900 rounded text-[10px] font-extrabold uppercase">Director Gated</span>
+              </h3>
+              <p class="text-xs text-purple-800 mt-0.5">Captures goodwill commercial discounts, price concessions, and unrecoverable bad-debt write-offs requiring mandatory Director sign-off.</p>
+            </div>
+            <button onclick="openAdjustmentModal()" class="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 cursor-pointer">
+              + New Adjustment / Write-Off Request
+            </button>
+          </div>
+
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Ref # & Date</th>
+                <th class="py-3 px-4">Adjustment Type</th>
+                <th class="py-3 px-4">Client & Invoice Ref</th>
+                <th class="py-3 px-4 text-right">Invoice Value</th>
+                <th class="py-3 px-4 text-right text-purple-700 font-black">Reduction Amount</th>
+                <th class="py-3 px-4">Reason Category & Justification</th>
+                <th class="py-3 px-4 text-center">Status</th>
+                <th class="py-3 px-4">Director Authorization</th>
+                <th class="py-3 px-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adjustments-tbody" class="divide-y divide-slate-100 text-xs">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
       </div>
 
     </main>
 
-    <!-- Modal: Record Payment -->
+    <!-- MODAL 1: Record / Edit Payment (Filtered Pending Invoices & Clients Only) -->
     <div id="payment-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
-        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="text-base font-bold text-slate-900" id="payment-modal-title">Record Payment Collection</h3>
-          <button onclick="closePaymentModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div class="flex items-center space-x-2">
+            <h3 class="text-base font-bold text-slate-900" id="payment-modal-title">Record Payment Collection</h3>
+            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">Pending Invoices Only</span>
+          </div>
+          <button onclick="closePaymentModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
         </div>
 
-        <form onsubmit="handleSavePayment(event)" class="p-6 space-y-4">
+        <form onsubmit="handleSavePayment(event)" class="p-6 space-y-4 overflow-y-auto text-xs">
           <input type="hidden" id="payment-doc-id" />
 
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Customer Name *</label>
-            <input type="text" id="inp-pay-customer" required placeholder="e.g. JSW Steel Limited" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <!-- Filtered Client Selection (Only Clients with Pending Balance) -->
+          <div class="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2">
+            <div class="flex justify-between items-center">
+              <label class="text-[11px] font-black uppercase text-emerald-950">1. Select Client (Pending Invoices Only) *</label>
+              <span class="text-[10px] text-emerald-800 font-semibold" id="client-link-count-hint"></span>
+            </div>
+            <select id="inp-pay-client-select" onchange="onPaymentClientFilterChanged(this.value)" class="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="">-- All Clients with Pending Invoices --</option>
+            </select>
           </div>
 
+          <!-- Filtered Pending Invoice Selection (Only Invoices with Remaining Balance) -->
+          <div class="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2">
+            <div class="flex justify-between items-center">
+              <label class="text-[11px] font-black uppercase text-indigo-950">2. Select Pending Commercial Invoice *</label>
+              <span class="text-[10px] text-indigo-700 font-semibold" id="inv-link-count-hint"></span>
+            </div>
+            <select id="inp-pay-invoice-select" onchange="onInvoiceSelected(this.value)" required class="w-full px-3 py-2 bg-white border border-indigo-300 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="">-- Select Pending Invoice to Settle --</option>
+            </select>
+
+            <!-- Real-time Invoice Financial Context Snapshot -->
+            <div id="inv-financial-snapshot" class="hidden grid grid-cols-4 gap-2 pt-1 text-[11px]">
+              <div class="bg-white p-2 rounded border border-indigo-100">
+                <span class="text-slate-400 block text-[9px] uppercase">Invoice Total</span>
+                <span class="font-black text-slate-900" id="snap-inv-total">Rs.0</span>
+              </div>
+              <div class="bg-white p-2 rounded border border-indigo-100">
+                <span class="text-slate-400 block text-[9px] uppercase">Paid (Cash+TDS)</span>
+                <span class="font-bold text-emerald-600" id="snap-inv-paid">Rs.0</span>
+              </div>
+              <div class="bg-white p-2 rounded border border-indigo-100">
+                <span class="text-slate-400 block text-[9px] uppercase">Prior Adjustments</span>
+                <span class="font-bold text-purple-700" id="snap-inv-adj">Rs.0</span>
+              </div>
+              <div class="bg-white p-2 rounded border border-indigo-100">
+                <span class="text-slate-400 block text-[9px] uppercase">Current Balance</span>
+                <span class="font-black text-amber-600" id="snap-inv-bal">Rs.0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer & Details -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Invoice Number</label>
-              <input type="text" id="inp-pay-invoice" placeholder="INV/2025-26/042" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Customer / Organization Name *</label>
+              <input type="text" id="inp-pay-customer" required placeholder="Select from dropdown above" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Amount Collected (Rs.) *</label>
-              <input type="number" id="inp-pay-amount" required placeholder="500000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Invoice Number (Reference)</label>
+              <input type="text" id="inp-pay-invoice" placeholder="INV/2026-27/001" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </div>
           </div>
 
+          <!-- Amounts: Amount Collected + TDS Deducted -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Mode *</label>
-              <select id="inp-pay-mode" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="NEFT/RTGS">NEFT / RTGS</option>
-                <option value="Cheque">Cheque</option>
-                <option value="UPI">UPI / Net Banking</option>
-                <option value="Cash">Cash</option>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Net Cash Received (Bank Credited) *</label>
+              <input type="number" id="inp-pay-amount" required oninput="calculateRemainingBalancePreview()" placeholder="500000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">TDS Deducted (u/s 194C / 194J)</label>
+              <input type="number" id="inp-pay-tds" value="0" oninput="calculateRemainingBalancePreview()" placeholder="0" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+          </div>
+
+          <!-- Settlement Preview Note -->
+          <div id="payment-preview-banner" class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-900 font-semibold flex items-center justify-between">
+            <span>Total Settlement: <strong id="prev-total-settlement">Rs.0</strong></span>
+            <span>New Remaining Balance: <strong id="prev-new-balance">Rs.0</strong></span>
+          </div>
+
+          <!-- Payment Mode, Bank Account & Reference -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Mode *</label>
+              <select id="inp-pay-mode" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="NEFT/RTGS">NEFT / RTGS Bank Transfer</option>
+                <option value="Cheque">Bank Cheque / DD</option>
+                <option value="UPI">UPI / IMPS Net Banking</option>
+                <option value="Wire Transfer">International Wire (SWIFT)</option>
+                <option value="Letter of Credit">Letter of Credit (LC)</option>
+                <option value="Cash">Cash (Petty Commercial)</option>
               </select>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">UTR / Cheque Number</label>
-              <input type="text" id="inp-pay-utr" placeholder="e.g. UTR192837465" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">UTR / Cheque / Transaction Ref *</label>
+              <input type="text" id="inp-pay-utr" required placeholder="e.g. UTR192837465 / CHQ-9012" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Date *</label>
-              <input type="text" id="inp-pay-date" required placeholder="DD/MM/YYYY" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Company Account Credited</label>
+              <select id="inp-pay-bank" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="HDFC Bank - 50200049283719 (Guindy Branch)">HDFC Bank - 50200049283719</option>
+                <option value="SBI - 39281726351 (Industrial Branch)">State Bank of India - 39281726351</option>
+              </select>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Status *</label>
-              <select id="inp-pay-status" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="Cleared">Cleared</option>
-                <option value="Pending Clearance">Pending Clearance</option>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Date *</label>
+              <input type="text" id="inp-pay-date" required placeholder="DD/MM/YYYY" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Type / Milestone</label>
+              <input type="text" id="inp-pay-milestone" placeholder="e.g. 30% Advance Payment / Final Balance" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Status *</label>
+              <select id="inp-pay-status" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="Cleared">Cleared (Funds in Bank)</option>
+                <option value="Pending Clearance">Pending Clearance (Cheque in transit)</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Remarks</label>
-            <textarea id="inp-pay-remarks" rows="2" placeholder="Bank name, TDS deduction details, balance payment due date..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Remarks & Settlement Notes</label>
+            <textarea id="inp-pay-remarks" rows="2" placeholder="TDS challan reference, bank narration, credit memo note..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
           </div>
 
           <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
-            <button type="button" onclick="closePaymentModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
-            <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer">
-              Save Payment
+            <button type="button" onclick="closePaymentModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer">Cancel</button>
+            <button type="submit" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition-colors cursor-pointer">
+              Save Payment & Generate Receipt
             </button>
           </div>
         </form>
       </div>
     </div>
 
+    <!-- MODAL 2: Official Printable Payment Settlement Receipt (PDF Format) -->
+    <div id="receipt-view-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]">
+        <div class="px-6 py-3 bg-slate-900 text-white flex items-center justify-between shrink-0">
+          <div class="flex items-center space-x-3">
+            <span class="text-emerald-400 font-bold text-lg">🧾</span>
+            <span class="text-sm font-bold tracking-wide" id="receipt-modal-title">Payment Settlement Receipt</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <button onclick="printReceiptDoc()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-xs cursor-pointer flex items-center space-x-1">
+              <span>🖨️ Print / Save PDF Receipt</span>
+            </button>
+            <button onclick="closeReceiptViewModal()" class="text-slate-400 hover:text-white text-lg font-bold cursor-pointer">&times;</button>
+          </div>
+        </div>
+
+        <div id="printable-receipt-wrapper" class="p-8 overflow-y-auto bg-white text-slate-900 space-y-6">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: Direct Payment Receipt Email Dispatch to Client -->
+    <div id="send-receipt-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col">
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="text-lg">✉️</span>
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Send Payment Settlement Receipt to Client</h3>
+              <p class="text-xs text-slate-500">Official email dispatch acknowledging receipt of funds</p>
+            </div>
+          </div>
+          <button onclick="closeSendReceiptModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
+        </div>
+
+        <div class="p-6 space-y-4 text-xs overflow-y-auto max-h-[80vh]">
+          <input type="hidden" id="send-rec-pay-id" />
+
+          <div>
+            <label class="block font-bold text-slate-700 uppercase mb-1">To (Client Email) *</label>
+            <input type="email" id="inp-rec-to" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold text-slate-700 uppercase mb-1">CC Accounts</label>
+              <input type="text" id="inp-rec-cc" value="measuredichennai@gmail.com" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 uppercase mb-1">Voucher Attachment</label>
+              <div class="px-3 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-bold flex items-center justify-between">
+                <span id="send-rec-attachment-name">Payment_Receipt.pdf</span>
+                <span class="text-[10px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded">PDF</span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 uppercase mb-1">Subject</label>
+            <input type="text" id="inp-rec-subject" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 uppercase mb-1">Acknowledgement Letter</label>
+            <textarea id="inp-rec-body" rows="7" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+          </div>
+
+          <div id="rec-dispatch-history-box" class="hidden p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+            <span class="text-[10px] font-bold uppercase text-slate-500">Dispatch Audit Log</span>
+            <div id="rec-dispatch-history-list" class="text-[11px] space-y-1 text-slate-600 font-mono"></div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          <button type="button" onclick="openReceiptInMailClient()" class="text-emerald-700 hover:text-emerald-900 text-xs font-bold hover:underline cursor-pointer">
+            Open in Default Mail Client (Mailto)
+          </button>
+          <div class="flex items-center space-x-3">
+            <button type="button" onclick="closeSendReceiptModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer">Cancel</button>
+            <button type="button" onclick="executeSendReceiptEmail()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer">
+              🚀 Send Receipt Directly
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: Request Goodwill Adjustment / Bad Debt Write-Off -->
+    <div id="adjustment-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
+        <div class="px-6 py-4 bg-purple-50 border-b border-purple-200 flex items-center justify-between shrink-0">
+          <div class="flex items-center space-x-2">
+            <h3 class="text-base font-bold text-purple-950" id="adj-modal-title">Request Payment Adjustment / Write-Off</h3>
+            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-purple-200 text-purple-900">Director Approval Gate</span>
+          </div>
+          <button onclick="closeAdjustmentModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
+        </div>
+
+        <form onsubmit="handleSaveAdjustment(event)" class="p-6 space-y-4 overflow-y-auto text-xs">
+          <input type="hidden" id="adj-doc-id" />
+
+          <!-- Adjustment Type Selector -->
+          <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+            <label class="block font-black text-slate-800 uppercase tracking-wider text-[11px]">Select Adjustment / Settlement Nature *</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="flex items-start space-x-2.5 p-3 rounded-xl border border-amber-200 bg-amber-50/50 hover:bg-amber-50 cursor-pointer">
+                <input type="radio" name="adj_type_radio" value="Goodwill Discount / Commercial Adjustment" checked onchange="onAdjustmentTypeChange(this.value)" class="mt-0.5 text-purple-600 focus:ring-purple-500" />
+                <div>
+                  <span class="font-bold text-amber-950 block">🏷️ Goodwill Discount / Price Adjustment</span>
+                  <span class="text-[10px] text-amber-800">Commercial concession, price negotiation, or minor scope reduction from invoice value.</span>
+                </div>
+              </label>
+
+              <label class="flex items-start space-x-2.5 p-3 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-50 cursor-pointer">
+                <input type="radio" name="adj_type_radio" value="Bad Debt Write-Off (Unrecoverable AR)" onchange="onAdjustmentTypeChange(this.value)" class="mt-0.5 text-rose-600 focus:ring-rose-500" />
+                <div>
+                  <span class="font-bold text-rose-950 block">🚨 Bad Debt Write-Off</span>
+                  <span class="text-[10px] text-rose-800">Long outstanding unrecoverable payment, client insolvency, or uncollectible receivable.</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Client & Invoice Dropdown (Only Clients & Invoices with Pending Balance) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Filter Client (Pending AR Only) *</label>
+              <select id="inp-adj-client-select" onchange="onAdjClientFilterChanged(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="">-- All Clients with Pending AR --</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Select Pending Invoice *</label>
+              <select id="inp-adj-invoice-select" onchange="onAdjInvoiceSelected(this.value)" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value="">-- Select Pending Invoice --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Real-time Financial Snapshot -->
+          <div id="adj-inv-snapshot" class="hidden grid grid-cols-3 gap-2.5 p-3 bg-purple-50/60 border border-purple-200 rounded-xl text-[11px]">
+            <div class="bg-white p-2 rounded border border-purple-100">
+              <span class="text-slate-400 block text-[9px] uppercase">Invoice Grand Total</span>
+              <span class="font-black text-slate-900" id="adj-snap-total">Rs.0</span>
+            </div>
+            <div class="bg-white p-2 rounded border border-purple-100">
+              <span class="text-slate-400 block text-[9px] uppercase">Cash Realized to Date</span>
+              <span class="font-bold text-emerald-600" id="adj-snap-paid">Rs.0</span>
+            </div>
+            <div class="bg-white p-2 rounded border border-purple-100">
+              <span class="text-slate-400 block text-[9px] uppercase">Current Unsettled Balance</span>
+              <span class="font-black text-amber-600" id="adj-snap-bal">Rs.0</span>
+            </div>
+          </div>
+
+          <!-- Adjustment Amount & Reason Category -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Adjustment / Write-Off Amount (Rs.) *</label>
+              <input type="number" id="inp-adj-amount" required oninput="calculateAdjBalancePreview()" placeholder="50000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Reason Category *</label>
+              <select id="inp-adj-category" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <!-- Options populated dynamically based on type -->
+              </select>
+            </div>
+          </div>
+
+          <!-- Adjustment Balance Preview Banner -->
+          <div id="adj-preview-banner" class="p-2.5 bg-purple-50 border border-purple-200 rounded-xl text-[11px] text-purple-900 font-semibold flex items-center justify-between">
+            <span>Invoice Balance After Adjustment: <strong id="adj-prev-balance">Rs.0</strong></span>
+            <span id="adj-prev-status-text" class="text-purple-700 font-bold">Remaining AR will update upon Director Approval</span>
+          </div>
+
+          <!-- Detailed Commercial Justification -->
+          <div>
+            <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Detailed Commercial Justification & Background *</label>
+            <textarea id="inp-adj-justification" required rows="3" placeholder="Provide full context: client discussions, good-will concession rationale, long-outstanding timeline, or insolvency notification details for Director review..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+          </div>
+
+          <!-- Director Direct Authorization Panel (For Director/Admin Roles) -->
+          <div id="director-direct-sign-panel" class="hidden p-3.5 bg-purple-100/70 border border-purple-300 rounded-xl space-y-2">
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" id="inp-adj-direct-sign" class="w-4 h-4 text-purple-700 rounded focus:ring-purple-500" />
+              <span class="font-black text-purple-950 text-xs">👑 Sign & Authorize as Director Immediately (Murugan V - Director)</span>
+            </label>
+            <div>
+              <label class="block font-bold text-purple-900 text-[10px] uppercase mb-1">Director Remarks / Corporate Minutes Note</label>
+              <input type="text" id="inp-adj-director-notes" placeholder="Approved and sanctioned under Corporate Authority & Bad Debt Provisioning policy." class="w-full px-3 py-1.5 bg-white border border-purple-300 rounded-lg text-xs font-medium focus:outline-none focus:ring-2 focus:ring-purple-500" />
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+            <button type="button" onclick="closeAdjustmentModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer">Cancel</button>
+            <button type="submit" class="px-6 py-2 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-xl shadow-xs transition-colors cursor-pointer">
+              Submit for Director Approval
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 5: Director Review & Approval Modal -->
+    <div id="director-approval-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
+        <div class="px-6 py-4 bg-purple-900 text-white flex items-center justify-between shrink-0">
+          <div class="flex items-center space-x-2">
+            <span class="text-xl">👑</span>
+            <div>
+              <h3 class="text-base font-bold">Director AR Authorization Sign-Off</h3>
+              <p class="text-xs text-purple-200" id="dir-modal-ref">Review Adjustment Request</p>
+            </div>
+          </div>
+          <button onclick="closeDirectorApprovalModal()" class="text-purple-300 hover:text-white text-lg font-bold cursor-pointer">&times;</button>
+        </div>
+
+        <div class="p-6 space-y-4 text-xs overflow-y-auto">
+          <input type="hidden" id="dir-adj-id" />
+
+          <!-- Summary Matrix -->
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+            <div class="flex justify-between">
+              <span class="text-slate-500">Customer Name:</span>
+              <strong class="text-slate-900 font-bold" id="dir-customer-name">--</strong>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Invoice Reference:</span>
+              <strong class="font-mono text-indigo-700" id="dir-invoice-num">--</strong>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Adjustment Type:</span>
+              <strong class="text-purple-800" id="dir-adj-type">--</strong>
+            </div>
+            <div class="flex justify-between border-t border-slate-200 pt-2">
+              <span class="text-slate-500">Requested Reduction Amount:</span>
+              <strong class="text-base font-black text-rose-700" id="dir-adj-amount">Rs.0</strong>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Reason Category:</span>
+              <strong class="text-slate-800" id="dir-adj-category">--</strong>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Requested By:</span>
+              <span class="font-medium text-slate-700" id="dir-adj-requested-by">--</span>
+            </div>
+          </div>
+
+          <!-- Detailed Justification -->
+          <div>
+            <label class="block font-bold text-slate-700 uppercase mb-1">Commercial Justification</label>
+            <div class="p-3 bg-purple-50/60 border border-purple-200 rounded-xl text-slate-800 font-medium whitespace-pre-wrap" id="dir-adj-justification">
+              --
+            </div>
+          </div>
+
+          <!-- Director Remarks -->
+          <div>
+            <label class="block font-bold text-purple-950 uppercase mb-1">Director Authorization Remarks *</label>
+            <textarea id="dir-adj-remarks" rows="2" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Approved and ratified by Director of Measure DI Technologies Private Limited."></textarea>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+          <button type="button" onclick="closeDirectorApprovalModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer">Cancel</button>
+          <div class="flex items-center space-x-2">
+            <button type="button" onclick="executeDirectorDecision('Rejected')" class="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-bold rounded-xl transition-colors cursor-pointer">
+              ❌ Reject Request
+            </button>
+            <button type="button" onclick="executeDirectorDecision('Approved')" class="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer">
+              👑 Authorize & Sanction
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 6: Printable AR Adjustment / Write-Off Voucher Certificate -->
+    <div id="adj-voucher-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]">
+        <div class="px-6 py-3 bg-purple-950 text-white flex items-center justify-between shrink-0">
+          <div class="flex items-center space-x-3">
+            <span class="text-amber-400 font-bold text-lg">⚖️</span>
+            <span class="text-sm font-bold tracking-wide" id="adj-voucher-title">Director Authorization Certificate</span>
+          </div>
+          <div class="flex items-center space-x-3">
+            <button onclick="printAdjVoucherDoc()" class="px-3 py-1 bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold rounded-lg shadow-xs cursor-pointer flex items-center space-x-1">
+              <span>🖨️ Print / Save PDF</span>
+            </button>
+            <button onclick="closeAdjVoucherModal()" class="text-slate-400 hover:text-white text-lg font-bold cursor-pointer">&times;</button>
+          </div>
+        </div>
+
+        <div id="printable-adj-wrapper" class="p-8 overflow-y-auto bg-white text-slate-900 space-y-6">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Script Implementation -->
     <script>
+      var currentPaymentView = 'transactions';
+
       document.addEventListener('DOMContentLoaded', function() {
         if (checkAuth(['admin', 'manager', 'staff'])) {
           initPaymentsPage();
@@ -188,7 +745,7 @@
           var select = document.getElementById('payment-emp-filter');
           wrapper.classList.remove('hidden');
 
-          select.innerHTML = `<option value="All">All Collectors</option>`;
+          select.innerHTML = `<option value="All">All Sales Representatives</option>`;
           employees.forEach(function(e) {
             var opt = document.createElement('option');
             opt.value = e.employeeId;
@@ -197,75 +754,849 @@
           });
         }
 
-        renderPaymentsTable();
+        populatePaymentClientDropdown();
+        populateInvoiceDropdown();
+        renderActivePaymentView();
+
+        // Check if redirected with ?action=adjustment or ?invoiceId=...
+        var urlParams = new URLSearchParams(window.location.search);
+        var targetAction = urlParams.get('action');
+        var targetInvId = urlParams.get('invoiceId');
+        if (targetAction === 'adjustment') {
+          openAdjustmentModal(targetInvId);
+        } else if (targetInvId) {
+          openPaymentModal(targetInvId);
+        }
       }
 
-      function renderPaymentsTable() {
-        var userRole = localStorage.getItem('userRole');
-        var myEmpId = localStorage.getItem('employeeId');
-        var searchQuery = document.getElementById('payment-search-input').value.toLowerCase();
-        
-        var selectedFilterEmp = "All";
-        var filterElem = document.getElementById('payment-emp-filter');
-        if (filterElem && filterElem.value) selectedFilterEmp = filterElem.value;
-
-        var payments = window.RevOpsStore.getCollection('payments') || [];
-
-        var selectedFy = document.getElementById('payment-fy-filter') ? document.getElementById('payment-fy-filter').value : '2026-27';
-        var filtered = payments.filter(function(p) {
-          if (selectedFy !== 'All') {
-            var payFy = typeof getFinancialYear === 'function' ? getFinancialYear(p.paymentDate) : '2026-27';
-            if (payFy !== selectedFy) return false;
+      function switchPaymentView(viewName) {
+        currentPaymentView = viewName;
+        document.querySelectorAll('#payment-view-tabs .view-tab-btn').forEach(function(btn) {
+          if (btn.getAttribute('data-view') === viewName) {
+            btn.className = 'view-tab-btn px-4 py-2 font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-pointer';
+          } else {
+            btn.className = 'view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer';
           }
-          if (userRole === 'staff' && p.employeeId !== myEmpId) return false;
-          if (selectedFilterEmp !== 'All' && p.employeeId !== selectedFilterEmp) return false;
-
-          var textMatch = p.customerName.toLowerCase().includes(searchQuery) ||
-                            (p.invoiceNumber || '').toLowerCase().includes(searchQuery) ||
-                            (p.utrNumber || '').toLowerCase().includes(searchQuery);
-          return textMatch;
         });
 
-        // Compute Stats
-        var clearedTotal = 0;
-        var pendingTotal = 0;
+        document.getElementById('view-section-transactions').classList.toggle('hidden', viewName !== 'transactions');
+        document.getElementById('view-section-client_ar').classList.toggle('hidden', viewName !== 'client_ar');
+        document.getElementById('view-section-project_ar').classList.toggle('hidden', viewName !== 'project_ar');
+        document.getElementById('view-section-salesrep_ar').classList.toggle('hidden', viewName !== 'salesrep_ar');
+        document.getElementById('view-section-adjustments').classList.toggle('hidden', viewName !== 'adjustments');
 
-        filtered.forEach(function(p) {
-          var amt = Number(p.amount) || 0;
-          if (p.status === 'Cleared') clearedTotal += amt;
-          else pendingTotal += amt;
+        renderActivePaymentView();
+      }
+
+      // Populate Client Filter in Payment Modal (ONLY clients with balanceDue > 0)
+      function populatePaymentClientDropdown() {
+        var invoices = window.RevOpsStore.getCollection('invoices') || [];
+        var clientSelect = document.getElementById('inp-pay-client-select');
+        if (!clientSelect) return;
+
+        var clientsWithPending = {};
+        invoices.forEach(function(inv) {
+          var bal = Number(inv.balanceDue) !== undefined ? Number(inv.balanceDue) : (Number(inv.grandTotal) || 0);
+          if (bal > 0 && inv.status !== 'Cancelled' && inv.status !== 'Draft') {
+            var cName = (inv.customerName || '').trim();
+            if (cName) {
+              clientsWithPending[cName] = (clientsWithPending[cName] || 0) + bal;
+            }
+          }
         });
 
-        document.getElementById('stat-collected-total').innerText = formatINR(clearedTotal);
-        document.getElementById('stat-pending-total').innerText = formatINR(pendingTotal);
-        document.getElementById('stat-trans-count').innerText = filtered.length;
+        clientSelect.innerHTML = `<option value="">-- All Clients with Pending Invoices (${Object.keys(clientsWithPending).length}) --</option>`;
+        Object.keys(clientsWithPending).sort().forEach(function(cName) {
+          var opt = document.createElement('option');
+          opt.value = cName;
+          opt.innerText = `${cName} (Pending AR: ${formatINR(clientsWithPending[cName])})`;
+          clientSelect.appendChild(opt);
+        });
 
-        var tbody = document.getElementById('payments-tbody');
-        tbody.innerHTML = "";
+        var hint = document.getElementById('client-link-count-hint');
+        if (hint) hint.innerText = `${Object.keys(clientsWithPending).length} Clients have Unsettled Invoices`;
+      }
 
-        if (filtered.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">No payment collection records found.</td></tr>`;
+      function onPaymentClientFilterChanged(selectedClient) {
+        populateInvoiceDropdown(selectedClient);
+        // Clear snapshot if current selection doesn't match
+        var invSelect = document.getElementById('inp-pay-invoice-select');
+        if (invSelect.value) {
+          onInvoiceSelected(invSelect.value);
+        } else {
+          document.getElementById('inv-financial-snapshot').classList.add('hidden');
+          document.getElementById('inp-pay-customer').value = selectedClient || '';
+          document.getElementById('inp-pay-invoice').value = '';
+        }
+      }
+
+      // Populate Invoice Dropdown (ONLY invoices with balanceDue > 0)
+      function populateInvoiceDropdown(filterClientName) {
+        var invoices = window.RevOpsStore.getCollection('invoices') || [];
+        var select = document.getElementById('inp-pay-invoice-select');
+        if (!select) return;
+
+        select.innerHTML = `<option value="">-- Select Pending Invoice to Settle --</option>`;
+        var activeCount = 0;
+
+        invoices.forEach(function(inv) {
+          var bal = Number(inv.balanceDue) !== undefined ? Number(inv.balanceDue) : (Number(inv.grandTotal) || 0);
+          if (bal > 0 && inv.status !== 'Cancelled' && inv.status !== 'Draft') {
+            if (filterClientName && inv.customerName !== filterClientName) return;
+
+            var opt = document.createElement('option');
+            opt.value = inv.id;
+            opt.innerText = `${inv.invoiceNumber} - ${inv.customerName} (Bal: ${formatINR(bal)}) [Due: ${inv.dueDate || inv.invoiceDate || 'Net 30'}]`;
+            opt.setAttribute('data-customer', inv.customerName || '');
+            opt.setAttribute('data-gstin', inv.customerGstin || '');
+            opt.setAttribute('data-invoicenum', inv.invoiceNumber || '');
+            opt.setAttribute('data-grandtotal', inv.grandTotal || 0);
+            opt.setAttribute('data-paid', (Number(inv.paidAmount) || 0) + (Number(inv.tdsDeducted) || 0));
+            opt.setAttribute('data-adj', (Number(inv.adjustmentAmount) || 0) + (Number(inv.writeOffAmount) || 0));
+            opt.setAttribute('data-balance', bal);
+            opt.setAttribute('data-email', inv.customerEmail || '');
+            opt.setAttribute('data-milestone', inv.milestoneTag || '');
+            select.appendChild(opt);
+            activeCount++;
+          }
+        });
+
+        var hint = document.getElementById('inv-link-count-hint');
+        if (hint) hint.innerText = `${activeCount} Pending Invoices with Unsettled Balance`;
+      }
+
+      function onInvoiceSelected(invId) {
+        var snapBox = document.getElementById('inv-financial-snapshot');
+        if (!invId) {
+          snapBox.classList.add('hidden');
           return;
         }
 
-        filtered.forEach(function(p) {
-          var statusPill = (p.status === "Cleared") ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800";
+        var select = document.getElementById('inp-pay-invoice-select');
+        var opt = select.options[select.selectedIndex];
+        if (!opt) return;
+
+        var customer = opt.getAttribute('data-customer');
+        var invoiceNum = opt.getAttribute('data-invoicenum');
+        var grandTotal = Number(opt.getAttribute('data-grandtotal')) || 0;
+        var paid = Number(opt.getAttribute('data-paid')) || 0;
+        var adj = Number(opt.getAttribute('data-adj')) || 0;
+        var balance = Number(opt.getAttribute('data-balance')) || 0;
+        var milestone = opt.getAttribute('data-milestone');
+
+        document.getElementById('inp-pay-customer').value = customer;
+        document.getElementById('inp-pay-invoice').value = invoiceNum;
+        document.getElementById('inp-pay-amount').value = balance > 0 ? balance : 100000;
+        document.getElementById('inp-pay-milestone').value = milestone || 'Commercial Settlement';
+
+        document.getElementById('snap-inv-total').innerText = formatINR(grandTotal);
+        document.getElementById('snap-inv-paid').innerText = formatINR(paid);
+        document.getElementById('snap-inv-adj').innerText = formatINR(adj);
+        document.getElementById('snap-inv-bal').innerText = formatINR(balance);
+        snapBox.classList.remove('hidden');
+
+        // Sync client filter dropdown if not already set
+        var clientSelect = document.getElementById('inp-pay-client-select');
+        if (clientSelect && !clientSelect.value && customer) {
+          clientSelect.value = customer;
+        }
+
+        calculateRemainingBalancePreview();
+      }
+
+      function calculateRemainingBalancePreview() {
+        var select = document.getElementById('inp-pay-invoice-select');
+        var curBalance = 0;
+        if (select && select.value) {
+          var opt = select.options[select.selectedIndex];
+          if (opt) curBalance = Number(opt.getAttribute('data-balance')) || 0;
+        }
+
+        var amt = Number(document.getElementById('inp-pay-amount').value) || 0;
+        var tds = Number(document.getElementById('inp-pay-tds').value) || 0;
+        var totalSettled = amt + tds;
+        var newBal = Math.max(0, curBalance - totalSettled);
+
+        document.getElementById('prev-total-settlement').innerText = formatINR(totalSettled);
+        document.getElementById('prev-new-balance').innerText = formatINR(newBal);
+      }
+
+      function renderActivePaymentView() {
+        var userRole = localStorage.getItem('userRole');
+        var myEmpId = localStorage.getItem('employeeId');
+        var searchQuery = (document.getElementById('payment-search-input').value || '').toLowerCase();
+        var selectedFy = document.getElementById('payment-fy-filter').value;
+        
+        var selectedEmp = "All";
+        var empElem = document.getElementById('payment-emp-filter');
+        if (empElem && empElem.value) selectedEmp = empElem.value;
+
+        var payments = window.RevOpsStore.getCollection('payments') || [];
+        var invoices = window.RevOpsStore.getCollection('invoices') || [];
+        var arAdjustments = window.RevOpsStore.getCollection('arAdjustments') || [];
+
+        // Global KPI Stats Calculation
+        var totalBilled = 0, totalCleared = 0, totalOutstanding = 0, totalOverdue = 0, totalAdjustments = 0, overdueInvoicesCount = 0;
+        var today = new Date();
+        today.setHours(0,0,0,0);
+
+        invoices.forEach(function(inv) {
+          var grand = Number(inv.grandTotal) || 0;
+          var bal = Number(inv.balanceDue) !== undefined ? Number(inv.balanceDue) : grand;
+
+          totalBilled += grand;
+          totalOutstanding += bal;
+
+          if (inv.dueDate && bal > 1) {
+            var due = parseDateDDMMYYYY(inv.dueDate);
+            if (due < today) {
+              totalOverdue += bal;
+              overdueInvoicesCount++;
+            }
+          }
+        });
+
+        payments.forEach(function(p) {
+          if (p.status === 'Cleared' || p.status === 'Approved') {
+            totalCleared += (Number(p.amount) || 0) + (Number(p.tdsAmount) || 0);
+          }
+        });
+
+        arAdjustments.forEach(function(adj) {
+          if (adj.approvalStatus === 'Approved') {
+            totalAdjustments += (Number(adj.adjustmentAmount) || 0);
+          }
+        });
+
+        document.getElementById('stat-billed-revenue').innerText = formatINR(totalBilled);
+        document.getElementById('stat-collected-total').innerText = formatINR(totalCleared);
+        document.getElementById('stat-outstanding-total').innerText = formatINR(totalOutstanding);
+        document.getElementById('stat-overdue-total').innerText = formatINR(totalOverdue);
+        document.getElementById('stat-overdue-detail').innerText = `${overdueInvoicesCount} Overdue Invoices Requiring Follow-up`;
+        document.getElementById('stat-adjustments-total').innerText = formatINR(totalAdjustments);
+
+        // Director AR Authorization Alert Banner check
+        var pendingApprovals = typeof window.RevOpsStore.getPendingDirectorApprovals === 'function' ? window.RevOpsStore.getPendingDirectorApprovals() : [];
+        var alertBanner = document.getElementById('director-approval-alert');
+        var countBadge = document.getElementById('pending-director-count');
+        if (alertBanner && countBadge) {
+          if (pendingApprovals.length > 0 && (userRole === 'admin' || userRole === 'super_admin' || userRole === 'manager')) {
+            alertBanner.classList.remove('hidden');
+            countBadge.innerText = pendingApprovals.length;
+          } else {
+            alertBanner.classList.add('hidden');
+          }
+        }
+
+        // Render current view
+        if (currentPaymentView === 'transactions') {
+          renderTransactionsView(payments, invoices, selectedFy, userRole, myEmpId, selectedEmp, searchQuery);
+        } else if (currentPaymentView === 'client_ar') {
+          renderClientArView(invoices, payments, selectedFy, searchQuery);
+        } else if (currentPaymentView === 'project_ar') {
+          renderProjectArView(invoices, payments, selectedFy, searchQuery);
+        } else if (currentPaymentView === 'salesrep_ar') {
+          renderSalesRepArView(invoices, payments, selectedFy, searchQuery);
+        } else if (currentPaymentView === 'adjustments') {
+          renderAdjustmentsView(arAdjustments, invoices, selectedFy, userRole, myEmpId, searchQuery);
+        }
+      }
+
+      function renderAdjustmentsView(arAdjustments, invoices, selectedFy, userRole, myEmpId, searchQuery) {
+        var filtered = arAdjustments.filter(function(adj) {
+          if (selectedFy !== 'All') {
+            var adjFy = typeof getFinancialYear === 'function' ? getFinancialYear(adj.requestDate, adj.invoiceNumber) : '2026-27';
+            if (adjFy !== selectedFy) return false;
+          }
+
+          var textMatch = (adj.adjustmentRef || '').toLowerCase().includes(searchQuery) ||
+                          (adj.customerName || '').toLowerCase().includes(searchQuery) ||
+                          (adj.invoiceNumber || '').toLowerCase().includes(searchQuery) ||
+                          (adj.adjustmentType || '').toLowerCase().includes(searchQuery) ||
+                          (adj.reasonCategory || '').toLowerCase().includes(searchQuery);
+          return textMatch;
+        });
+
+        var countElem = document.getElementById('count-view-adj');
+        if (countElem) countElem.innerText = filtered.length;
+
+        var tbody = document.getElementById('adjustments-tbody');
+        tbody.innerHTML = "";
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400">No AR adjustment or write-off records found.</td></tr>`;
+          return;
+        }
+
+        filtered.forEach(function(adj) {
+          var typePill = adj.adjustmentType === 'Bad Debt Write-Off (Unrecoverable AR)' ? 'bg-rose-100 text-rose-800 font-black border border-rose-200' : 'bg-amber-100 text-amber-800 font-bold border border-amber-200';
+          
+          var statusPill = 'bg-slate-100 text-slate-700';
+          if (adj.approvalStatus === 'Approved') statusPill = 'bg-purple-100 text-purple-900 font-black border border-purple-300';
+          else if (adj.approvalStatus === 'Pending Director Approval') statusPill = 'bg-amber-100 text-amber-900 font-bold animate-pulse border border-amber-300';
+          else if (adj.approvalStatus === 'Rejected') statusPill = 'bg-rose-100 text-rose-800 font-bold';
+
+          var directorInfo = `<span class="text-slate-400 text-[11px]">--</span>`;
+          if (adj.approvalStatus === 'Approved') {
+            directorInfo = `
+              <div class="text-[11px] font-bold text-purple-950">👑 ${escapeHtml(adj.approvedBy || 'Murugan V (Director)')}</div>
+              <div class="text-[9px] text-slate-400 font-mono">${escapeHtml(adj.approvalDate || '--')}</div>
+              ${adj.directorRemarks ? `<div class="text-[10px] text-slate-600 italic max-w-xs truncate" title="${escapeHtml(adj.directorRemarks)}">"${escapeHtml(adj.directorRemarks)}"</div>` : ''}
+            `;
+          } else if (adj.approvalStatus === 'Pending Director Approval') {
+            if (userRole === 'admin' || userRole === 'super_admin' || userRole === 'manager') {
+              directorInfo = `
+                <button onclick="openDirectorApprovalModal('${escapeHtml(adj.id)}')" class="px-2.5 py-1 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-[10px] font-black shadow-xs cursor-pointer flex items-center space-x-1">
+                  <span>👑 Director Review</span>
+                </button>
+              `;
+            } else {
+              directorInfo = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">Awaiting Director</span>`;
+            }
+          }
 
           var tr = document.createElement('tr');
           tr.className = "hover:bg-slate-50 transition-colors";
           tr.innerHTML = `
-            <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(p.customerName)}</td>
-            <td class="py-3 px-4 font-mono text-slate-600">${escapeHtml(p.invoiceNumber || '--')}</td>
-            <td class="py-3 px-4 text-right font-black text-slate-900">${formatINR(p.amount)}</td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900 font-mono text-[11px]">${escapeHtml(adj.adjustmentRef || 'ADJ-REQ')}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(adj.requestDate)}</div>
+            </td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 rounded text-[10px] uppercase ${typePill}">
+                ${adj.adjustmentType === 'Bad Debt Write-Off (Unrecoverable AR)' ? '🚨 Bad Debt Write-Off' : '🏷️ Goodwill Discount'}
+              </span>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900">${escapeHtml(adj.customerName)}</div>
+              <div class="font-mono text-[10px] text-indigo-700 font-semibold">${escapeHtml(adj.invoiceNumber)}</div>
+            </td>
+            <td class="py-3 px-4 text-right font-black text-slate-800">
+              ${formatINR(adj.invoiceGrandTotal || 0)}
+            </td>
+            <td class="py-3 px-4 text-right font-black text-purple-800 text-sm">
+              ${formatINR(adj.adjustmentAmount || 0)}
+            </td>
+            <td class="py-3 px-4 max-w-xs">
+              <div class="font-bold text-slate-800 text-[11px]">${escapeHtml(adj.reasonCategory)}</div>
+              <div class="text-[10px] text-slate-500 truncate mt-0.5" title="${escapeHtml(adj.commercialJustification)}">${escapeHtml(adj.commercialJustification)}</div>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] ${statusPill}">
+                ${escapeHtml(adj.approvalStatus)}
+              </span>
+            </td>
+            <td class="py-3 px-4">
+              ${directorInfo}
+            </td>
+            <td class="py-3 px-4 text-center space-x-1.5 whitespace-nowrap">
+              <button onclick="viewPrintableAdjVoucher('${escapeHtml(adj.id)}')" class="p-1 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 rounded text-[11px] font-bold cursor-pointer" title="View Director Authorization Certificate">⚖️ Voucher</button>
+              ${adj.approvalStatus !== 'Approved' ? `<button onclick="deleteArAdjustment('${escapeHtml(adj.id)}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>` : ''}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Modal 4: Request Goodwill Adjustment / Bad Debt Write-Off
+      function openAdjustmentModal(prefillInvoiceId) {
+        document.getElementById('adj-doc-id').value = "";
+        document.getElementById('adj-modal-title').innerText = "Request Payment Adjustment / Write-Off";
+
+        populateAdjClientDropdown();
+        populateAdjInvoiceDropdown();
+        onAdjustmentTypeChange('Goodwill Discount / Commercial Adjustment');
+
+        document.getElementById('inp-adj-amount').value = "";
+        document.getElementById('inp-adj-justification').value = "";
+        document.getElementById('inp-adj-direct-sign').checked = false;
+        document.getElementById('inp-adj-director-notes').value = "Approved and sanctioned under Corporate Authority & Bad Debt Provisioning policy.";
+
+        var userRole = localStorage.getItem('userRole');
+        var directSignPanel = document.getElementById('director-direct-sign-panel');
+        if (userRole === 'admin' || userRole === 'super_admin') {
+          directSignPanel.classList.remove('hidden');
+        } else {
+          directSignPanel.classList.add('hidden');
+        }
+
+        if (prefillInvoiceId) {
+          var select = document.getElementById('inp-adj-invoice-select');
+          if (select) {
+            select.value = prefillInvoiceId;
+            onAdjInvoiceSelected(prefillInvoiceId);
+          }
+        }
+
+        document.getElementById('adjustment-modal').classList.remove('hidden');
+      }
+
+      function closeAdjustmentModal() {
+        document.getElementById('adjustment-modal').classList.add('hidden');
+      }
+
+      function onAdjustmentTypeChange(adjType) {
+        var catSelect = document.getElementById('inp-adj-category');
+        catSelect.innerHTML = "";
+
+        var categories = [];
+        if (adjType === 'Bad Debt Write-Off (Unrecoverable AR)') {
+          categories = [
+            "Long Outstanding Unrecoverable (>180 Days)",
+            "Client Insolvency / NCLT CIRP Proceedings",
+            "Disputed Balance / Uncollectible Commercial Debt",
+            "Customer Operations Liquidated / Defunct",
+            "Director Bad-Debt Sanction & Provisioning"
+          ];
+        } else {
+          categories = [
+            "Goodwill Customer Concession & Strategic Relationship",
+            "Commercial Scope / Quantity Reconciliation",
+            "Volume Rebate / Contractual Discount",
+            "Liquidated Damages (LD) Commercial Settlement",
+            "Post-Delivery Performance Goodwill Allowance",
+            "Management / Senior Director Negotiated Discount"
+          ];
+        }
+
+        categories.forEach(function(cat) {
+          var opt = document.createElement('option');
+          opt.value = cat;
+          opt.innerText = cat;
+          catSelect.appendChild(opt);
+        });
+
+        calculateAdjBalancePreview();
+      }
+
+      function populateAdjClientDropdown() {
+        var invoices = window.RevOpsStore.getCollection('invoices') || [];
+        var clientSelect = document.getElementById('inp-adj-client-select');
+        if (!clientSelect) return;
+
+        var clientsWithPending = {};
+        invoices.forEach(function(inv) {
+          var bal = Number(inv.balanceDue) !== undefined ? Number(inv.balanceDue) : (Number(inv.grandTotal) || 0);
+          if (bal > 0 && inv.status !== 'Cancelled' && inv.status !== 'Draft') {
+            var cName = (inv.customerName || '').trim();
+            if (cName) {
+              clientsWithPending[cName] = (clientsWithPending[cName] || 0) + bal;
+            }
+          }
+        });
+
+        clientSelect.innerHTML = `<option value="">-- All Clients with Pending AR (${Object.keys(clientsWithPending).length}) --</option>`;
+        Object.keys(clientsWithPending).sort().forEach(function(cName) {
+          var opt = document.createElement('option');
+          opt.value = cName;
+          opt.innerText = `${cName} (Pending AR: ${formatINR(clientsWithPending[cName])})`;
+          clientSelect.appendChild(opt);
+        });
+      }
+
+      function onAdjClientFilterChanged(selectedClient) {
+        populateAdjInvoiceDropdown(selectedClient);
+        var invSelect = document.getElementById('inp-adj-invoice-select');
+        if (invSelect.value) {
+          onAdjInvoiceSelected(invSelect.value);
+        } else {
+          document.getElementById('adj-inv-snapshot').classList.add('hidden');
+        }
+      }
+
+      function populateAdjInvoiceDropdown(filterClientName) {
+        var invoices = window.RevOpsStore.getCollection('invoices') || [];
+        var select = document.getElementById('inp-adj-invoice-select');
+        if (!select) return;
+
+        select.innerHTML = `<option value="">-- Select Pending Invoice --</option>`;
+        invoices.forEach(function(inv) {
+          var bal = Number(inv.balanceDue) !== undefined ? Number(inv.balanceDue) : (Number(inv.grandTotal) || 0);
+          if (bal > 0 && inv.status !== 'Cancelled' && inv.status !== 'Draft') {
+            if (filterClientName && inv.customerName !== filterClientName) return;
+
+            var opt = document.createElement('option');
+            opt.value = inv.id;
+            opt.innerText = `${inv.invoiceNumber} - ${inv.customerName} (Bal: ${formatINR(bal)})`;
+            opt.setAttribute('data-customer', inv.customerName || '');
+            opt.setAttribute('data-invoicenum', inv.invoiceNumber || '');
+            opt.setAttribute('data-grandtotal', inv.grandTotal || 0);
+            opt.setAttribute('data-paid', (Number(inv.paidAmount) || 0) + (Number(inv.tdsDeducted) || 0));
+            opt.setAttribute('data-balance', bal);
+            select.appendChild(opt);
+          }
+        });
+      }
+
+      function onAdjInvoiceSelected(invId) {
+        var snapBox = document.getElementById('adj-inv-snapshot');
+        if (!invId) {
+          snapBox.classList.add('hidden');
+          return;
+        }
+
+        var select = document.getElementById('inp-adj-invoice-select');
+        var opt = select.options[select.selectedIndex];
+        if (!opt) return;
+
+        var customer = opt.getAttribute('data-customer');
+        var grandTotal = Number(opt.getAttribute('data-grandtotal')) || 0;
+        var paid = Number(opt.getAttribute('data-paid')) || 0;
+        var balance = Number(opt.getAttribute('data-balance')) || 0;
+
+        document.getElementById('adj-snap-total').innerText = formatINR(grandTotal);
+        document.getElementById('adj-snap-paid').innerText = formatINR(paid);
+        document.getElementById('adj-snap-bal').innerText = formatINR(balance);
+        snapBox.classList.remove('hidden');
+
+        var clientSelect = document.getElementById('inp-adj-client-select');
+        if (clientSelect && !clientSelect.value && customer) {
+          clientSelect.value = customer;
+        }
+
+        document.getElementById('inp-adj-amount').value = balance;
+        calculateAdjBalancePreview();
+      }
+
+      function calculateAdjBalancePreview() {
+        var select = document.getElementById('inp-adj-invoice-select');
+        var curBalance = 0;
+        if (select && select.value) {
+          var opt = select.options[select.selectedIndex];
+          if (opt) curBalance = Number(opt.getAttribute('data-balance')) || 0;
+        }
+
+        var adjAmt = Number(document.getElementById('inp-adj-amount').value) || 0;
+        var newBal = Math.max(0, curBalance - adjAmt);
+
+        document.getElementById('adj-prev-balance').innerText = formatINR(newBal);
+        
+        var statusHint = document.getElementById('adj-prev-status-text');
+        var isDirectSign = document.getElementById('inp-adj-direct-sign') && document.getElementById('inp-adj-direct-sign').checked;
+        if (isDirectSign) {
+          statusHint.innerText = "👑 Will be Immediately Sanctioned by Director";
+          statusHint.className = "text-purple-700 font-bold";
+        } else {
+          statusHint.innerText = "Remaining AR will update upon Director Approval";
+          statusHint.className = "text-amber-700 font-bold";
+        }
+      }
+
+      function handleSaveAdjustment(e) {
+        e.preventDefault();
+        var invId = document.getElementById('inp-adj-invoice-select').value;
+        if (!invId) {
+          alert("Please select a valid pending invoice.");
+          return;
+        }
+
+        var invSelect = document.getElementById('inp-adj-invoice-select');
+        var opt = invSelect.options[invSelect.selectedIndex];
+        var curBalance = Number(opt.getAttribute('data-balance')) || 0;
+        var adjAmount = Number(document.getElementById('inp-adj-amount').value) || 0;
+
+        if (adjAmount <= 0) {
+          alert("Please specify an adjustment amount greater than zero.");
+          return;
+        }
+
+        if (adjAmount > curBalance + 1) {
+          alert(`Adjustment amount (${formatINR(adjAmount)}) cannot exceed the current invoice balance (${formatINR(curBalance)}).`);
+          return;
+        }
+
+        var selectedTypeElem = document.querySelector('input[name="adj_type_radio"]:checked');
+        var adjType = selectedTypeElem ? selectedTypeElem.value : "Goodwill Discount / Commercial Adjustment";
+
+        var myEmpId = localStorage.getItem('employeeId');
+        var myName = localStorage.getItem('userName');
+
+        var adjData = {
+          invoiceId: invId,
+          invoiceNumber: opt.getAttribute('data-invoicenum'),
+          customerName: opt.getAttribute('data-customer'),
+          invoiceGrandTotal: Number(opt.getAttribute('data-grandtotal')) || 0,
+          currentBalanceDue: curBalance,
+          adjustmentType: adjType,
+          adjustmentAmount: adjAmount,
+          reasonCategory: document.getElementById('inp-adj-category').value,
+          commercialJustification: document.getElementById('inp-adj-justification').value.trim(),
+          requestedBy: myName,
+          requestedByEmpId: myEmpId,
+          requestDate: getFormattedToday()
+        };
+
+        var isDirectSign = document.getElementById('inp-adj-direct-sign') && document.getElementById('inp-adj-direct-sign').checked;
+        var directorNotes = document.getElementById('inp-adj-director-notes') ? document.getElementById('inp-adj-director-notes').value.trim() : '';
+
+        var res = window.RevOpsStore.createArAdjustmentRequest(adjData);
+        if (!res || !res.success) {
+          alert("Failed to submit adjustment request: " + (res.error || "Unknown error"));
+          return;
+        }
+
+        if (isDirectSign) {
+          window.RevOpsStore.approveArAdjustment(res.adjustment.id, 'Approved', directorNotes || 'Direct Director Sanction', 'Murugan V (Director)');
+          alert(`👑 Director Sanction Applied!\nAdjustment Ref: ${res.adjustment.adjustmentRef} for ${formatINR(adjAmount)} has been authorized.\nInvoice ${opt.getAttribute('data-invoicenum')} balance updated.`);
+        } else {
+          alert(`✅ Adjustment request ${res.adjustment.adjustmentRef} submitted successfully for mandatory Director Review.`);
+        }
+
+        closeAdjustmentModal();
+        populatePaymentClientDropdown();
+        populateInvoiceDropdown();
+        switchPaymentView('adjustments');
+      }
+
+      function deleteArAdjustment(adjId) {
+        if (confirm("Are you sure you want to delete this adjustment request?")) {
+          var adjustments = window.RevOpsStore.getCollection('arAdjustments') || [];
+          var adj = adjustments.find(function(a) { return a.id === adjId; });
+          window.RevOpsStore.deleteItem('arAdjustments', adjId);
+
+          if (adj && adj.invoiceId) {
+            window.RevOpsStore.syncInvoicePaymentStatus(adj.invoiceId);
+          }
+          renderActivePaymentView();
+        }
+      }
+
+      // Modal 5: Director Review & Decision
+      function openDirectorApprovalModal(adjId) {
+        var adjustments = window.RevOpsStore.getCollection('arAdjustments') || [];
+        var adj = adjustments.find(function(a) { return a.id === adjId; });
+        if (!adj) return;
+
+        document.getElementById('dir-adj-id').value = adj.id;
+        document.getElementById('dir-modal-ref').innerText = `Ref: ${adj.adjustmentRef} - ${adj.customerName}`;
+        document.getElementById('dir-customer-name').innerText = adj.customerName;
+        document.getElementById('dir-invoice-num').innerText = adj.invoiceNumber;
+        document.getElementById('dir-adj-type').innerText = adj.adjustmentType;
+        document.getElementById('dir-adj-amount').innerText = formatINR(adj.adjustmentAmount);
+        document.getElementById('dir-adj-category').innerText = adj.reasonCategory;
+        document.getElementById('dir-adj-requested-by').innerText = `${adj.requestedBy || 'Staff'} on ${adj.requestDate}`;
+        document.getElementById('dir-adj-justification').innerText = adj.commercialJustification;
+        document.getElementById('dir-adj-remarks').value = "Approved and sanctioned under Corporate Authority & Bad Debt Provisioning policy.";
+
+        document.getElementById('director-approval-modal').classList.remove('hidden');
+      }
+
+      function closeDirectorApprovalModal() {
+        document.getElementById('director-approval-modal').classList.add('hidden');
+      }
+
+      function executeDirectorDecision(decision) {
+        var adjId = document.getElementById('dir-adj-id').value;
+        var remarks = document.getElementById('dir-adj-remarks').value.trim();
+        var directorName = 'Murugan V (Director)';
+
+        var res = window.RevOpsStore.approveArAdjustment(adjId, decision, remarks, directorName);
+        if (res && res.success) {
+          closeDirectorApprovalModal();
+          populatePaymentClientDropdown();
+          populateInvoiceDropdown();
+          renderActivePaymentView();
+          alert(`👑 Director Decision Recorded: ${decision} for ${res.adjustment.adjustmentRef}.\nLinked Invoice balance synchronized.`);
+        } else {
+          alert("Failed to record decision: " + (res.error || "Unknown error"));
+        }
+      }
+
+      // Modal 6: Printable Director Authorization & Bad Debt / Goodwill Voucher
+      function viewPrintableAdjVoucher(adjId) {
+        var adjustments = window.RevOpsStore.getCollection('arAdjustments') || [];
+        var adj = adjustments.find(function(a) { return a.id === adjId; });
+        if (!adj) return;
+
+        var invoices = window.RevOpsStore.getCollection('invoices') || [];
+        var linkedInv = invoices.find(function(i) { return i.id === adj.invoiceId || i.invoiceNumber === adj.invoiceNumber; });
+
+        document.getElementById('adj-voucher-title').innerText = `Director Authorization Certificate - ${adj.adjustmentRef}`;
+        var wrapper = document.getElementById('printable-adj-wrapper');
+
+        var isApproved = adj.approvalStatus === 'Approved';
+
+        wrapper.innerHTML = `
+          <!-- Header -->
+          <div class="flex justify-between items-start border-b-2 border-purple-950 pb-4">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-2xl font-black text-purple-950 tracking-tight">MEASURE DI TECHNOLOGIES</span>
+                <span class="px-2 py-0.5 rounded bg-purple-900 text-white text-[10px] font-black uppercase">DIRECTOR SANCTION</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1">
+                Plot No. 42, SIDCO Industrial Estate, Guindy, Chennai - 600032, Tamil Nadu<br>
+                <strong>GSTIN:</strong> 33AAACM4209L1ZT | <strong>CIN:</strong> U72900TN2020PTC135890
+              </p>
+            </div>
+            <div class="text-right">
+              <h2 class="text-base font-black text-purple-950 uppercase tracking-wide">AR ADJUSTMENT MEMO</h2>
+              <div class="text-xs font-mono font-bold text-slate-900 mt-1">${escapeHtml(adj.adjustmentRef)}</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5">Date: ${escapeHtml(adj.approvalDate || adj.requestDate)}</div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isApproved ? 'bg-purple-100 text-purple-900' : 'bg-amber-100 text-amber-900'} uppercase">
+                ${escapeHtml(adj.approvalStatus)}
+              </span>
+            </div>
+          </div>
+
+          <!-- Customer & Invoice Target -->
+          <div class="bg-purple-50/60 p-4 rounded-xl border border-purple-200 text-xs space-y-2">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <span class="text-[10px] font-bold uppercase text-purple-900 block">Customer / Organization:</span>
+                <div class="font-bold text-slate-900 text-sm">${escapeHtml(adj.customerName)}</div>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] font-bold uppercase text-purple-900 block">Commercial Invoice Reference:</span>
+                <div class="font-bold font-mono text-indigo-700 text-sm">${escapeHtml(adj.invoiceNumber)}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Adjustment Breakdown Table -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden text-xs">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase text-slate-700">
+                  <th class="py-2.5 px-3">Adjustment Nature</th>
+                  <th class="py-2.5 px-3">Reason Category</th>
+                  <th class="py-2.5 px-3 text-right">Invoice Value (Rs.)</th>
+                  <th class="py-2.5 px-3 text-right text-purple-900 font-black">Authorized Reduction (Rs.)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr>
+                  <td class="py-3 px-3 font-bold text-slate-900">
+                    ${escapeHtml(adj.adjustmentType)}
+                  </td>
+                  <td class="py-3 px-3 text-slate-700">
+                    ${escapeHtml(adj.reasonCategory)}
+                  </td>
+                  <td class="py-3 px-3 text-right font-mono font-bold text-slate-800">
+                    ${formatINR(adj.invoiceGrandTotal || (linkedInv ? linkedInv.grandTotal : 0))}
+                  </td>
+                  <td class="py-3 px-3 text-right font-mono font-black text-purple-900 text-sm">
+                    ${formatINR(adj.adjustmentAmount)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Justification & Corporate Minutes -->
+          <div class="space-y-3 text-xs">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <span class="text-[10px] font-bold uppercase text-slate-500 block mb-1">Commercial Justification & Case Rationale:</span>
+              <p class="text-slate-800 whitespace-pre-wrap">${escapeHtml(adj.commercialJustification)}</p>
+            </div>
+
+            <div class="p-3 bg-purple-50/70 border border-purple-300 rounded-xl">
+              <span class="text-[10px] font-bold uppercase text-purple-950 block mb-1">Director Remarks / Sanction Notes:</span>
+              <p class="text-purple-950 font-medium">${escapeHtml(adj.directorRemarks || 'Authorized and approved under Director Board Power & Bad Debt Recovery Protocol.')}</p>
+            </div>
+          </div>
+
+          <!-- Ledger Balance Impact -->
+          ${linkedInv ? `
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex justify-between text-xs font-mono">
+              <span>Invoice Total: <strong>${formatINR(linkedInv.grandTotal)}</strong></span>
+              <span>Paid (Cash+TDS): <strong>${formatINR((linkedInv.paidAmount || 0) + (linkedInv.tdsDeducted || 0))}</strong></span>
+              <span>Total Adjustments: <strong>${formatINR((linkedInv.adjustmentAmount || 0) + (linkedInv.writeOffAmount || 0))}</strong></span>
+              <span class="font-black text-slate-900">Net Remaining AR: <strong class="${linkedInv.balanceDue > 0 ? 'text-amber-700' : 'text-emerald-700'}">${formatINR(linkedInv.balanceDue)}</strong></span>
+            </div>
+          ` : ''}
+
+          <!-- Director Seal & Signature -->
+          <div class="flex justify-between items-end border-t border-slate-200 pt-6 text-xs">
+            <div class="text-[11px] text-slate-400">
+              Document Ref: ${escapeHtml(adj.adjustmentRef)}<br>
+              Authorized by Board of Directors, Measure DI Technologies Private Limited.
+            </div>
+            <div class="text-center">
+              <div class="w-36 h-12 border-b-2 border-purple-900 mx-auto flex items-center justify-center text-[10px] text-purple-900 font-bold italic">
+                Murugan V
+              </div>
+              <span class="font-black text-slate-900 block mt-1">MURUGAN V</span>
+              <span class="text-[10px] text-purple-800 font-bold uppercase">Director & Signatory</span>
+              <span class="text-[9px] text-slate-500 block">DIN: 08920149</span>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('adj-voucher-modal').classList.remove('hidden');
+      }
+
+      function closeAdjVoucherModal() {
+        document.getElementById('adj-voucher-modal').classList.add('hidden');
+      }
+
+      function printAdjVoucherDoc() {
+        window.print();
+      }
+
+      function renderTransactionsView(payments, invoices, selectedFy, userRole, myEmpId, selectedEmp, searchQuery) {
+        var filtered = payments.filter(function(p) {
+          if (selectedFy !== 'All') {
+            var payFy = typeof getFinancialYear === 'function' ? getFinancialYear(p.paymentDate, p.invoiceNumber) : '2026-27';
+            if (payFy !== selectedFy) return false;
+          }
+          if (userRole === 'staff' && p.employeeId !== myEmpId) return false;
+          if (selectedEmp !== 'All' && p.employeeId !== selectedEmp) return false;
+
+          var textMatch = (p.customerName || '').toLowerCase().includes(searchQuery) ||
+                          (p.invoiceNumber || '').toLowerCase().includes(searchQuery) ||
+                          (p.receiptNumber || '').toLowerCase().includes(searchQuery) ||
+                          (p.utrNumber || '').toLowerCase().includes(searchQuery);
+          return textMatch;
+        });
+
+        document.getElementById('count-view-trans').innerText = filtered.length;
+        var tbody = document.getElementById('payments-tbody');
+        tbody.innerHTML = "";
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400">No payment transaction records found.</td></tr>`;
+          return;
+        }
+
+        filtered.forEach(function(p) {
+          var statusPill = (p.status === "Cleared") ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-amber-100 text-amber-800";
+          var receiptNum = p.receiptNumber || ('REC-2026-' + p.id.slice(-3));
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900 font-mono text-[11px]">${escapeHtml(receiptNum)}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(p.paymentDate)}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900">${escapeHtml(p.customerName)}</div>
+              <div class="text-[10px] text-slate-400">${escapeHtml(p.paymentMilestone || 'General Collection')}</div>
+            </td>
+            <td class="py-3 px-4 font-mono font-semibold text-slate-700">
+              ${escapeHtml(p.invoiceNumber || '--')}
+            </td>
+            <td class="py-3 px-4 text-right font-black text-emerald-700">
+              ${formatINR(p.amount)}
+            </td>
+            <td class="py-3 px-4 text-right font-mono text-slate-500 font-semibold">
+              ${p.tdsAmount > 0 ? formatINR(p.tdsAmount) : '--'}
+            </td>
             <td class="py-3 px-4 text-slate-700">
               <span class="font-semibold">${escapeHtml(p.paymentMode)}</span>
               ${p.utrNumber ? `<span class="block text-[10px] text-slate-400 font-mono">Ref: ${escapeHtml(p.utrNumber)}</span>` : ''}
             </td>
-            <td class="py-3 px-4 text-slate-500 font-mono">${escapeHtml(p.paymentDate)}</td>
             <td class="py-3 px-4 text-center">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusPill}">${escapeHtml(p.status)}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase ${statusPill}">${escapeHtml(p.status)}</span>
             </td>
-            <td class="py-3 px-4 text-center space-x-2">
+            <td class="py-3 px-4 text-center">
+              <button onclick="openSendReceiptModal('${escapeHtml(p.id)}')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-[10px] cursor-pointer" title="Email Settlement Receipt to Client">
+                ✉️ Email Client
+              </button>
+            </td>
+            <td class="py-3 px-4 text-center space-x-1.5 whitespace-nowrap">
+              <button onclick="viewPrintableReceipt('${escapeHtml(p.id)}')" class="p-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-bold cursor-pointer" title="View Official Receipt Voucher">🧾 View</button>
               <button onclick="editPayment('${escapeHtml(p.id)}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
               <button onclick="deletePayment('${escapeHtml(p.id)}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
             </td>
@@ -274,24 +1605,298 @@
         });
       }
 
-      function openPaymentModal() {
+      function renderClientArView(invoices, payments, selectedFy, searchQuery) {
+        var clientsMap = {};
+        var today = new Date();
+        today.setHours(0,0,0,0);
+
+        invoices.forEach(function(inv) {
+          var client = inv.customerName || 'Unknown Client';
+          if (!clientsMap[client]) {
+            clientsMap[client] = {
+              customerName: client,
+              customerGstin: inv.customerGstin,
+              customerEmail: inv.customerEmail,
+              totalInvoiced: 0,
+              totalPaid: 0,
+              totalTds: 0,
+              totalAdj: 0,
+              balanceDue: 0,
+              bucket0_30: 0,
+              bucket31_60: 0,
+              bucket61_90: 0,
+              bucket90Plus: 0,
+              lastDueDate: inv.dueDate
+            };
+          }
+
+          var grand = Number(inv.grandTotal) || 0;
+          var paid = Number(inv.paidAmount) || 0;
+          var tds = Number(inv.tdsDeducted) || 0;
+          var adj = (Number(inv.adjustmentAmount) || 0) + (Number(inv.writeOffAmount) || 0);
+          var bal = Number(inv.balanceDue) !== undefined ? Number(inv.balanceDue) : Math.max(0, grand - (paid + tds + adj));
+
+          clientsMap[client].totalInvoiced += grand;
+          clientsMap[client].totalPaid += paid;
+          clientsMap[client].totalTds += tds;
+          clientsMap[client].totalAdj += adj;
+          clientsMap[client].balanceDue += bal;
+
+          if (bal > 0) {
+            var due = inv.dueDate ? parseDateDDMMYYYY(inv.dueDate) : today;
+            var diffDays = Math.max(0, Math.floor((today - due) / (1000 * 60 * 60 * 24)));
+
+            if (diffDays <= 30) clientsMap[client].bucket0_30 += bal;
+            else if (diffDays <= 60) clientsMap[client].bucket31_60 += bal;
+            else if (diffDays <= 90) clientsMap[client].bucket61_90 += bal;
+            else clientsMap[client].bucket90Plus += bal;
+          }
+        });
+
+        var clientList = Object.values(clientsMap).filter(function(c) {
+          return c.customerName.toLowerCase().includes(searchQuery);
+        });
+
+        var tbody = document.getElementById('client-ar-tbody');
+        tbody.innerHTML = "";
+
+        if (clientList.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400">No client accounts found.</td></tr>`;
+          return;
+        }
+
+        clientList.forEach(function(c) {
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900">${escapeHtml(c.customerName)}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(c.customerGstin || 'Unregistered')}</div>
+            </td>
+            <td class="py-3 px-4 text-right font-black text-slate-900">${formatINR(c.totalInvoiced)}</td>
+            <td class="py-3 px-4 text-right font-bold text-emerald-600">${formatINR(c.totalPaid + c.totalTds)}</td>
+            <td class="py-3 px-4 text-right font-black ${c.balanceDue > 0 ? 'text-amber-700' : 'text-slate-400'}">${formatINR(c.balanceDue)}</td>
+            <td class="py-3 px-4 text-right font-mono text-emerald-700 font-semibold">${c.bucket0_30 > 0 ? formatINR(c.bucket0_30) : '--'}</td>
+            <td class="py-3 px-4 text-right font-mono text-amber-600 font-semibold">${c.bucket31_60 > 0 ? formatINR(c.bucket31_60) : '--'}</td>
+            <td class="py-3 px-4 text-right font-mono text-orange-600 font-semibold">${c.bucket61_90 > 0 ? formatINR(c.bucket61_90) : '--'}</td>
+            <td class="py-3 px-4 text-right font-mono text-rose-600 font-black">${c.bucket90Plus > 0 ? formatINR(c.bucket90Plus) : '--'}</td>
+            <td class="py-3 px-4 text-center space-x-1.5 whitespace-nowrap">
+              ${c.balanceDue > 0 ? `<button onclick="sendClientPaymentReminder('${escapeHtml(c.customerName)}', '${escapeHtml(c.customerEmail || '')}', ${c.balanceDue})" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[10px] font-bold cursor-pointer">🔔 Send Reminder</button>` : `<span class="text-[10px] text-emerald-700 font-bold">✓ Settled</span>`}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function renderProjectArView(invoices, payments, selectedFy, searchQuery) {
+        var rowsHtml = '';
+        invoices.forEach(function(inv) {
+          if (!inv.customerName.toLowerCase().includes(searchQuery) && !(inv.invoiceNumber || '').toLowerCase().includes(searchQuery)) return;
+
+          var grand = Number(inv.grandTotal) || 0;
+          var paid = (Number(inv.paidAmount) || 0) + (Number(inv.tdsDeducted) || 0);
+          var adj = (Number(inv.adjustmentAmount) || 0) + (Number(inv.writeOffAmount) || 0);
+          var bal = Number(inv.balanceDue) !== undefined ? Number(inv.balanceDue) : Math.max(0, grand - (paid + adj));
+          var pct = grand > 0 ? Math.min(100, Math.round((paid + adj) / grand * 100)) : 0;
+
+          rowsHtml += `
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="py-3 px-4">
+                <div class="font-bold text-slate-900">${escapeHtml(inv.poRef || inv.invoiceNumber)}</div>
+                <div class="text-[10px] text-slate-400">${escapeHtml(inv.vertical || 'Commercial')} • ${escapeHtml(inv.milestoneTag || 'Milestone')}</div>
+              </td>
+              <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(inv.customerName)}</td>
+              <td class="py-3 px-4 text-right font-black text-slate-900">${formatINR(grand)}</td>
+              <td class="py-3 px-4 text-right font-bold text-indigo-700">${formatINR(grand)}</td>
+              <td class="py-3 px-4 text-right font-bold text-emerald-600">${formatINR(paid)}</td>
+              <td class="py-3 px-4 text-right font-black ${bal > 0 ? 'text-amber-700' : 'text-slate-400'}">${formatINR(bal)}</td>
+              <td class="py-3 px-4 text-center">
+                <div class="w-full bg-slate-200 rounded-full h-2">
+                  <div class="bg-emerald-500 h-2 rounded-full" style="width: ${pct}%"></div>
+                </div>
+                <span class="text-[10px] font-bold text-slate-600 font-mono mt-0.5 block">${pct}% Realized</span>
+              </td>
+              <td class="py-3 px-4 text-center font-mono text-slate-600 font-bold text-xs">${escapeHtml(inv.invoiceNumber)}</td>
+            </tr>
+          `;
+        });
+
+        var tbody = document.getElementById('project-ar-tbody');
+        tbody.innerHTML = rowsHtml || `<tr><td colspan="8" class="py-8 text-center text-slate-400">No project receivables found.</td></tr>`;
+      }
+
+      function renderSalesRepArView(invoices, payments, selectedFy, searchQuery) {
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+        var repsMap = {};
+
+        employees.forEach(function(e) {
+          repsMap[e.employeeId] = {
+            employeeId: e.employeeId,
+            fullName: e.fullName,
+            designation: e.designation,
+            invoiceCount: 0,
+            totalBilled: 0,
+            totalCollected: 0,
+            pendingBalance: 0
+          };
+        });
+
+        invoices.forEach(function(inv) {
+          var empId = inv.employeeId || 'E-002';
+          if (!repsMap[empId]) {
+            repsMap[empId] = {
+              employeeId: empId,
+              fullName: inv.employeeName || 'Sales Representative',
+              designation: 'Sales Engineer',
+              invoiceCount: 0,
+              totalBilled: 0,
+              totalCollected: 0,
+              pendingBalance: 0
+            };
+          }
+
+          var grand = Number(inv.grandTotal) || 0;
+          var paid = (Number(inv.paidAmount) || 0) + (Number(inv.tdsDeducted) || 0);
+          var adj = (Number(inv.adjustmentAmount) || 0) + (Number(inv.writeOffAmount) || 0);
+          var bal = Number(inv.balanceDue) !== undefined ? Number(inv.balanceDue) : Math.max(0, grand - (paid + adj));
+
+          repsMap[empId].invoiceCount++;
+          repsMap[empId].totalBilled += grand;
+          repsMap[empId].totalCollected += paid;
+          repsMap[empId].pendingBalance += bal;
+        });
+
+        var repList = Object.values(repsMap).filter(function(r) {
+          return r.fullName.toLowerCase().includes(searchQuery) && r.totalBilled > 0;
+        });
+
+        var tbody = document.getElementById('salesrep-ar-tbody');
+        tbody.innerHTML = "";
+
+        if (repList.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400">No sales person performance records.</td></tr>`;
+          return;
+        }
+
+        repList.forEach(function(r) {
+          var recoveryRate = r.totalBilled > 0 ? Math.round(r.totalCollected / r.totalBilled * 100) : 0;
+          var badgePill = recoveryRate >= 80 ? "bg-emerald-100 text-emerald-800" : (recoveryRate >= 50 ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800");
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900">${escapeHtml(r.fullName)}</div>
+              <div class="text-[10px] text-slate-400">${escapeHtml(r.designation || 'Sales')} (${escapeHtml(r.employeeId)})</div>
+            </td>
+            <td class="py-3 px-4 text-center font-bold font-mono text-slate-700">${r.invoiceCount}</td>
+            <td class="py-3 px-4 text-right font-black text-slate-900">${formatINR(r.totalBilled)}</td>
+            <td class="py-3 px-4 text-right font-bold text-emerald-600">${formatINR(r.totalCollected)}</td>
+            <td class="py-3 px-4 text-right font-black text-amber-700">${formatINR(r.pendingBalance)}</td>
+            <td class="py-3 px-4 text-center">
+              <div class="w-full bg-slate-200 rounded-full h-2">
+                <div class="bg-indigo-600 h-2 rounded-full" style="width: ${recoveryRate}%"></div>
+              </div>
+              <span class="text-[10px] font-bold text-slate-700 font-mono mt-0.5 block">${recoveryRate}% Collected</span>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${badgePill}">${recoveryRate >= 80 ? 'Target Achieved' : 'In Progress'}</span>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function openPaymentModal(prefillInvoiceId) {
         document.getElementById('payment-doc-id').value = "";
         document.getElementById('payment-modal-title').innerText = "Record Payment Collection";
 
+        populatePaymentClientDropdown();
+        populateInvoiceDropdown();
+
+        document.getElementById('inp-pay-client-select').value = "";
         document.getElementById('inp-pay-customer').value = "";
         document.getElementById('inp-pay-invoice').value = "";
         document.getElementById('inp-pay-amount').value = 500000;
+        document.getElementById('inp-pay-tds').value = 0;
         document.getElementById('inp-pay-mode').value = "NEFT/RTGS";
         document.getElementById('inp-pay-utr').value = "";
         document.getElementById('inp-pay-date').value = getFormattedToday();
         document.getElementById('inp-pay-status').value = "Cleared";
+        document.getElementById('inp-pay-milestone').value = "Milestone Settlement";
         document.getElementById('inp-pay-remarks').value = "";
+
+        if (prefillInvoiceId) {
+          var select = document.getElementById('inp-pay-invoice-select');
+          if (select) {
+            select.value = prefillInvoiceId;
+            onInvoiceSelected(prefillInvoiceId);
+          }
+        }
 
         document.getElementById('payment-modal').classList.remove('hidden');
       }
 
       function closePaymentModal() {
         document.getElementById('payment-modal').classList.add('hidden');
+      }
+
+      function handleSavePayment(e) {
+        e.preventDefault();
+        var docId = document.getElementById('payment-doc-id').value;
+        var myEmpId = localStorage.getItem('employeeId');
+        var myName = localStorage.getItem('userName');
+
+        var invoiceId = document.getElementById('inp-pay-invoice-select').value;
+        var invoiceNumber = document.getElementById('inp-pay-invoice').value.trim();
+        var amount = Number(document.getElementById('inp-pay-amount').value) || 0;
+        var tdsAmount = Number(document.getElementById('inp-pay-tds').value) || 0;
+
+        var receiptNumber = docId ? '' : window.RevOpsStore.generateNextReceiptNumber();
+
+        var payData = {
+          invoiceId: invoiceId,
+          invoiceNumber: invoiceNumber,
+          customerName: document.getElementById('inp-pay-customer').value.trim(),
+          amount: amount,
+          tdsAmount: tdsAmount,
+          paymentMode: document.getElementById('inp-pay-mode').value,
+          utrNumber: document.getElementById('inp-pay-utr').value.trim(),
+          bankAccount: document.getElementById('inp-pay-bank').value,
+          paymentDate: document.getElementById('inp-pay-date').value.trim(),
+          paymentMilestone: document.getElementById('inp-pay-milestone').value.trim(),
+          status: document.getElementById('inp-pay-status').value,
+          remarks: document.getElementById('inp-pay-remarks').value.trim(),
+          employeeId: myEmpId,
+          employeeName: myName,
+          updatedAt: new Date().toISOString()
+        };
+
+        var savedDocId = docId;
+        if (docId) {
+          window.RevOpsStore.updateItem('payments', docId, payData);
+        } else {
+          payData.receiptNumber = receiptNumber;
+          payData.createdAt = new Date().toISOString();
+          payData.receiptDispatchHistory = [];
+          var added = window.RevOpsStore.addItem('payments', payData);
+          savedDocId = added.id;
+        }
+
+        // Real-time synchronization of linked Invoice balance & status
+        if (invoiceId || invoiceNumber) {
+          window.RevOpsStore.syncInvoicePaymentStatus(invoiceId || invoiceNumber);
+        }
+
+        closePaymentModal();
+        populatePaymentClientDropdown();
+        populateInvoiceDropdown();
+        renderActivePaymentView();
+
+        // Prompt to email receipt
+        if (confirm("✅ Payment collection recorded successfully! Receipt Ref: " + (payData.receiptNumber || 'REC') + ".\n\nWould you like to send the official Payment Settlement Receipt to the client now?")) {
+          openSendReceiptModal(savedDocId);
+        }
       }
 
       function editPayment(docId) {
@@ -302,54 +1907,292 @@
         document.getElementById('payment-doc-id').value = p.id;
         document.getElementById('payment-modal-title').innerText = "Edit Payment Collection";
 
+        populatePaymentClientDropdown();
+        populateInvoiceDropdown();
+        if (p.invoiceId) {
+          document.getElementById('inp-pay-invoice-select').value = p.invoiceId;
+        }
+
         document.getElementById('inp-pay-customer').value = p.customerName;
         document.getElementById('inp-pay-invoice').value = p.invoiceNumber || '';
         document.getElementById('inp-pay-amount').value = p.amount;
+        document.getElementById('inp-pay-tds').value = p.tdsAmount || 0;
         document.getElementById('inp-pay-mode').value = p.paymentMode;
         document.getElementById('inp-pay-utr').value = p.utrNumber || '';
+        document.getElementById('inp-pay-bank').value = p.bankAccount || document.getElementById('inp-pay-bank').options[0].value;
         document.getElementById('inp-pay-date').value = p.paymentDate;
+        document.getElementById('inp-pay-milestone').value = p.paymentMilestone || '';
         document.getElementById('inp-pay-status').value = p.status;
         document.getElementById('inp-pay-remarks').value = p.remarks || '';
 
+        calculateRemainingBalancePreview();
         document.getElementById('payment-modal').classList.remove('hidden');
       }
 
-      function handleSavePayment(e) {
-        e.preventDefault();
-        var docId = document.getElementById('payment-doc-id').value;
-        var myEmpId = localStorage.getItem('employeeId');
-        var myName = localStorage.getItem('userName');
+      function deletePayment(docId) {
+        if (confirm("Are you sure you want to delete this payment collection?")) {
+          var payments = window.RevOpsStore.getCollection('payments') || [];
+          var p = payments.find(function(item) { return item.id === docId; });
+          window.RevOpsStore.deleteItem('payments', docId);
 
-        var payData = {
-          customerName: document.getElementById('inp-pay-customer').value.trim(),
-          invoiceNumber: document.getElementById('inp-pay-invoice').value.trim(),
-          amount: Number(document.getElementById('inp-pay-amount').value) || 0,
-          paymentMode: document.getElementById('inp-pay-mode').value,
-          utrNumber: document.getElementById('inp-pay-utr').value.trim(),
-          paymentDate: document.getElementById('inp-pay-date').value.trim(),
-          status: document.getElementById('inp-pay-status').value,
-          remarks: document.getElementById('inp-pay-remarks').value.trim(),
-          employeeId: myEmpId,
-          employeeName: myName,
-          updatedAt: new Date().toISOString()
-        };
-
-        if (docId) {
-          window.RevOpsStore.updateItem('payments', docId, payData);
-        } else {
-          payData.createdAt = new Date().toISOString();
-          window.RevOpsStore.addItem('payments', payData);
+          if (p && (p.invoiceId || p.invoiceNumber)) {
+            window.RevOpsStore.syncInvoicePaymentStatus(p.invoiceId || p.invoiceNumber);
+          }
+          populatePaymentClientDropdown();
+          populateInvoiceDropdown();
+          renderActivePaymentView();
         }
-
-        closePaymentModal();
-        renderPaymentsTable();
       }
 
-      function deletePayment(docId) {
-        if (confirm("Are you sure you want to delete this payment record?")) {
-          window.RevOpsStore.deleteItem('payments', docId);
-          renderPaymentsTable();
+      // View Printable Settlement Receipt Voucher
+      function viewPrintableReceipt(payId) {
+        var payments = window.RevOpsStore.getCollection('payments') || [];
+        var p = payments.find(function(item) { return item.id === payId; });
+        if (!p) return;
+
+        var invoices = window.RevOpsStore.getCollection('invoices') || [];
+        var linkedInv = invoices.find(function(inv) { return inv.id === p.invoiceId || inv.invoiceNumber === p.invoiceNumber; });
+
+        var receiptNum = p.receiptNumber || ('REC-2026-' + p.id.slice(-3));
+        document.getElementById('receipt-modal-title').innerText = `Payment Receipt Voucher - ${receiptNum}`;
+
+        var wrapper = document.getElementById('printable-receipt-wrapper');
+        var netAmt = Number(p.amount) || 0;
+        var tdsAmt = Number(p.tdsAmount) || 0;
+        var totalSettlement = netAmt + tdsAmt;
+
+        wrapper.innerHTML = `
+          <!-- Header -->
+          <div class="flex justify-between items-start border-b-2 border-slate-900 pb-4">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-2xl font-black text-indigo-950 tracking-tight">MEASURE DI TECHNOLOGIES</span>
+                <span class="px-2 py-0.5 rounded bg-emerald-700 text-white text-[10px] font-black uppercase">PAYMENT RECEIPT</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1">
+                Plot No. 42, SIDCO Industrial Estate, Guindy, Chennai - 600032, Tamil Nadu<br>
+                <strong>GSTIN:</strong> 33AAACM4209L1ZT | <strong>CIN:</strong> U72900TN2020PTC135890
+              </p>
+            </div>
+            <div class="text-right">
+              <h2 class="text-lg font-black text-emerald-800 uppercase tracking-wide">SETTLEMENT RECEIPT</h2>
+              <div class="text-xs font-mono font-bold text-slate-900 mt-1">${escapeHtml(receiptNum)}</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5">Date: ${escapeHtml(p.paymentDate)}</div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 uppercase">Cleared & Credited</span>
+            </div>
+          </div>
+
+          <!-- Received From Client -->
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
+            <div class="flex justify-between">
+              <div>
+                <span class="text-[10px] font-bold uppercase text-slate-400">Received With Thanks From:</span>
+                <div class="font-bold text-slate-900 text-sm">${escapeHtml(p.customerName)}</div>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] font-bold uppercase text-slate-400">Commercial Invoice Ref:</span>
+                <div class="font-bold font-mono text-indigo-700">${escapeHtml(p.invoiceNumber || 'Direct Payment')}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Settlement Breakdown Matrix -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden text-xs">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase text-slate-700">
+                  <th class="py-2.5 px-3">Description / Purpose</th>
+                  <th class="py-2.5 px-3">Payment Mode & Ref</th>
+                  <th class="py-2.5 px-3 text-right">Net Credited (Rs.)</th>
+                  <th class="py-2.5 px-3 text-right">TDS (Rs.)</th>
+                  <th class="py-2.5 px-3 text-right">Total Settled (Rs.)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr>
+                  <td class="py-3 px-3 font-semibold text-slate-900">
+                    ${escapeHtml(p.paymentMilestone || 'Commercial Invoice Settlement')}
+                  </td>
+                  <td class="py-3 px-3 font-mono text-slate-700">
+                    ${escapeHtml(p.paymentMode)}<br>
+                    <span class="text-[10px] text-slate-400">Ref: ${escapeHtml(p.utrNumber || '--')}</span>
+                  </td>
+                  <td class="py-3 px-3 text-right font-mono font-bold text-emerald-700">${formatINR(netAmt)}</td>
+                  <td class="py-3 px-3 text-right font-mono text-slate-600">${tdsAmt > 0 ? formatINR(tdsAmt) : '--'}</td>
+                  <td class="py-3 px-3 text-right font-mono font-black text-slate-900 text-sm">${formatINR(totalSettlement)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Account & Balance Context -->
+          <div class="grid grid-cols-2 gap-4 text-xs">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+              <span class="text-[10px] font-bold uppercase text-slate-400 block mb-1">Company Bank Narration:</span>
+              <p class="font-mono text-[11px] text-slate-700">${escapeHtml(p.bankAccount || 'HDFC Bank - 50200049283719')}</p>
+              ${p.remarks ? `<p class="text-[11px] text-slate-500 mt-1 italic">${escapeHtml(p.remarks)}</p>` : ''}
+            </div>
+
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-right">
+              ${linkedInv ? `
+                <div class="flex justify-between text-slate-600">
+                  <span>Total Invoice Value:</span>
+                  <span class="font-mono font-bold">${formatINR(linkedInv.grandTotal)}</span>
+                </div>
+                <div class="flex justify-between text-emerald-700">
+                  <span>Cumulative Paid:</span>
+                  <span class="font-mono font-bold">${formatINR((linkedInv.paidAmount || 0) + (linkedInv.tdsDeducted || 0))}</span>
+                </div>
+                <div class="flex justify-between font-black text-slate-900 border-t border-slate-200 pt-1">
+                  <span>Remaining Invoice Balance:</span>
+                  <span class="font-mono ${linkedInv.balanceDue > 0 ? 'text-amber-700' : 'text-emerald-700'}">${formatINR(linkedInv.balanceDue)}</span>
+                </div>
+              ` : `
+                <div class="text-slate-500 italic">No linked invoice ledger. Standalone payment receipt.</div>
+              `}
+            </div>
+          </div>
+
+          <!-- Signature Seal -->
+          <div class="flex justify-between items-end border-t border-slate-200 pt-6 text-xs">
+            <div class="text-[11px] text-slate-400">
+              Authenticated electronic receipt issued by Measure DI RevOps Engine.
+            </div>
+            <div class="text-center">
+              <div class="w-32 h-10 border-b border-slate-400 mx-auto flex items-center justify-center text-[9px] text-slate-400 italic">
+                [Authorized Accounts Seal]
+              </div>
+              <span class="font-bold text-slate-900 block mt-1">MEASURE DI TECHNOLOGIES</span>
+              <span class="text-[10px] text-slate-500">Finance & Accounts Department</span>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('receipt-view-modal').classList.remove('hidden');
+      }
+
+      function closeReceiptViewModal() {
+        document.getElementById('receipt-view-modal').classList.add('hidden');
+      }
+
+      function printReceiptDoc() {
+        window.print();
+      }
+
+      // Email Dispatch of Payment Receipt
+      function openSendReceiptModal(payId) {
+        var payments = window.RevOpsStore.getCollection('payments') || [];
+        var p = payments.find(function(item) { return item.id === payId; });
+        if (!p) return;
+
+        var invoices = window.RevOpsStore.getCollection('invoices') || [];
+        var linkedInv = invoices.find(function(inv) { return inv.id === p.invoiceId || inv.invoiceNumber === p.invoiceNumber; });
+
+        document.getElementById('send-rec-pay-id').value = p.id;
+        var clientEmail = (linkedInv && linkedInv.customerEmail) ? linkedInv.customerEmail : 'accounts@client.com';
+        document.getElementById('inp-rec-to').value = clientEmail;
+
+        var receiptNum = p.receiptNumber || ('REC-2026-' + p.id.slice(-3));
+        document.getElementById('send-rec-attachment-name').innerText = `${receiptNum}.pdf`;
+
+        var subject = `[Measure DI Technologies] Payment Settlement Receipt Ref: ${receiptNum} for Invoice ${p.invoiceNumber || ''}`;
+        document.getElementById('inp-rec-subject').value = subject;
+
+        var netAmt = Number(p.amount) || 0;
+        var tdsAmt = Number(p.tdsAmount) || 0;
+        var totalSettled = netAmt + tdsAmt;
+
+        var remainingBalNote = linkedInv ? `Remaining Invoice Balance: ${formatINR(linkedInv.balanceDue)}` : `Status: Cleared`;
+
+        var body = `Dear ${p.customerName} Team,
+
+Greetings from Measure DI Technologies Private Limited.
+
+We gratefully acknowledge receipt of your payment for the amount of ${formatINR(netAmt)}${tdsAmt > 0 ? ' (plus TDS of ' + formatINR(tdsAmt) + ')' : ''} towards Invoice Ref: ${p.invoiceNumber || '--'}.
+
+Payment Receipt Details:
+- Official Receipt Number: ${receiptNum}
+- Receipt Date: ${p.paymentDate}
+- Customer: ${p.customerName}
+- Total Settled Amount: ${formatINR(totalSettled)}
+- Payment Mode: ${p.paymentMode}
+- Bank Reference / UTR Number: ${p.utrNumber || 'N/A'}
+- ${remainingBalNote}
+
+Our official Payment Settlement Receipt voucher is attached herewith for your accounting records.
+
+Thank you for your valued partnership.
+
+Warm regards,
+Finance & Accounts Operations
+Measure DI Technologies Pvt Ltd
+Mobile: +91 98406 29928 | Email: measuredichennai@gmail.com`;
+
+        document.getElementById('inp-rec-body').value = body;
+
+        var histBox = document.getElementById('rec-dispatch-history-box');
+        var histList = document.getElementById('rec-dispatch-history-list');
+        if (p.receiptDispatchHistory && p.receiptDispatchHistory.length > 0) {
+          histBox.classList.remove('hidden');
+          histList.innerHTML = p.receiptDispatchHistory.map(function(h) {
+            return `<div>• ${h.timestamp} - Sent to <strong>${escapeHtml(h.to)}</strong> (${h.status})</div>`;
+          }).join('');
+        } else {
+          histBox.classList.add('hidden');
         }
+
+        document.getElementById('send-receipt-modal').classList.remove('hidden');
+      }
+
+      function closeSendReceiptModal() {
+        document.getElementById('send-receipt-modal').classList.add('hidden');
+      }
+
+      function executeSendReceiptEmail() {
+        var payId = document.getElementById('send-rec-pay-id').value;
+        var toEmail = document.getElementById('inp-rec-to').value.trim();
+        var ccEmail = document.getElementById('inp-rec-cc').value.trim();
+        var subject = document.getElementById('inp-rec-subject').value.trim();
+        var myName = localStorage.getItem('userName');
+
+        if (!toEmail) {
+          alert("Please enter the recipient client email address.");
+          return;
+        }
+
+        var payments = window.RevOpsStore.getCollection('payments') || [];
+        var p = payments.find(function(it) { return it.id === payId; });
+        if (!p) return;
+
+        var history = p.receiptDispatchHistory || [];
+        history.push({
+          timestamp: getFormattedToday() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          to: toEmail,
+          cc: ccEmail,
+          subject: subject,
+          senderName: myName,
+          status: 'Dispatched'
+        });
+
+        window.RevOpsStore.updateItem('payments', p.id, { receiptDispatchHistory: history });
+        closeSendReceiptModal();
+        renderActivePaymentView();
+        alert("🚀 Payment Settlement Receipt dispatched to client " + toEmail + "!");
+      }
+
+      function openReceiptInMailClient() {
+        var toEmail = document.getElementById('inp-rec-to').value.trim();
+        var ccEmail = document.getElementById('inp-rec-cc').value.trim();
+        var subject = encodeURIComponent(document.getElementById('inp-rec-subject').value.trim());
+        var body = encodeURIComponent(document.getElementById('inp-rec-body').value.trim());
+        window.location.href = `mailto:${toEmail}?cc=${ccEmail}&subject=${subject}&body=${body}`;
+      }
+
+      function sendClientPaymentReminder(clientName, clientEmail, balanceDue) {
+        var toEmail = clientEmail || 'accounts@client.com';
+        var subject = encodeURIComponent(`[Payment Reminder] Measure DI Technologies - Outstanding Balance Ref: ${clientName}`);
+        var body = encodeURIComponent(`Dear ${clientName} Accounts Team,\n\nThis is a friendly reminder that an outstanding commercial balance of ${formatINR(balanceDue)} is currently pending settlement with Measure DI Technologies Pvt Ltd.\n\nKindly review your pending invoices and arrange remittance at your earliest convenience.\n\nRemittance Bank:\nHDFC Bank - A/c No: 50200049283719 (IFSC: HDFC0000123, Guindy Chennai)\n\nThank you,\nFinance & Accounts Team\nMeasure DI Technologies Pvt Ltd`);
+        window.location.href = `mailto:${toEmail}?cc=measuredichennai@gmail.com&subject=${subject}&body=${body}`;
       }
     </script>
   </body>

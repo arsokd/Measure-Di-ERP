@@ -79,6 +79,7 @@ export default defineConfig(({ mode }) => {
           serviceTickets: path.resolve(__dirname, 'service-tickets.html'),
           invoices: path.resolve(__dirname, 'invoices.html'),
           masterData: path.resolve(__dirname, 'master-data.html'),
+          sop: path.resolve(__dirname, 'sop.html'),
         },
       },
     },

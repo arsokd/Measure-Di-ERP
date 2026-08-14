@@ -246,6 +246,7 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
     { title: "KRAs & Target Metrics", path: "kra-targets.html", desc: "Key result areas & quarterly goals", icon: "📊", show: true },
     { title: "Performance Reviews", path: "reviews.html", desc: "360 appraisal feedback & ratings", icon: "📝", show: showTeamAndReviews },
     { title: "Annual Operating Plan (AOP)", path: "aop-targets.html", desc: "Company revenue targets & strategy", icon: "🏆", show: isAdmin },
+    { title: "Standard Operating Procedures (SOP)", path: "sop.html", desc: "New joiner training & role-based operational procedures", icon: "📜", show: true },
     { title: "User Guide & PDF Manual", path: "user-guide.html", desc: "Comprehensive RevOps SOP & live PDF manual", icon: "📖", show: true }
   ];
 

@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Measure DI RevOps - Service & AMC Leads Pipeline</title>
+    <link rel="stylesheet" href="/src/index.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="js/firebase-init.js" defer></script>
+    <script src="js/store.js" defer></script>
+    <script src="js/seed-data.js" defer></script>
+    <script src="auth-guard.js" defer></script>
+  </head>
+  <body class="bg-slate-900 min-h-screen text-slate-100 font-sans antialiased">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      
+      <!-- Top Header & Action Controls -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-850 p-6 rounded-2xl border border-slate-800 shadow-xl">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              Service & Quality Pipeline
+            </span>
+            <span class="text-xs text-slate-400 font-semibold">• AMC Renewals, Breakdown Calls, Spares & Calibrations</span>
+          </div>
+          <h1 class="text-2xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
+            <span>Service & AMC Leads Hub</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800/80">RevOps v28</span>
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">Dedicated inquiry funnel for Annual Maintenance Contracts (AMC), preventive audits, calibration certifications, breakdown callouts & replacement spares.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+          <a href="amc-contracts.html" class="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer" title="AMC Contracts Registry & PM Visits">
+            <i class="fa-solid fa-calendar-check text-amber-400"></i>
+            <span>AMC Monitoring</span>
+          </a>
+          <a href="amc-quotes.html" class="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer" title="AMC Quotations & Proposals">
+            <i class="fa-solid fa-file-contract text-indigo-400"></i>
+            <span>AMC Quotes</span>
+          </a>
+          <a href="amc-orders.html" class="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer" title="AMC Order Registration">
+            <i class="fa-solid fa-box-open text-emerald-400"></i>
+            <span>AMC Orders</span>
+          </a>
+          <button onclick="openServiceLeadModal()" class="px-4 py-2 bg-[#982B68] hover:bg-[#802256] text-white font-bold text-xs rounded-xl shadow-lg shadow-[#982B68]/30 transition-all flex items-center space-x-1.5 cursor-pointer">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>+ Add Service / AMC Lead</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 6-Stage Service Funnel Progression Bar -->
+      <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <i class="fa-solid fa-filter text-amber-400"></i>
+            <span>Service & AMC Inbound Progression Funnel</span>
+          </span>
+          <span class="text-[11px] text-slate-400" id="funnel-total-caption">Total Service Inquiries</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2" id="service-funnel-bar">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- KPI Revenue Economics Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1 -->
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Active Service / AMC Pipeline</div>
+            <div class="text-2xl font-black text-white mt-1" id="stat-service-pipeline-val">₹0</div>
+            <div class="text-[11px] text-amber-400 font-semibold mt-0.5" id="stat-service-leads-count">0 Open Inquiries</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-handshake"></i>
+          </div>
+        </div>
+
+        <!-- KPI 2 -->
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-wider text-emerald-400">AMC Renewal Opportunities</div>
+            <div class="text-2xl font-black text-emerald-400 mt-1" id="stat-amc-renewals-count">0</div>
+            <div class="text-[11px] text-slate-400 font-semibold mt-0.5" id="stat-amc-renewals-val">Value: ₹0</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-repeat"></i>
+          </div>
+        </div>
+
+        <!-- KPI 3 -->
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-wider text-indigo-400">Average Contract Size</div>
+            <div class="text-2xl font-black text-indigo-400 mt-1" id="stat-avg-ticket">₹0</div>
+            <div class="text-[11px] text-slate-400 font-semibold mt-0.5">Annual / Callout Baseline</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-calculator"></i>
+          </div>
+        </div>
+
+        <!-- KPI 4 -->
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-wider text-sky-400">Service Win Rate %</div>
+            <div class="text-2xl font-black text-sky-400 mt-1" id="stat-win-rate">0%</div>
+            <div class="text-[11px] text-slate-400 font-semibold mt-0.5" id="stat-won-count">0 Contracts Confirmed</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Controls & Search -->
+      <div class="bg-slate-850 p-4 rounded-2xl border border-slate-800 shadow-xl flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[300px]">
+          <!-- Search -->
+          <div class="relative flex-1 min-w-[200px]">
+            <input type="text" id="service-lead-search" oninput="renderServiceLeadsTable()" placeholder="Search by Customer, Lead #, Equipment Model, Serial #..." class="w-full pl-8 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500" />
+            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-3 text-slate-500 text-xs"></i>
+          </div>
+
+          <!-- Service Category Filter -->
+          <select id="service-type-filter" onchange="renderServiceLeadsTable()" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300 font-semibold focus:outline-none focus:border-amber-500">
+            <option value="All">All Service Lead Types</option>
+            <option value="AMC Comprehensive">AMC Comprehensive Contract</option>
+            <option value="AMC Non-Comprehensive">AMC Non-Comprehensive Contract</option>
+            <option value="AMC Renewal">AMC Renewal Opportunity</option>
+            <option value="Breakdown Repair">Breakdown / Diagnostic Call</option>
+            <option value="Calibration & Certification">Calibration & Legal Metrology Stamping</option>
+            <option value="Spare Parts Supply">Spare Parts Supply & Replacements</option>
+          </select>
+
+          <!-- Stage Filter -->
+          <select id="service-stage-filter" onchange="renderServiceLeadsTable()" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300 font-semibold focus:outline-none focus:border-amber-500">
+            <option value="All">All Funnel Stages</option>
+            <option value="Inquiry Ingestion">Inquiry Ingestion / Contacted</option>
+            <option value="Site Inspection Scheduled">Site Inspection / Audit Scheduled</option>
+            <option value="Scope & Pricing Evaluated">Scope & Pricing Evaluated</option>
+            <option value="Quotation Submitted">AMC / Service Quotation Submitted</option>
+            <option value="Commercial Negotiation">Commercial Negotiation</option>
+            <option value="Contract Won / Confirmed">Contract Won / Confirmed</option>
+            <option value="Lost">Lost</option>
+          </select>
+
+          <!-- FY Filter -->
+          <select id="service-fy-filter" onchange="renderServiceLeadsTable()" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300 font-semibold focus:outline-none focus:border-amber-500">
+            <option value="All">All Financial Years</option>
+            <option value="2026-27" selected>FY 2026-27</option>
+            <option value="2025-26">FY 2025-26</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400 font-bold" id="service-lead-count-badge">0 leads</span>
+          <button onclick="exportServiceLeadsCSV()" class="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-download text-xs text-slate-400"></i>
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Service Leads Master Table -->
+      <div class="bg-slate-850 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-900/80 border-b border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                <th class="py-3 px-4">Lead # & Date</th>
+                <th class="py-3 px-4">Customer & Plant Site</th>
+                <th class="py-3 px-4">Service Type & Scope</th>
+                <th class="py-3 px-4">Equipment & Serial No</th>
+                <th class="py-3 px-4">Contact Person</th>
+                <th class="py-3 px-4 text-right">Est. Annual / Call Value</th>
+                <th class="py-3 px-4 text-center">Stage & Status</th>
+                <th class="py-3 px-4 text-center">Actions & Conversions</th>
+              </tr>
+            </thead>
+            <tbody id="service-leads-tbody" class="divide-y divide-slate-800 text-xs">
+              <!-- Dynamically populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- MODAL: ADD / EDIT SERVICE LEAD -->
+    <div id="service-lead-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-3xl shadow-2xl p-6 text-slate-200 space-y-5 my-8">
+        
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-9 h-9 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-sm">
+              <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-white uppercase tracking-wider" id="service-lead-modal-title">Record Service / AMC Lead</h3>
+              <p class="text-[11px] text-slate-400">Log client maintenance requirements, contract renewals, spares or calibration leads</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeServiceLeadModal()" class="text-slate-400 hover:text-white text-lg font-bold p-1 cursor-pointer">&times;</button>
+        </div>
+
+        <form id="service-lead-form" onsubmit="handleSaveServiceLead(event)" class="space-y-4">
+          <input type="hidden" id="service-lead-doc-id" value="" />
+
+          <!-- Row 1: Customer Name & Lead Source -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Customer Company *</label>
+              <input type="text" id="inp-srv-customer" required placeholder="e.g. JSW Steel Limited" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-semibold focus:outline-none focus:border-amber-500" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Lead Source *</label>
+              <select id="inp-srv-source" required class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-semibold focus:outline-none focus:border-amber-500">
+                <option value="AMC Warranty Expiry Conversion" selected>Warranty Expiry AMC Conversion</option>
+                <option value="Annual AMC Renewal">Annual AMC Renewal Notice</option>
+                <option value="Emergency Breakdown Call">Emergency Breakdown / Helpdesk Call</option>
+                <option value="Existing Client Service Request">Existing Client Service Request</option>
+                <option value="Direct Inbound Inquiry">Direct Inbound Customer Inquiry</option>
+                <option value="Periodic Calibration Reminder">Periodic Calibration Reminder</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Row 2: Service Type & Equipment Model -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Service Classification *</label>
+              <select id="inp-srv-type" required class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-semibold focus:outline-none focus:border-amber-500">
+                <option value="AMC Comprehensive" selected>AMC Comprehensive (Spares + Labor)</option>
+                <option value="AMC Non-Comprehensive">AMC Non-Comprehensive (Labor Only)</option>
+                <option value="AMC Renewal">AMC Renewal Opportunity</option>
+                <option value="Breakdown Repair">Breakdown Repair / Diagnostic Call</option>
+                <option value="Calibration & Certification">Calibration & Certification</option>
+                <option value="Spare Parts Supply">Spare Parts Supply</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Equipment Model *</label>
+              <input type="text" id="inp-srv-model" required placeholder="Wireless Crane Scale 50T (CS-50W)" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Equipment Serial No(s)</label>
+              <input type="text" id="inp-srv-serial" placeholder="CS-50T-2025-001, CS-50T-2025-002" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-amber-300 font-mono focus:outline-none focus:border-amber-500" />
+            </div>
+          </div>
+
+          <!-- Row 3: Estimated Value, Stage & Target Date -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Est. Contract / Service Value (₹) *</label>
+              <input type="number" min="0" step="1000" id="inp-srv-value" required placeholder="180000" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-bold focus:outline-none focus:border-amber-500" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Funnel Stage *</label>
+              <select id="inp-srv-stage" required class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-semibold focus:outline-none focus:border-amber-500">
+                <option value="Inquiry Ingestion" selected>1. Inquiry Ingestion / Contacted</option>
+                <option value="Site Inspection Scheduled">2. Site Inspection Scheduled</option>
+                <option value="Scope & Pricing Evaluated">3. Scope & Pricing Evaluated</option>
+                <option value="Quotation Submitted">4. AMC / Service Quote Submitted</option>
+                <option value="Commercial Negotiation">5. Commercial Negotiation</option>
+                <option value="Contract Won / Confirmed">6. Contract Won / Confirmed</option>
+                <option value="Lost">Lost / Dropped</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Target Close Date *</label>
+              <input type="date" id="inp-srv-target-date" required class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500" />
+            </div>
+          </div>
+
+          <!-- Row 4: Contact Person Details -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Contact Person Name *</label>
+              <input type="text" id="inp-srv-contact-name" required placeholder="Mr. Rajesh Verma" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Mobile / Phone *</label>
+              <input type="text" id="inp-srv-contact-phone" required placeholder="9876543210" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Email Address</label>
+              <input type="email" id="inp-srv-contact-email" placeholder="rajesh@jsw.in" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500" />
+            </div>
+          </div>
+
+          <!-- Row 5: Notes & Scope Requirements -->
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Scope of Maintenance / Inspection Notes</label>
+            <textarea id="inp-srv-notes" rows="2.5" placeholder="Requested 4 quarterly PM visits, urgent calibration of 50T crane scales in Toranagallu slag yard before annual audit..." class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-amber-500"></textarea>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+            <button type="button" onclick="closeServiceLeadModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">
+              Cancel
+            </button>
+            <button type="submit" class="px-5 py-2 bg-[#982B68] hover:bg-[#802256] text-white font-bold text-xs rounded-xl shadow-md transition-colors flex items-center space-x-1.5 cursor-pointer">
+              <i class="fa-solid fa-floppy-disk text-xs"></i>
+              <span>Save Service Lead</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Page Logic Script -->
+    <script>
+      var activeServiceLeads = [];
+
+      var serviceStagesList = [
+        "Inquiry Ingestion",
+        "Site Inspection Scheduled",
+        "Scope & Pricing Evaluated",
+        "Quotation Submitted",
+        "Commercial Negotiation",
+        "Contract Won / Confirmed"
+      ];
+
+      document.addEventListener('DOMContentLoaded', function() {
+        renderServiceFunnelBar();
+        renderServiceLeadsTable();
+
+        if (window.RevOpsStore && typeof window.RevOpsStore.subscribeRealtimeSync === 'function') {
+          window.RevOpsStore.subscribeRealtimeSync('serviceLeads', function() {
+            renderServiceFunnelBar();
+            renderServiceLeadsTable();
+          });
+        }
+      });
+
+      function getServiceLeadsList() {
+        var list = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceLeads') || []) : [];
+        if (list.length === 0) {
+          // Initialize specialized Service & AMC Leads dataset
+          list = [
+            {
+              id: "srv_lead_001",
+              leadNumber: "SRV-LD-2026-001",
+              customerName: "JSW Steel Limited",
+              serviceType: "AMC Comprehensive",
+              leadSource: "AMC Warranty Expiry Conversion",
+              equipmentModel: "Wireless Crane Scale 50T (CS-50W)",
+              serialNumbers: "CS-50T-2024-088, CS-50T-2024-089",
+              estimatedValue: 240000,
+              stage: "Quotation Submitted",
+              status: "Quotation Submitted",
+              targetDate: "2026-09-15",
+              contactPerson: "Mr. Ramesh Kulkarni",
+              contactPhone: "9845012345",
+              contactEmail: "ramesh.kulkarni@jsw.in",
+              createdDate: "12/08/2026",
+              financialYear: "2026-27",
+              employeeId: "E-004",
+              employeeName: "Priya Sharma",
+              notes: "Expiring 12-month warranty converted into Comprehensive AMC proposal with 4 quarterly audits."
+            },
+            {
+              id: "srv_lead_002",
+              leadNumber: "SRV-LD-2026-002",
+              customerName: "Tata Steel Limited",
+              serviceType: "AMC Renewal",
+              leadSource: "Annual AMC Renewal",
+              equipmentModel: "Dynamic In-Motion Train Weigher (IMW-500)",
+              serialNumbers: "IMW-500-2023-014",
+              estimatedValue: 380000,
+              stage: "Commercial Negotiation",
+              status: "Commercial Negotiation",
+              targetDate: "2026-08-30",
+              contactPerson: "Dr. Arvind Patnaik",
+              contactPhone: "9437098765",
+              contactEmail: "arvind.patnaik@tatasteel.com",
+              createdDate: "05/08/2026",
+              financialYear: "2026-27",
+              employeeId: "E-006",
+              employeeName: "Senthil Nathan",
+              notes: "Multi-year AMC renewal for blast furnace track weighing automation."
+            },
+            {
+              id: "srv_lead_003",
+              leadNumber: "SRV-LD-2026-003",
+              customerName: "UltraTech Cement",
+              serviceType: "Spare Parts Supply",
+              leadSource: "Existing Client Service Request",
+              equipmentModel: "Onboard Tipper Scale (OTW-30T)",
+              serialNumbers: "OTW-30T-2024-041",
+              estimatedValue: 135000,
+              stage: "Scope & Pricing Evaluated",
+              status: "Scope & Pricing Evaluated",
+              targetDate: "2026-09-10",
+              contactPerson: "Mr. Suresh Gokhale",
+              contactPhone: "9822054321",
+              contactEmail: "suresh.gokhale@adityabirla.com",
+              createdDate: "15/08/2026",
+              financialYear: "2026-27",
+              employeeId: "E-006",
+              employeeName: "Senthil Nathan",
+              notes: "Requirement for 3 spare shear beam transducers and 2 armored cable harnesses."
+            },
+            {
+              id: "srv_lead_004",
+              leadNumber: "SRV-LD-2026-004",
+              customerName: "Vedanta Aluminium",
+              serviceType: "Calibration & Certification",
+              leadSource: "Periodic Calibration Reminder",
+              equipmentModel: "Electronic Static Pitless Weighbridge (WB-100T)",
+              serialNumbers: "WB-100T-2024-003",
+              estimatedValue: 70000,
+              stage: "Site Inspection Scheduled",
+              status: "Site Inspection Scheduled",
+              targetDate: "2026-08-28",
+              contactPerson: "Mr. Debabrata Jena",
+              contactPhone: "9777011223",
+              contactEmail: "debabrata.jena@vedanta.co.in",
+              createdDate: "16/08/2026",
+              financialYear: "2026-27",
+              employeeId: "E-004",
+              employeeName: "Priya Sharma",
+              notes: "Annual NABL weight verification and stamping assistance for plant weighbridge."
+            }
+          ];
+          if (window.RevOpsStore && window.RevOpsStore.saveCollection) {
+            window.RevOpsStore.saveCollection('serviceLeads', list);
+          }
+        }
+        return list;
+      }
+
+      function renderServiceFunnelBar() {
+        var leads = getServiceLeadsList();
+        var container = document.getElementById('service-funnel-bar');
+        if (!container) return;
+
+        var counts = {};
+        serviceStagesList.forEach(function(s) { counts[s] = 0; });
+        leads.forEach(function(l) {
+          var st = l.stage || l.status;
+          if (counts[st] !== undefined) counts[st]++;
+        });
+
+        container.innerHTML = '';
+        serviceStagesList.forEach(function(st, idx) {
+          var c = counts[st] || 0;
+          var div = document.createElement('div');
+          div.className = "bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-center relative overflow-hidden flex flex-col justify-between";
+          div.innerHTML = `
+            <div class="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1">Stage ${idx + 1}</div>
+            <div class="text-lg font-black text-white">${c}</div>
+            <div class="text-[9px] font-bold text-amber-300 truncate mt-1" title="${st}">${st}</div>
+          `;
+          container.appendChild(div);
+        });
+      }
+
+      function renderServiceLeadsTable() {
+        var leads = getServiceLeadsList();
+        activeServiceLeads = leads;
+
+        var searchQuery = (document.getElementById('service-lead-search')?.value || '').toLowerCase();
+        var typeFilter = document.getElementById('service-type-filter')?.value || 'All';
+        var stageFilter = document.getElementById('service-stage-filter')?.value || 'All';
+        var fyFilter = document.getElementById('service-fy-filter')?.value || 'All';
+
+        var filtered = leads.filter(function(l) {
+          if (fyFilter !== 'All' && l.financialYear !== fyFilter) return false;
+          if (typeFilter !== 'All' && l.serviceType !== typeFilter) return false;
+          if (stageFilter !== 'All' && (l.stage || l.status) !== stageFilter) return false;
+
+          var q = searchQuery;
+          var textMatch = (l.leadNumber || '').toLowerCase().includes(q) ||
+                          (l.customerName || '').toLowerCase().includes(q) ||
+                          (l.equipmentModel || '').toLowerCase().includes(q) ||
+                          (l.serialNumbers || '').toLowerCase().includes(q) ||
+                          (l.contactPerson || '').toLowerCase().includes(q);
+          return textMatch;
+        });
+
+        // Compute KPIs
+        var totalPipelineVal = 0;
+        var openCount = 0;
+        var amcRenewalsCount = 0;
+        var amcRenewalsVal = 0;
+        var wonCount = 0;
+
+        leads.forEach(function(l) {
+          var val = Number(l.estimatedValue) || 0;
+          var st = l.stage || l.status || '';
+
+          if (st !== 'Lost') {
+            totalPipelineVal += val;
+            openCount++;
+          }
+          if (st === 'Contract Won / Confirmed' || st === 'Won') {
+            wonCount++;
+          }
+          if (l.serviceType.includes('AMC') || l.serviceType.includes('Renewal')) {
+            amcRenewalsCount++;
+            amcRenewalsVal += val;
+          }
+        });
+
+        var avgVal = openCount > 0 ? Math.round(totalPipelineVal / openCount) : 0;
+        var winRate = openCount > 0 ? Math.round((wonCount / openCount) * 100) : 0;
+
+        document.getElementById('stat-service-pipeline-val').textContent = '₹' + (totalPipelineVal >= 100000 ? (totalPipelineVal / 100000).toFixed(2) + ' L' : totalPipelineVal.toLocaleString('en-IN'));
+        document.getElementById('stat-service-leads-count').textContent = openCount + ' Open Inquiries';
+        document.getElementById('stat-amc-renewals-count').textContent = amcRenewalsCount;
+        document.getElementById('stat-amc-renewals-val').textContent = 'Value: ₹' + (amcRenewalsVal / 100000).toFixed(2) + ' L';
+        document.getElementById('stat-avg-ticket').textContent = '₹' + (avgVal >= 100000 ? (avgVal / 100000).toFixed(2) + ' L' : avgVal.toLocaleString('en-IN'));
+        document.getElementById('stat-win-rate').textContent = winRate + '%';
+        document.getElementById('stat-won-count').textContent = wonCount + ' Contracts Confirmed';
+        document.getElementById('service-lead-count-badge').textContent = filtered.length + ' leads';
+
+        var tbody = document.getElementById('service-leads-tbody');
+        tbody.innerHTML = '';
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-500">No Service or AMC leads found matching filters.</td></tr>`;
+          return;
+        }
+
+        filtered.forEach(function(l) {
+          var val = Number(l.estimatedValue) || 0;
+          var st = l.stage || l.status || 'Inquiry Ingestion';
+
+          var stageBadge = "bg-slate-800 text-slate-300 border-slate-700";
+          if (st === "Contract Won / Confirmed" || st === "Won") stageBadge = "bg-emerald-950 text-emerald-300 border-emerald-700/60";
+          else if (st === "Quotation Submitted" || st === "Scope & Pricing Evaluated") stageBadge = "bg-blue-950 text-blue-300 border-blue-700/60";
+          else if (st === "Site Inspection Scheduled") stageBadge = "bg-purple-950 text-purple-300 border-purple-700/60";
+          else if (st === "Commercial Negotiation") stageBadge = "bg-amber-950 text-amber-300 border-amber-700/60";
+          else if (st === "Lost") stageBadge = "bg-rose-950 text-rose-400 border-rose-700/60";
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-800/40 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4">
+              <div class="font-black text-amber-400 font-mono">${escapeHtml(l.leadNumber)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(l.createdDate || getFormattedToday())}</div>
+              <span class="inline-block mt-1 px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(l.leadSource || 'Direct')}</span>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-white text-xs">${escapeHtml(l.customerName)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Owner: <span class="text-indigo-300 font-semibold">${escapeHtml(l.employeeName || 'Priya Sharma')}</span></div>
+            </td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-950 text-amber-300 border border-amber-800/60">${escapeHtml(l.serviceType)}</span>
+              <div class="text-[10px] text-slate-400 mt-1 line-clamp-1" title="${escapeHtml(l.notes || '')}">${escapeHtml(l.notes || 'Service requirement')}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-semibold text-slate-200 text-xs">${escapeHtml(l.equipmentModel)}</div>
+              <div class="text-[10px] text-amber-300 font-mono mt-0.5">${escapeHtml(l.serialNumbers || 'S/N: N/A')}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-semibold text-white text-xs">${escapeHtml(l.contactPerson || 'Customer Contact')}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(l.contactPhone || '')}</div>
+            </td>
+            <td class="py-3 px-4 text-right">
+              <div class="font-black text-white">₹${val.toLocaleString('en-IN')}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Target: ${escapeHtml(l.targetDate || 'N/A')}</div>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${stageBadge}">${escapeHtml(st)}</span>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <div class="flex items-center justify-center space-x-1.5">
+                <button onclick="editServiceLead('${l.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer" title="Edit Service Lead">
+                  <i class="fa-solid fa-pen-to-square text-xs"></i>
+                </button>
+                <a href="quotations.html?quoteType=AMC&prefillCustomer=${encodeURIComponent(l.customerName)}&prefillModel=${encodeURIComponent(l.equipmentModel)}" class="p-1.5 bg-indigo-950 hover:bg-indigo-900 text-indigo-300 hover:text-white rounded-lg transition-colors border border-indigo-800/60 cursor-pointer" title="Generate AMC Quotation">
+                  <i class="fa-solid fa-file-invoice text-xs"></i>
+                </a>
+                <a href="amc-contracts.html" class="p-1.5 bg-amber-950 hover:bg-amber-900 text-amber-300 hover:text-white rounded-lg transition-colors border border-amber-800/60 cursor-pointer" title="Register to AMC Contracts">
+                  <i class="fa-solid fa-file-contract text-xs"></i>
+                </a>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function openServiceLeadModal() {
+        var form = document.getElementById('service-lead-form');
+        form.reset();
+        document.getElementById('service-lead-doc-id').value = '';
+        document.getElementById('service-lead-modal-title').textContent = "Record Service / AMC Lead";
+        
+        var today = new Date();
+        today.setDate(today.getDate() + 30);
+        var yyyy = today.getFullYear();
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var dd = String(today.getDate()).padStart(2, '0');
+        document.getElementById('inp-srv-target-date').value = yyyy + '-' + mm + '-' + dd;
+
+        document.getElementById('service-lead-modal').classList.remove('hidden');
+      }
+
+      function closeServiceLeadModal() {
+        document.getElementById('service-lead-modal').classList.add('hidden');
+      }
+
+      function editServiceLead(id) {
+        var leads = getServiceLeadsList();
+        var l = leads.find(function(item) { return item.id === id; });
+        if (!l) return;
+
+        document.getElementById('service-lead-doc-id').value = l.id;
+        document.getElementById('service-lead-modal-title').textContent = "Edit Service Lead (" + l.leadNumber + ")";
+        document.getElementById('inp-srv-customer').value = l.customerName || '';
+        document.getElementById('inp-srv-source').value = l.leadSource || 'AMC Warranty Expiry Conversion';
+        document.getElementById('inp-srv-type').value = l.serviceType || 'AMC Comprehensive';
+        document.getElementById('inp-srv-model').value = l.equipmentModel || '';
+        document.getElementById('inp-srv-serial').value = l.serialNumbers || '';
+        document.getElementById('inp-srv-value').value = l.estimatedValue || 180000;
+        document.getElementById('inp-srv-stage').value = l.stage || 'Inquiry Ingestion';
+        document.getElementById('inp-srv-target-date').value = l.targetDate || '';
+        document.getElementById('inp-srv-contact-name').value = l.contactPerson || '';
+        document.getElementById('inp-srv-contact-phone').value = l.contactPhone || '';
+        document.getElementById('inp-srv-contact-email').value = l.contactEmail || '';
+        document.getElementById('inp-srv-notes').value = l.notes || '';
+
+        document.getElementById('service-lead-modal').classList.remove('hidden');
+      }
+
+      function handleSaveServiceLead(e) {
+        e.preventDefault();
+        var docId = document.getElementById('service-lead-doc-id').value;
+        var leads = getServiceLeadsList();
+        var existing = docId ? leads.find(function(l) { return l.id === docId; }) : null;
+
+        var myEmpId = localStorage.getItem('employeeId') || 'E-004';
+        var myEmpName = localStorage.getItem('userName') || 'Priya Sharma';
+
+        var nextLeadNum = existing ? existing.leadNumber : ('SRV-LD-' + (new Date().getFullYear()) + '-' + String(leads.length + 1).padStart(3, '0'));
+
+        var newLead = {
+          id: docId || ('srv_lead_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+          leadNumber: nextLeadNum,
+          customerName: document.getElementById('inp-srv-customer').value.trim(),
+          leadSource: document.getElementById('inp-srv-source').value,
+          serviceType: document.getElementById('inp-srv-type').value,
+          equipmentModel: document.getElementById('inp-srv-model').value.trim(),
+          serialNumbers: document.getElementById('inp-srv-serial').value.trim(),
+          estimatedValue: Number(document.getElementById('inp-srv-value').value) || 0,
+          stage: document.getElementById('inp-srv-stage').value,
+          status: document.getElementById('inp-srv-stage').value,
+          targetDate: document.getElementById('inp-srv-target-date').value,
+          contactPerson: document.getElementById('inp-srv-contact-name').value.trim(),
+          contactPhone: document.getElementById('inp-srv-contact-phone').value.trim(),
+          contactEmail: document.getElementById('inp-srv-contact-email').value.trim(),
+          notes: document.getElementById('inp-srv-notes').value.trim(),
+          employeeId: existing ? existing.employeeId : myEmpId,
+          employeeName: existing ? existing.employeeName : myEmpName,
+          createdDate: existing ? existing.createdDate : getFormattedToday(),
+          financialYear: typeof getFinancialYear === 'function' ? getFinancialYear(document.getElementById('inp-srv-target-date').value) : '2026-27',
+          updatedAt: new Date().toISOString()
+        };
+
+        if (existing) {
+          var idx = leads.findIndex(function(l) { return l.id === docId; });
+          if (idx !== -1) leads[idx] = newLead;
+        } else {
+          leads.unshift(newLead);
+        }
+
+        if (window.RevOpsStore && window.RevOpsStore.saveCollection) {
+          window.RevOpsStore.saveCollection('serviceLeads', leads);
+          if (window.RevOpsStore.logAudit) {
+            window.RevOpsStore.logAudit('Service Leads', newLead.leadNumber, existing ? 'UPDATE' : 'CREATE', (existing ? 'Updated service lead ' : 'Created new service lead ') + newLead.leadNumber + ' - ' + newLead.customerName + ' (' + newLead.serviceType + ')', existing, newLead);
+          }
+        }
+
+        closeServiceLeadModal();
+        renderServiceFunnelBar();
+        renderServiceLeadsTable();
+      }
+
+      function exportServiceLeadsCSV() {
+        var leads = activeServiceLeads || [];
+        if (leads.length === 0) {
+          alert("No service leads to export.");
+          return;
+        }
+
+        var headers = ["LeadNumber", "CustomerName", "ServiceType", "LeadSource", "EquipmentModel", "SerialNumbers", "EstimatedValue_INR", "Stage", "TargetDate", "ContactPerson", "ContactPhone", "ContactEmail", "Owner", "Notes"];
+        var rows = leads.map(function(l) {
+          return [
+            l.leadNumber,
+            '"' + (l.customerName || '').replace(/"/g, '""') + '"',
+            l.serviceType,
+            l.leadSource,
+            '"' + (l.equipmentModel || '').replace(/"/g, '""') + '"',
+            '"' + (l.serialNumbers || '').replace(/"/g, '""') + '"',
+            l.estimatedValue || 0,
+            l.stage,
+            l.targetDate,
+            '"' + (l.contactPerson || '').replace(/"/g, '""') + '"',
+            l.contactPhone || '',
+            l.contactEmail || '',
+            '"' + (l.employeeName || '').replace(/"/g, '""') + '"',
+            '"' + (l.notes || '').replace(/"/g, '""') + '"'
+          ].join(',');
+        });
+
+        var csv = headers.join(',') + '\n' + rows.join('\n');
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", "MeasureDI_Service_AMC_Leads_" + new Date().toISOString().slice(0, 10) + ".csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    </script>
+  </body>
+</html>

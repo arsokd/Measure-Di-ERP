@@ -35,7 +35,7 @@
             <span>Orders & Commercial Contracts</span>
             <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/80">PO Booking</span>
           </h1>
-          <p class="text-xs text-slate-400 mt-1">Multi-contributor revenue splits for KRA/AOP attribution, customer PO & factory technical instructions, and Bank/Performance Guarantee (BG/PG) tracking.</p>
+          <p class="text-xs text-slate-400 mt-1">Customer-filtered quotations, 1st advance tracking, PO scan/image attachments, strict 100% sales contribution splits, and BG/Retention terms.</p>
         </div>
 
         <button onclick="openOrderModal()" class="px-4 py-2.5 bg-[#982B68] hover:bg-[#802256] text-white font-bold text-xs rounded-xl shadow-lg shadow-[#982B68]/30 transition-all flex items-center space-x-2 cursor-pointer">
@@ -44,8 +44,8 @@
         </button>
       </div>
 
-      <!-- 3 Summary KPI Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <!-- 4 Summary KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-md">
           <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders Booked</span>
           <div class="text-2xl font-black text-white mt-1" id="stat-won-count">0</div>
@@ -55,13 +55,19 @@
         <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-md">
           <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Contract Value (Excl. GST)</span>
           <div class="text-2xl font-black text-indigo-400 mt-1" id="stat-total-value">₹0</div>
-          <p class="text-[11px] text-slate-400 mt-1">Net Booked Revenue Recognized in AOP</p>
+          <p class="text-[11px] text-slate-400 mt-1">Net Booked Revenue in AOP</p>
+        </div>
+
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-md">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Expected 1st Advances</span>
+          <div class="text-2xl font-black text-amber-400 mt-1" id="stat-advance-total">₹0</div>
+          <p class="text-[11px] text-slate-400 mt-1">Agreed PO Milestone Advances</p>
         </div>
 
         <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-md">
           <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Average Order Size</span>
           <div class="text-2xl font-black text-emerald-400 mt-1" id="stat-avg-value">₹0</div>
-          <p class="text-[11px] text-slate-400 mt-1">Per Commercial Equipment & Turnkey Contract</p>
+          <p class="text-[11px] text-slate-400 mt-1">Per Commercial Contract</p>
         </div>
       </div>
 
@@ -99,9 +105,10 @@
                 <th class="py-3 px-4">PO Ref & Date</th>
                 <th class="py-3 px-4">Customer & Vertical</th>
                 <th class="py-3 px-4 text-right">Order Value (Excl. GST)</th>
+                <th class="py-3 px-4 text-right">Agreed 1st Advance</th>
                 <th class="py-3 px-4">Sales Contribution Split</th>
-                <th class="py-3 px-4">BG / PG Terms</th>
-                <th class="py-3 px-4">Factory Instructions</th>
+                <th class="py-3 px-4">PO Copy / Scan</th>
+                <th class="py-3 px-4">BG / Retention Terms</th>
                 <th class="py-3 px-4 text-center">Status</th>
                 <th class="py-3 px-4 text-center">Actions</th>
               </tr>
@@ -124,32 +131,69 @@
               <i class="fa-solid fa-file-contract text-purple-400"></i>
               <span>Book Commercial Order / PO</span>
             </h3>
-            <p class="text-xs text-slate-400">Link quotation, configure contribution split across sales team, attach PO & technical instructions</p>
+            <p class="text-xs text-slate-400">Customer-filtered quotations, 1st advance tracking, PO scan/image attachments, strict 100% sales contribution splits, and BG/Retention terms.</p>
           </div>
-          <button onclick="closeOrderModal()" class="text-slate-400 hover:text-white text-xl font-bold p-1">&times;</button>
+          <button onclick="closeOrderModal()" class="text-slate-400 hover:text-white text-xl font-bold p-1 cursor-pointer">&times;</button>
         </div>
 
         <form id="order-form" onsubmit="handleSaveOrder(event)" class="p-6 space-y-5 overflow-y-auto flex-1">
           <input type="hidden" id="ord-doc-id" />
+          <input type="hidden" id="ord-lead-id" />
+          <input type="hidden" id="ord-po-file-data" />
+          <input type="hidden" id="ord-po-file-name" />
 
-          <!-- Section 1: Customer & Quotation Linkage -->
+          <!-- Section 1: Customer & Quotation Selection (Customer Filters Quotes) -->
           <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
-            <div class="text-xs font-black uppercase text-purple-400 tracking-wider flex items-center gap-2">
-              <i class="fa-solid fa-link"></i>
-              <span>Quotation & Customer Linkage</span>
+            <div class="flex items-center justify-between">
+              <div class="text-xs font-black uppercase text-purple-400 tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-user-check"></i>
+                <span>Step 1: Choose Customer & Pending Quotation</span>
+              </div>
+              <span class="text-[10px] text-slate-400 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/60 font-semibold">
+                Customer-Specific Quote Filter Active
+              </span>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Customer Selection Dropdown -->
               <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Approved Quotation Linkage *</label>
-                <select id="inp-ord-quote" onchange="handleQuoteSelectForOrder()" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
-                  <!-- Populated dynamically with pending approved quotes -->
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Select Customer / Account *</label>
+                <select id="inp-ord-customer-select" onchange="onCustomerSelectedForOrder()" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500 cursor-pointer">
+                  <!-- Dynamically populated with unique customers -->
                 </select>
+                <input type="hidden" id="inp-ord-customer" />
               </div>
 
+              <!-- Pending Quotations Filtered for that Selected Customer -->
               <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Customer / Organization Name *</label>
-                <input type="text" id="inp-ord-customer" required placeholder="e.g. JSW Steel Limited" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                  Pending Approved Quotation *
+                </label>
+                <select id="inp-ord-quote" onchange="handleQuoteSelectForOrder()" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500 cursor-pointer">
+                  <!-- Populated dynamically based on chosen customer -->
+                </select>
+              </div>
+            </div>
+
+            <!-- Linked Lead & Quotation Info Badge Bar -->
+            <div id="linkage-info-box" class="hidden p-3 bg-slate-950 rounded-xl border border-slate-700/80 text-xs space-y-2">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+                <div>
+                  <span class="text-slate-400 block text-[10px] font-bold uppercase">Linked CRM Lead:</span>
+                  <span class="font-bold text-indigo-300 font-mono" id="disp-link-lead-no">None</span>
+                </div>
+                <div>
+                  <span class="text-slate-400 block text-[10px] font-bold uppercase">Primary Contact:</span>
+                  <span class="font-semibold text-white truncate block" id="disp-link-contact">-</span>
+                </div>
+                <div>
+                  <span class="text-slate-400 block text-[10px] font-bold uppercase">Quoted Net Value:</span>
+                  <span class="font-bold text-emerald-400" id="disp-link-quote-val">₹0</span>
+                </div>
+                <div>
+                  <span class="text-slate-400 block text-[10px] font-bold uppercase">Quotation Status:</span>
+                  <span class="font-bold text-sky-400" id="disp-link-quote-status">Approved</span>
+                </div>
               </div>
             </div>
 
@@ -163,22 +207,36 @@
                 <input type="date" id="inp-ord-podate" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Vertical *</label>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Industry Vertical *</label>
                 <select id="inp-ord-vertical" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
                   <option value="Projects">Projects</option>
                   <option value="Onboard">Onboard</option>
                   <option value="Crane">Crane</option>
-                  <option value="Service and Parts">Service and Parts</option>
                 </select>
               </div>
             </div>
           </div>
 
-          <!-- Section 2: Order Valuation & Commercials -->
+          <!-- Section 2: Order Valuation, Tax & 1st Advance Milestone -->
           <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
             <div class="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-2">
               <i class="fa-solid fa-indian-rupee-sign"></i>
-              <span>Contract Valuation & Tax Details</span>
+              <span>Contract Valuation, Tax Details & Agreed 1st Advance</span>
+            </div>
+
+            <!-- Dynamic Discrepancy & Reconcile Alert Banner -->
+            <div id="discrepancy-alert" class="hidden p-3 rounded-xl text-xs font-medium bg-amber-950/40 border border-amber-500/50 text-amber-300 space-y-1.5">
+              <div class="flex items-center space-x-2 font-bold text-amber-400">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span id="discrepancy-title">Quotation $\ne$ Final PO Value Variance Detected</span>
+              </div>
+              <p class="text-[11px] text-slate-300" id="discrepancy-desc">
+                The booked PO value differs from the initial quotation. The linked Quotation and Lead will be automatically updated and reconciled upon booking.
+              </p>
+              <label class="inline-flex items-center gap-2 mt-1 cursor-pointer">
+                <input type="checkbox" id="chk-auto-reconcile" checked class="rounded text-indigo-500" />
+                <span class="text-[11px] text-white font-bold">Auto-correct Quotation and Lead values to match this final PO</span>
+              </label>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -200,9 +258,33 @@
                 <input type="text" id="disp-ord-total" readonly class="w-full px-3 py-2 bg-slate-900 border border-slate-750 rounded-xl text-xs font-black text-emerald-400" value="₹0" />
               </div>
             </div>
+
+            <!-- First Advance Milestone (As per Quote & PO) -->
+            <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-750/80 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <i class="fa-solid fa-coins text-amber-400"></i>
+                  <span>Agreed First Advance Terms (From Quote & PO) *</span>
+                </span>
+                <span class="text-[10px] text-slate-400">Compared directly upon payment receipt</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-300 mb-1">First Advance Percentage (%)</label>
+                  <div class="flex items-center space-x-1.5">
+                    <input type="number" id="inp-ord-adv-pct" min="0" max="100" step="1" value="50" oninput="onAdvancePctChanged()" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-indigo-500" />
+                    <span class="text-xs text-slate-400 font-bold">%</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-slate-300 mb-1">Expected 1st Advance Amount (₹) *</label>
+                  <input type="number" id="inp-ord-adv-amt" min="0" step="1" oninput="onAdvanceAmtChanged()" placeholder="e.g. 2250000" class="w-full px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-black text-amber-300 focus:outline-none focus:border-indigo-500" />
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Section 3: Sales Contribution % Split (Feeds KRA / AOP Targets) -->
+          <!-- Section 3: Sales Contribution % Split (Strict 100% Mandatory) -->
           <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
             <div class="flex items-center justify-between">
               <div class="text-xs font-black uppercase text-emerald-400 tracking-wider flex items-center gap-2">
@@ -220,7 +302,7 @@
                 </button>
               </div>
             </div>
-            <p class="text-[11px] text-slate-400">Total contribution must equal <strong>exactly 100%</strong> (neither lesser nor higher). This splits revenue directly towards individual employee AOP achievement.</p>
+            <p class="text-[11px] text-slate-400">Total contribution must equal <strong>exactly 100.00%</strong>. This splits revenue directly towards individual employee AOP achievement.</p>
 
             <!-- Dynamic Live Validation Warning / Success Banner -->
             <div id="split-validation-alert" class="p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all"></div>
@@ -237,11 +319,11 @@
             </div>
           </div>
 
-          <!-- Section 4: Bank Guarantee & Performance Guarantee (BG / PG) -->
+          <!-- Section 4: Bank Guarantee & Performance Guarantee (BG / PG) + Retention Terms -->
           <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
             <div class="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-2">
               <i class="fa-solid fa-shield-halved"></i>
-              <span>Bank Guarantee / Performance Guarantee (BG/PG) Terms</span>
+              <span>Bank Guarantee / Performance Guarantee (BG/PG) & Retention Terms</span>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -254,8 +336,8 @@
               </div>
 
               <div id="bg-amount-box" class="hidden">
-                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">BG Amount (₹) / % of PO</label>
-                <input type="number" id="inp-ord-bgamt" placeholder="e.g. 450000 (10%)" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">BG / PG Amount (₹)</label>
+                <input type="number" id="inp-ord-bgamt" placeholder="e.g. 450000" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
               </div>
 
               <div id="bg-expiry-box" class="hidden">
@@ -263,20 +345,53 @@
                 <input type="date" id="inp-ord-bgdate" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
               </div>
             </div>
+
+            <!-- Retention & Warranty Period Settings -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-750/60">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Retention Condition in PO?</label>
+                <select id="inp-ord-retreq" onchange="toggleRetentionFields()" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                  <option value="No">No Payment Retention</option>
+                  <option value="Yes">Yes - Retention Amount to be Released After Warranty</option>
+                </select>
+              </div>
+
+              <div id="ret-amount-box" class="hidden">
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Retention Amount (₹) / %</label>
+                <input type="number" id="inp-ord-retamt" placeholder="e.g. 450000 (10%)" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+
+              <div id="ret-period-box" class="hidden">
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Warranty / Release Timeline</label>
+                <input type="text" id="inp-ord-retperiod" placeholder="e.g. 12 Months from commissioning" value="12 Months from Commissioning" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+            </div>
           </div>
 
-          <!-- Section 5: Purchase Order File & Factory Instructions -->
+          <!-- Section 5: Customer PO Copy (Image / PDF Attachment) & Factory Instructions -->
           <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
             <div class="text-xs font-black uppercase text-sky-400 tracking-wider flex items-center gap-2">
-              <i class="fa-solid fa-file-arrow-up"></i>
-              <span>Customer PO Copy & Technical Factory Instruction Document</span>
+              <i class="fa-solid fa-camera"></i>
+              <span>Customer PO Copy (Image / Scan / PDF) & Technical Factory Docs</span>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Customer PO Copy (PDF / Image) *</label>
-                <input type="file" id="inp-ord-pofile" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" class="w-full px-2 py-1.5 bg-slate-950 border border-slate-750 rounded-xl text-xs text-slate-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white cursor-pointer" />
-                <p class="text-[10px] text-slate-400 mt-1">Official signed purchase order document</p>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                  Customer PO Copy (Image / Photo / PDF) *
+                </label>
+                <input type="file" id="inp-ord-pofile" accept="image/png,image/jpeg,image/jpg,.pdf,.doc,.docx" onchange="handlePOFileSelected(event)" class="w-full px-2 py-1.5 bg-slate-950 border border-slate-750 rounded-xl text-xs text-slate-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white cursor-pointer" />
+                
+                <!-- Live PO Image Thumbnail Preview Box -->
+                <div id="po-image-preview-container" class="hidden mt-2 p-2 bg-slate-950 rounded-xl border border-slate-700 flex items-center gap-3">
+                  <img id="po-image-thumbnail" src="" alt="PO Preview" class="w-12 h-12 rounded object-cover border border-slate-600 cursor-pointer" onclick="viewPOImageFromPreview()" />
+                  <div class="text-xs flex-1 truncate">
+                    <span class="font-bold text-white block truncate" id="po-image-file-label">PO_Image.jpg</span>
+                    <span class="text-[10px] text-emerald-400 font-semibold">✓ Image Captured & Attached</span>
+                  </div>
+                  <button type="button" onclick="removePOImageAttachment()" class="text-rose-400 hover:text-rose-300 text-xs font-bold px-2 py-1 cursor-pointer">&times; Remove</button>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-1">Official signed purchase order document or direct camera snapshot</p>
               </div>
 
               <div>
@@ -294,15 +409,40 @@
             <button type="button" onclick="closeOrderModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer">Cancel</button>
             <button type="submit" class="px-5 py-2 bg-[#982B68] hover:bg-[#802256] text-white text-xs font-bold rounded-xl shadow-lg shadow-[#982B68]/30 transition-all cursor-pointer flex items-center gap-2">
               <i class="fa-solid fa-check"></i>
-              <span>Book Order & Save</span>
+              <span>Book Order & Auto-Reconcile</span>
             </button>
           </div>
         </form>
       </div>
     </div>
 
+    <!-- MODAL: Full Size PO Image & Document Viewer -->
+    <div id="po-viewer-modal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-slate-900 w-full max-w-2xl rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-5 py-3 bg-slate-850 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-image text-indigo-400"></i>
+            <h3 class="text-sm font-bold text-white" id="po-viewer-title">Customer Purchase Order Copy</h3>
+          </div>
+          <button onclick="closePOViewerModal()" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
+        </div>
+        <div class="p-4 overflow-auto flex-1 flex items-center justify-center bg-slate-950">
+          <img id="po-viewer-image" src="" alt="PO Copy" class="max-w-full max-h-[70vh] rounded-lg shadow-lg border border-slate-800 object-contain" />
+          <div id="po-viewer-doc-fallback" class="hidden text-center space-y-3 p-8">
+            <i class="fa-solid fa-file-pdf text-4xl text-rose-500"></i>
+            <div class="text-sm font-bold text-white" id="po-viewer-doc-name">PO_Document.pdf</div>
+            <p class="text-xs text-slate-400">PDF document attached with order record.</p>
+          </div>
+        </div>
+        <div class="px-5 py-2.5 bg-slate-850 border-t border-slate-800 flex justify-end">
+          <button onclick="closePOViewerModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold">Close</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       var currentSplits = [];
+      var activeSelectedQuote = null;
 
       document.addEventListener('DOMContentLoaded', function() {
         if (checkAuth(['admin', 'manager', 'staff'])) {
@@ -345,11 +485,73 @@
         }
       }
 
+      function toggleRetentionFields() {
+        var req = document.getElementById('inp-ord-retreq').value;
+        var amtBox = document.getElementById('ret-amount-box');
+        var perBox = document.getElementById('ret-period-box');
+        if (req === 'Yes') {
+          amtBox.classList.remove('hidden');
+          perBox.classList.remove('hidden');
+        } else {
+          amtBox.classList.add('hidden');
+          perBox.classList.add('hidden');
+        }
+      }
+
       function recalculateOrderTotals() {
         var val = Number(document.getElementById('inp-ord-value').value) || 0;
         var gstPct = Number(document.getElementById('inp-ord-gstpct').value) || 0;
         var total = val + (val * (gstPct / 100));
         document.getElementById('disp-ord-total').value = '₹' + Math.round(total).toLocaleString('en-IN');
+
+        // Auto calculate advance amount based on percentage
+        var advPct = Number(document.getElementById('inp-ord-adv-pct').value) || 0;
+        if (advPct > 0) {
+          var advAmt = Math.round(val * (advPct / 100));
+          document.getElementById('inp-ord-adv-amt').value = advAmt;
+        }
+
+        checkValuationDiscrepancy(val);
+      }
+
+      function onAdvancePctChanged() {
+        var val = Number(document.getElementById('inp-ord-value').value) || 0;
+        var pct = Number(document.getElementById('inp-ord-adv-pct').value) || 0;
+        var amt = Math.round(val * (pct / 100));
+        document.getElementById('inp-ord-adv-amt').value = amt;
+      }
+
+      function onAdvanceAmtChanged() {
+        var val = Number(document.getElementById('inp-ord-value').value) || 0;
+        var amt = Number(document.getElementById('inp-ord-adv-amt').value) || 0;
+        if (val > 0) {
+          var pct = (amt / val) * 100;
+          document.getElementById('inp-ord-adv-pct').value = parseFloat(pct.toFixed(2));
+        }
+      }
+
+      function checkValuationDiscrepancy(currentOrderVal) {
+        var alertBox = document.getElementById('discrepancy-alert');
+        var titleEl = document.getElementById('discrepancy-title');
+        var descEl = document.getElementById('discrepancy-desc');
+
+        if (!activeSelectedQuote) {
+          alertBox.classList.add('hidden');
+          return;
+        }
+
+        var quoteVal = Math.round(activeSelectedQuote.netTaxableAmount || activeSelectedQuote.grandTotal || 0);
+        var orderVal = Math.round(currentOrderVal);
+
+        if (orderVal > 0 && Math.abs(orderVal - quoteVal) > 10) {
+          var diff = orderVal - quoteVal;
+          var sign = diff > 0 ? '+' : '';
+          titleEl.innerHTML = `⚠️ Quotation & PO Discrepancy Detected (Variance: ${sign}₹${Math.abs(diff).toLocaleString('en-IN')})`;
+          descEl.innerHTML = `Approved Quotation Value is <strong>₹${quoteVal.toLocaleString('en-IN')}</strong> vs Final PO Value is <strong>₹${orderVal.toLocaleString('en-IN')}</strong>. Enabling the option below will auto-correct and align the Quotation and CRM Lead to match the final PO.`;
+          alertBox.classList.remove('hidden');
+        } else {
+          alertBox.classList.add('hidden');
+        }
       }
 
       function addSplitRow(existing) {
@@ -382,7 +584,6 @@
           return;
         }
 
-        // Even distribution with rounding correction on the first person
         var count = currentSplits.length;
         var base = Math.floor(100 / count);
         var remainder = 100 - (base * count);
@@ -424,7 +625,7 @@
             </div>
             <div class="col-span-4 sm:col-span-3">
               <div class="flex items-center space-x-1">
-                <input type="number" min="0" max="100" step="0.5" value="${s.percent}" oninput="currentSplits[${i}].percent = parseFloat(this.value) || 0; updateSplitTotal();" class="w-full px-2 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-bold text-center" />
+                <input type="number" min="0" max="100" step="0.5" value="${s.percent}" oninput="currentSplits[${i}].percent = parseFloat(this.value) || 0; updateSplitTotal();" class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-bold text-center" />
                 <span class="text-slate-400 font-bold">%</span>
               </div>
             </div>
@@ -458,7 +659,7 @@
             alertBox.innerHTML = `
               <div class="flex items-center space-x-2">
                 <i class="fa-solid fa-circle-check text-emerald-400"></i>
-                <span>Contribution split equals exactly <strong>100%</strong>. Order can be saved.</span>
+                <span>Contribution split equals exactly <strong>100.00%</strong>. Order can be saved.</span>
               </div>
             `;
           }
@@ -497,56 +698,225 @@
         }
       }
 
+      function populateCustomerOptions(selectedCustomer) {
+        var custSelect = document.getElementById('inp-ord-customer-select');
+        custSelect.innerHTML = '<option value="">-- Select Customer Account --</option>';
+
+        var quotes = window.RevOpsStore.getCollection('quotations') || [];
+        var leads = window.RevOpsStore.getCollection('leads') || [];
+
+        var customerSet = {};
+        quotes.forEach(function(q) { if (q.customerName) customerSet[q.customerName.trim()] = true; });
+        leads.forEach(function(l) { if (l.customerName) customerSet[l.customerName.trim()] = true; });
+
+        var sortedCustomers = Object.keys(customerSet).sort();
+        sortedCustomers.forEach(function(cust) {
+          var opt = document.createElement('option');
+          opt.value = cust;
+          opt.innerText = cust;
+          if (selectedCustomer && selectedCustomer.trim().toLowerCase() === cust.toLowerCase()) {
+            opt.selected = true;
+          }
+          custSelect.appendChild(opt);
+        });
+      }
+
+      function onCustomerSelectedForOrder() {
+        var customer = document.getElementById('inp-ord-customer-select').value;
+        document.getElementById('inp-ord-customer').value = customer;
+        populateCustomerQuotes(customer, null);
+      }
+
+      function populateCustomerQuotes(customerName, selectedQuoteId) {
+        var quoteSelect = document.getElementById('inp-ord-quote');
+        quoteSelect.innerHTML = '<option value="">-- Select Pending Quotation for ' + (customerName || 'Customer') + ' --</option>';
+
+        var quotes = window.RevOpsStore.getCollection('quotations') || [];
+        var filteredQuotes = quotes;
+
+        if (customerName) {
+          filteredQuotes = quotes.filter(function(q) {
+            return (q.customerName || '').trim().toLowerCase() === customerName.trim().toLowerCase();
+          });
+        }
+
+        if (filteredQuotes.length === 0) {
+          var opt = document.createElement('option');
+          opt.value = "";
+          opt.innerText = "(No pending quotations for " + customerName + " - Create Quote first)";
+          quoteSelect.appendChild(opt);
+          return;
+        }
+
+        filteredQuotes.forEach(function(q) {
+          var opt = document.createElement('option');
+          opt.value = q.id;
+          opt.innerText = (q.quoteNumber || q.id) + " - ₹" + Number(q.grandTotal || q.netTaxableAmount || 0).toLocaleString('en-IN') + " (" + (q.status || 'Approved') + ")";
+          if (selectedQuoteId && selectedQuoteId === q.id) {
+            opt.selected = true;
+          }
+          quoteSelect.appendChild(opt);
+        });
+
+        // If only 1 quote exists for this customer, auto-select it!
+        if (filteredQuotes.length === 1 && !selectedQuoteId) {
+          quoteSelect.value = filteredQuotes[0].id;
+          handleQuoteSelectForOrder();
+        }
+      }
+
       function handleQuoteSelectForOrder() {
         var quoteId = document.getElementById('inp-ord-quote').value;
-        if (!quoteId) return;
+        var infoBox = document.getElementById('linkage-info-box');
+        
+        if (!quoteId) {
+          activeSelectedQuote = null;
+          infoBox.classList.add('hidden');
+          document.getElementById('discrepancy-alert').classList.add('hidden');
+          return;
+        }
 
         var quotes = window.RevOpsStore.getCollection('quotations') || [];
         var q = quotes.find(function(item) { return item.id === quoteId; });
+        activeSelectedQuote = q;
+
         if (q) {
           document.getElementById('inp-ord-customer').value = q.customerName || '';
+          if (q.customerName) {
+            document.getElementById('inp-ord-customer-select').value = q.customerName.trim();
+          }
           if (q.vertical) document.getElementById('inp-ord-vertical').value = q.vertical;
           var netVal = q.netTaxableAmount || q.grandTotal || 0;
           document.getElementById('inp-ord-value').value = Math.round(netVal);
+          document.getElementById('ord-lead-id').value = q.leadId || '';
+
+          // Populate linkage details
+          infoBox.classList.remove('hidden');
+          document.getElementById('disp-link-lead-no').innerText = q.leadId || 'Direct Quote';
+          document.getElementById('disp-link-contact').innerText = q.contactPerson || q.customerEmail || q.customerName;
+          document.getElementById('disp-link-quote-val').innerText = '₹' + Number(netVal).toLocaleString('en-IN');
+          document.getElementById('disp-link-quote-status').innerText = q.status || 'Approved';
+
           recalculateOrderTotals();
         }
       }
 
+      function handlePOFileSelected(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+
+        document.getElementById('ord-po-file-name').value = file.name;
+        var previewContainer = document.getElementById('po-image-preview-container');
+        var thumbnail = document.getElementById('po-image-thumbnail');
+        var label = document.getElementById('po-image-file-label');
+
+        label.innerText = file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
+
+        if (file.type.startsWith('image/')) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            document.getElementById('ord-po-file-data').value = e.target.result;
+            thumbnail.src = e.target.result;
+            thumbnail.classList.remove('hidden');
+            previewContainer.classList.remove('hidden');
+          };
+          reader.readAsDataURL(file);
+        } else {
+          document.getElementById('ord-po-file-data').value = 'doc:' + file.name;
+          thumbnail.src = 'https://cdn-icons-png.flaticon.com/512/337/337946.png';
+          previewContainer.classList.remove('hidden');
+        }
+      }
+
+      function removePOImageAttachment() {
+        document.getElementById('inp-ord-pofile').value = '';
+        document.getElementById('ord-po-file-data').value = '';
+        document.getElementById('ord-po-file-name').value = '';
+        document.getElementById('po-image-preview-container').classList.add('hidden');
+      }
+
+      function viewPOImageFromPreview() {
+        var data = document.getElementById('ord-po-file-data').value;
+        var fileName = document.getElementById('ord-po-file-name').value || 'PO Copy';
+        showPOViewer(data, fileName);
+      }
+
+      function showPOViewer(fileData, fileName) {
+        var modal = document.getElementById('po-viewer-modal');
+        var img = document.getElementById('po-viewer-image');
+        var fallback = document.getElementById('po-viewer-doc-fallback');
+        var title = document.getElementById('po-viewer-title');
+
+        title.innerText = 'PO Copy: ' + (fileName || 'Document');
+
+        if (fileData && fileData.startsWith('data:image')) {
+          img.src = fileData;
+          img.classList.remove('hidden');
+          fallback.classList.add('hidden');
+        } else {
+          img.classList.add('hidden');
+          fallback.classList.remove('hidden');
+          document.getElementById('po-viewer-doc-name').innerText = fileName || 'PO_Attachment.pdf';
+        }
+
+        modal.classList.remove('hidden');
+      }
+
+      function closePOViewerModal() {
+        document.getElementById('po-viewer-modal').classList.add('hidden');
+      }
+
       function openOrderModal(orderData) {
         currentSplits = [];
+        activeSelectedQuote = null;
         var modal = document.getElementById('order-modal');
         var form = document.getElementById('order-form');
         form.reset();
-
-        // Populate pending approved quotations
-        var quotes = window.RevOpsStore.getCollection('quotations') || [];
-        var quoteSelect = document.getElementById('inp-ord-quote');
-        quoteSelect.innerHTML = '<option value="">-- Select Approved Quotation --</option>';
-        quotes.forEach(function(q) {
-          var opt = document.createElement('option');
-          opt.value = q.id;
-          opt.innerText = (q.quoteNumber || q.id) + " - " + q.customerName + " (₹" + Number(q.grandTotal || 0).toLocaleString('en-IN') + ")";
-          quoteSelect.appendChild(opt);
-        });
+        removePOImageAttachment();
+        document.getElementById('discrepancy-alert').classList.add('hidden');
+        document.getElementById('linkage-info-box').classList.add('hidden');
 
         if (orderData) {
           document.getElementById('order-modal-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-purple-400"></i> <span>Edit Commercial Order (${orderData.poNumber || orderData.id})</span>`;
           document.getElementById('ord-doc-id').value = orderData.id;
-          document.getElementById('inp-ord-quote').value = orderData.quotationId || '';
+          populateCustomerOptions(orderData.customerName);
           document.getElementById('inp-ord-customer').value = orderData.customerName || '';
+          populateCustomerQuotes(orderData.customerName, orderData.quotationId);
+
           document.getElementById('inp-ord-ponum').value = orderData.poNumber || '';
           document.getElementById('inp-ord-podate').value = orderData.poDate || '';
           document.getElementById('inp-ord-vertical').value = orderData.vertical || 'Projects';
           document.getElementById('inp-ord-value').value = orderData.orderValue || orderData.value || 0;
           document.getElementById('inp-ord-gstpct').value = orderData.gstPercent || 18;
+          document.getElementById('inp-ord-adv-pct').value = orderData.advancePercent || 50;
+          document.getElementById('inp-ord-adv-amt').value = orderData.expectedAdvanceAmount || Math.round((orderData.orderValue || 0) * 0.5);
+          document.getElementById('ord-lead-id').value = orderData.leadId || '';
+
+          if (orderData.poFileData) {
+            document.getElementById('ord-po-file-data').value = orderData.poFileData;
+            document.getElementById('ord-po-file-name').value = orderData.poFileName || 'PO_Scan.jpg';
+            document.getElementById('po-image-file-label').innerText = orderData.poFileName || 'PO_Scan.jpg';
+            document.getElementById('po-image-preview-container').classList.remove('hidden');
+            if (orderData.poFileData.startsWith('data:image')) {
+              document.getElementById('po-image-thumbnail').src = orderData.poFileData;
+            }
+          }
+
           recalculateOrderTotals();
 
           if (orderData.bgRequired === 'Yes') {
             document.getElementById('inp-ord-bgreq').value = 'Yes';
             document.getElementById('inp-ord-bgamt').value = orderData.bgAmount || '';
             document.getElementById('inp-ord-bgdate').value = orderData.bgExpiryDate || '';
-            toggleBgFields();
           }
+          toggleBgFields();
+
+          if (orderData.retentionRequired === 'Yes') {
+            document.getElementById('inp-ord-retreq').value = 'Yes';
+            document.getElementById('inp-ord-retamt').value = orderData.retentionAmount || '';
+            document.getElementById('inp-ord-retperiod').value = orderData.retentionPeriod || '12 Months from Commissioning';
+          }
+          toggleRetentionFields();
 
           if (orderData.splits && Array.isArray(orderData.splits)) {
             currentSplits = JSON.parse(JSON.stringify(orderData.splits));
@@ -557,9 +927,14 @@
           document.getElementById('order-modal-title').innerHTML = `<i class="fa-solid fa-file-contract text-purple-400"></i> <span>Book Commercial Order / PO</span>`;
           document.getElementById('ord-doc-id').value = '';
           document.getElementById('inp-ord-podate').value = new Date().toISOString().slice(0, 10);
+          populateCustomerOptions(null);
+          populateCustomerQuotes(null, null);
+
           var myEmpId = localStorage.getItem('employeeId') || 'E-002';
           currentSplits = [{ employeeId: myEmpId, percent: 100 }];
+          document.getElementById('inp-ord-adv-pct').value = '50';
           toggleBgFields();
+          toggleRetentionFields();
         }
 
         renderSplitRows();
@@ -605,16 +980,19 @@
           return textMatch;
         });
 
-        // Compute metrics
         var totalWon = filtered.length;
         var totalVal = 0;
+        var totalAdv = 0;
         filtered.forEach(function(o) {
-          totalVal += Number(o.orderValue) || Number(o.value) || 0;
+          var v = Number(o.orderValue) || Number(o.value) || 0;
+          totalVal += v;
+          totalAdv += Number(o.expectedAdvanceAmount) || Math.round(v * 0.5);
         });
         var avgVal = totalWon > 0 ? (totalVal / totalWon) : 0;
 
         document.getElementById('stat-won-count').innerText = totalWon;
         document.getElementById('stat-total-value').innerText = formatINR(totalVal);
+        document.getElementById('stat-advance-total').innerText = formatINR(totalAdv);
         document.getElementById('stat-avg-value').innerText = formatINR(avgVal);
         document.getElementById('order-count-badge').innerText = totalWon + ' orders';
 
@@ -622,12 +1000,14 @@
         tbody.innerHTML = '';
 
         if (filtered.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-500">No commercial orders found matching the filter.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-500">No commercial orders found matching the filter.</td></tr>`;
           return;
         }
 
         filtered.forEach(function(o) {
           var val = Number(o.orderValue) || Number(o.value) || 0;
+          var advVal = Number(o.expectedAdvanceAmount) || Math.round(val * 0.5);
+          var advPct = o.advancePercent || 50;
           var splits = o.splits || [{ employeeId: o.employeeId || 'E-002', percent: 100 }];
 
           var splitsHtml = splits.map(function(s) {
@@ -636,12 +1016,20 @@
             return `<div class="text-[10px]"><span class="font-bold text-white">${escapeHtml(name)}:</span> <span class="text-emerald-400 font-extrabold">${s.percent}%</span></div>`;
           }).join('');
 
+          var poFileHtml = o.poFileData ? `
+            <button onclick="showPOViewer('${escapeHtml(o.poFileData)}', '${escapeHtml(o.poFileName || 'PO Copy')}')" class="px-2 py-1 bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-camera text-indigo-400"></i>
+              <span>View PO Copy</span>
+            </button>
+          ` : `<span class="text-slate-500 text-[10px]">No file</span>`;
+
           var tr = document.createElement('tr');
           tr.className = "hover:bg-slate-800/40 transition-colors";
           tr.innerHTML = `
             <td class="py-3 px-4">
               <div class="font-black text-indigo-400 font-mono">${escapeHtml(o.poNumber || o.id)}</div>
               <div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(o.poDate || o.orderDate || getFormattedToday())}</div>
+              ${o.quotationId ? `<div class="text-[9px] text-purple-400 font-semibold font-mono mt-0.5">Ref Quote: ${escapeHtml(o.quotationId)}</div>` : ''}
             </td>
             <td class="py-3 px-4">
               <div class="font-bold text-white">${escapeHtml(o.customerName)}</div>
@@ -651,21 +1039,26 @@
               <div class="font-black text-white">₹${Number(val).toLocaleString('en-IN')}</div>
               <div class="text-[10px] text-slate-400">+18% GST</div>
             </td>
+            <td class="py-3 px-4 text-right">
+              <div class="font-black text-amber-300">₹${Number(advVal).toLocaleString('en-IN')}</div>
+              <div class="text-[10px] text-slate-400">${advPct}% 1st Advance</div>
+            </td>
             <td class="py-3 px-4 space-y-0.5">
               ${splitsHtml}
             </td>
             <td class="py-3 px-4">
-              ${o.bgRequired === 'Yes' ? `
-                <div class="text-[11px] font-bold text-amber-300">₹${Number(o.bgAmount || 0).toLocaleString('en-IN')}</div>
-                <div class="text-[10px] text-slate-400">Exp: ${escapeHtml(o.bgExpiryDate || 'N/A')}</div>
-              ` : `<span class="text-slate-500 text-[11px]">No BG</span>`}
+              ${poFileHtml}
             </td>
             <td class="py-3 px-4">
-              ${o.factoryDocAttached ? `
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 text-sky-300 border border-sky-800/60">
-                  <i class="fa-solid fa-file-pdf mr-1"></i> Attached
-                </span>
-              ` : `<span class="text-slate-500 text-[10px]">Standard Specs</span>`}
+              ${o.bgRequired === 'Yes' ? `
+                <div class="text-[10px] font-bold text-amber-300">BG: ₹${Number(o.bgAmount || 0).toLocaleString('en-IN')}</div>
+                <div class="text-[9px] text-slate-400">Exp: ${escapeHtml(o.bgExpiryDate || 'N/A')}</div>
+              ` : ''}
+              ${o.retentionRequired === 'Yes' ? `
+                <div class="text-[10px] font-bold text-purple-300">Ret: ₹${Number(o.retentionAmount || 0).toLocaleString('en-IN')}</div>
+                <div class="text-[9px] text-slate-400">${escapeHtml(o.retentionPeriod || 'Post-Warranty')}</div>
+              ` : ''}
+              ${o.bgRequired !== 'Yes' && o.retentionRequired !== 'Yes' ? `<span class="text-slate-500 text-[11px]">Standard Terms</span>` : ''}
             </td>
             <td class="py-3 px-4 text-center">
               <span class="px-2 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-950 text-emerald-300 border border-emerald-700/60">
@@ -673,7 +1066,7 @@
               </span>
             </td>
             <td class="py-3 px-4 text-center">
-              <button onclick="editOrder('${o.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg transition-colors" title="Edit Order Details">
+              <button onclick="editOrder('${o.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg transition-colors cursor-pointer" title="Edit Order Details">
                 <i class="fa-solid fa-pen-to-square text-xs"></i>
               </button>
             </td>
@@ -693,7 +1086,7 @@
       function handleSaveOrder(e) {
         e.preventDefault();
 
-        // Validate splits total strictly equals 100% (neither lesser nor higher)
+        // Validate splits total strictly equals 100%
         var totalSplit = 0;
         currentSplits.forEach(function(s) { totalSplit += parseFloat(s.percent) || 0; });
         totalSplit = Math.round(totalSplit * 100) / 100;
@@ -718,32 +1111,51 @@
         var existingOrder = docId ? (window.RevOpsStore.getCollection('orders') || []).find(function(o) { return o.id === docId; }) : null;
 
         var poNum = document.getElementById('inp-ord-ponum').value.trim();
+        var poDate = document.getElementById('inp-ord-podate').value;
+        var customerName = (document.getElementById('inp-ord-customer-select').value || document.getElementById('inp-ord-customer').value).trim();
+        var vertical = document.getElementById('inp-ord-vertical').value;
         var val = Number(document.getElementById('inp-ord-value').value) || 0;
         var gstPct = Number(document.getElementById('inp-ord-gstpct').value) || 18;
         var gstAmount = val * (gstPct / 100);
+        var advPct = Number(document.getElementById('inp-ord-adv-pct').value) || 50;
+        var advAmt = Number(document.getElementById('inp-ord-adv-amt').value) || Math.round(val * (advPct / 100));
 
         var bgReq = document.getElementById('inp-ord-bgreq').value;
+        var retReq = document.getElementById('inp-ord-retreq').value;
         var quoteId = document.getElementById('inp-ord-quote').value;
+        var leadId = document.getElementById('ord-lead-id').value;
+        var autoReconcile = document.getElementById('chk-auto-reconcile') ? document.getElementById('chk-auto-reconcile').checked : true;
+
+        var poFileData = document.getElementById('ord-po-file-data').value || (existingOrder ? existingOrder.poFileData : '');
+        var poFileName = document.getElementById('ord-po-file-name').value || (existingOrder ? existingOrder.poFileName : '');
 
         var newOrder = {
           id: docId || ('ord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
           quotationId: quoteId,
+          leadId: leadId,
           poNumber: poNum,
-          poDate: document.getElementById('inp-ord-podate').value,
-          customerName: document.getElementById('inp-ord-customer').value.trim(),
-          vertical: document.getElementById('inp-ord-vertical').value,
+          poDate: poDate,
+          customerName: customerName,
+          vertical: vertical,
           orderValue: val,
           value: val,
           gstPercent: gstPct,
           gstAmount: gstAmount,
           totalWithGst: val + gstAmount,
+          advancePercent: advPct,
+          expectedAdvanceAmount: advAmt,
           splits: currentSplits,
           employeeId: currentSplits[0].employeeId,
           employeeName: 'Sales Team',
           bgRequired: bgReq,
           bgAmount: bgReq === 'Yes' ? Number(document.getElementById('inp-ord-bgamt').value) : 0,
           bgExpiryDate: bgReq === 'Yes' ? document.getElementById('inp-ord-bgdate').value : '',
+          retentionRequired: retReq,
+          retentionAmount: retReq === 'Yes' ? Number(document.getElementById('inp-ord-retamt').value) : 0,
+          retentionPeriod: retReq === 'Yes' ? document.getElementById('inp-ord-retperiod').value : '',
           factoryDocAttached: !document.getElementById('inp-no-fac-doc').checked,
+          poFileData: poFileData,
+          poFileName: poFileName,
           status: 'Booked',
           createdDate: existingOrder ? existingOrder.createdDate : getFormattedToday(),
           createdAt: existingOrder ? existingOrder.createdAt : new Date().toISOString(),
@@ -752,28 +1164,75 @@
 
         window.RevOpsStore.saveRecord('orders', newOrder);
 
-        // Update Lead Funnel status to 'Order Confirmed'
-        if (quoteId) {
+        // 1. RECONCILE & UPDATE LINKED QUOTATION
+        if (quoteId && autoReconcile) {
           var quotes = window.RevOpsStore.getCollection('quotations') || [];
           var q = quotes.find(function(it) { return it.id === quoteId; });
-          if (q && q.leadId) {
-            var leads = window.RevOpsStore.getCollection('leads') || [];
-            var l = leads.find(function(it) { return it.id === q.leadId; });
-            if (l) {
-              l.stage = 'Order Confirmed';
-              l.status = 'Order Confirmed';
-              window.RevOpsStore.saveRecord('leads', l);
+          if (q) {
+            var oldQuoteState = JSON.parse(JSON.stringify(q));
+            q.status = 'Order Booked / Won';
+            q.poNumber = poNum;
+            q.poDate = poDate;
+            q.netTaxableAmount = val;
+            q.grandTotal = Math.round(val + gstAmount);
+            q.expectedAdvanceAmount = advAmt;
+            q.updatedAt = new Date().toISOString();
+            
+            if (q.items && q.items.length === 1) {
+              q.items[0].unitPrice = val;
+            }
+
+            window.RevOpsStore.saveRecord('quotations', q);
+
+            if (!leadId && q.leadId) leadId = q.leadId;
+
+            if (window.RevOpsStore.logAudit) {
+              window.RevOpsStore.logAudit(
+                'Quotations',
+                q.quoteNumber || q.id,
+                'UPDATE',
+                'Auto-reconciled quotation details to match final PO ' + poNum + ' (Valuation: ₹' + val.toLocaleString('en-IN') + ', 1st Advance: ₹' + advAmt.toLocaleString('en-IN') + ')',
+                oldQuoteState,
+                q
+              );
             }
           }
         }
 
-        // Log to Universal Audit Trail
+        // 2. RECONCILE & UPDATE LINKED CRM LEAD
+        if (leadId && autoReconcile) {
+          var leads = window.RevOpsStore.getCollection('leads') || [];
+          var l = leads.find(function(it) { return it.id === leadId; });
+          if (l) {
+            var oldLeadState = JSON.parse(JSON.stringify(l));
+            l.stage = 'Order Confirmed';
+            l.status = 'Order Confirmed';
+            l.poNumber = poNum;
+            l.poDate = poDate;
+            l.estimatedValue = val;
+            l.updatedAt = new Date().toISOString();
+            window.RevOpsStore.saveRecord('leads', l);
+
+            if (window.RevOpsStore.logAudit) {
+              window.RevOpsStore.logAudit(
+                'Leads',
+                l.id,
+                'UPDATE',
+                'Advanced CRM Lead to "Order Confirmed" and updated value to final PO ' + poNum + ' (₹' + val.toLocaleString('en-IN') + ')',
+                oldLeadState,
+                l
+              );
+            }
+          }
+        }
+
+        // 3. LOG AUDIT ENTRY FOR ORDER
         if (window.RevOpsStore.logAudit) {
           window.RevOpsStore.logAudit(
             'Orders',
             newOrder.poNumber,
             existingOrder ? 'UPDATE' : 'CREATE',
-            (existingOrder ? 'Updated commercial order ' : 'Booked new commercial order ') + newOrder.customerName + ' (₹' + val.toLocaleString('en-IN') + ')',
+            (existingOrder ? 'Updated commercial order ' : 'Booked new commercial order ') + newOrder.customerName + ' (PO #' + poNum + ', ₹' + val.toLocaleString('en-IN') + ', 1st Advance: ₹' + advAmt.toLocaleString('en-IN') + ')',
             existingOrder,
             newOrder
           );

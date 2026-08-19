@@ -34,12 +34,39 @@
           <a href="invoices.html" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center space-x-1.5">
             <span>🧾 Commercial Invoices</span>
           </a>
+          <button onclick="downloadPgBgReceivablesCsv()" class="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-200 shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer" title="Download Performance Guarantee & Retention Receivables List">
+            <span>📥 Export PG/BG Due List</span>
+          </button>
           <button onclick="openAdjustmentModal()" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer">
             <span>⚖️ + Request Adjustment / Write-Off</span>
           </button>
           <button onclick="openPaymentModal()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             <span>+ Record Payment Collection</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- In-App Alert: Bank Guarantee / Performance Guarantee / Warranty Expiry Alert Banner -->
+      <div id="pg-bg-expiry-alert" class="hidden bg-gradient-to-r from-amber-50 via-rose-50 to-amber-50 border-2 border-amber-300 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-xl bg-amber-600 text-white flex items-center justify-center font-black text-xl shadow-xs shrink-0">
+            🔔
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-amber-950 uppercase tracking-wide flex items-center gap-2">
+              <span>Performance Guarantee (PG) / Bank Guarantee Release Alert</span>
+              <span id="pending-pgbg-count" class="px-2 py-0.5 bg-amber-700 text-white rounded-full text-[11px] font-black">0</span>
+            </h3>
+            <p class="text-xs text-amber-900 mt-0.5" id="pending-pgbg-text">Guarantees or retention amounts reached warranty maturity or stipulated collection date in PO entry.</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2 shrink-0">
+          <button onclick="downloadPgBgReceivablesCsv()" class="px-3.5 py-2 bg-white hover:bg-amber-100 text-amber-900 text-xs font-bold rounded-xl border border-amber-300 shadow-xs transition-colors cursor-pointer">
+            📥 Download List (CSV)
+          </button>
+          <button onclick="switchPaymentView('pg_bg')" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex items-center space-x-1.5">
+            <span>View PG/BG Details &rarr;</span>
           </button>
         </div>
       </div>
@@ -74,7 +101,7 @@
         <div class="bg-white p-4.5 rounded-2xl shadow-xs border border-slate-200 space-y-1">
           <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-600">Realized Collections</span>
           <div class="text-xl font-black text-emerald-600" id="stat-collected-total">Rs.0</div>
-          <p class="text-[10px] text-slate-400">Cleared in Bank + TDS Deductions</p>
+          <p class="text-[10px] text-slate-400">Accounts Cleared & Bank Verified</p>
         </div>
 
         <div class="bg-white p-4.5 rounded-2xl shadow-xs border border-slate-200 space-y-1">
@@ -105,20 +132,23 @@
             
             <!-- View Tabs -->
             <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs" id="payment-view-tabs">
-              <button onclick="switchPaymentView('transactions')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-pointer" data-view="transactions">
+              <button onclick="switchPaymentView('transactions')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-pointer whitespace-nowrap" data-view="transactions">
                 💳 Payment Receipts & Ledger (<span id="count-view-trans">0</span>)
               </button>
-              <button onclick="switchPaymentView('client_ar')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer" data-view="client_ar">
+              <button onclick="switchPaymentView('client_ar')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer whitespace-nowrap" data-view="client_ar">
                 👥 Client-wise Outstanding & Aging
               </button>
-              <button onclick="switchPaymentView('project_ar')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer" data-view="project_ar">
+              <button onclick="switchPaymentView('project_ar')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer whitespace-nowrap" data-view="project_ar">
                 📦 Project / Order-wise Receivables
               </button>
-              <button onclick="switchPaymentView('salesrep_ar')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer" data-view="salesrep_ar">
-                🎯 Sales Person Recovery Performance
+              <button onclick="switchPaymentView('salesrep_ar')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer whitespace-nowrap" data-view="salesrep_ar">
+                🎯 Sales Person Recovery
               </button>
-              <button onclick="switchPaymentView('adjustments')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer" data-view="adjustments">
-                ⚖️ Adjustments & Director Write-Offs (<span id="count-view-adj">0</span>)
+              <button onclick="switchPaymentView('pg_bg')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer whitespace-nowrap" data-view="pg_bg">
+                🛡️ PG / BG & Retention (<span id="count-view-pgbg">0</span>)
+              </button>
+              <button onclick="switchPaymentView('adjustments')" class="view-tab-btn px-4 py-2 font-bold rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer whitespace-nowrap" data-view="adjustments">
+                ⚖️ Adjustments & Write-Offs (<span id="count-view-adj">0</span>)
               </button>
             </div>
 
@@ -232,7 +262,42 @@
           </table>
         </div>
 
-        <!-- VIEW 5: AR Adjustments & Director-Approved Write-Offs -->
+        <!-- VIEW 5: Performance Guarantee (PG), Bank Guarantee (BG) & Retention Receivables -->
+        <div id="view-section-pg_bg" class="hidden overflow-x-auto p-4 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-amber-50/70 p-4 rounded-xl border border-amber-200">
+            <div>
+              <h3 class="text-sm font-black text-amber-950 flex items-center gap-2">
+                <span>🛡️ Bank Guarantee (BG), Performance Guarantee (PG) & Retention Receivables</span>
+                <span class="px-2 py-0.5 bg-amber-200 text-amber-900 rounded text-[10px] font-extrabold uppercase">Warranty / Contract Release</span>
+              </h3>
+              <p class="text-xs text-amber-900 mt-0.5">Tracks financial security deposits, PBGs, and retention amounts tied to order contracts, commissioning sign-offs, and warranty periods.</p>
+            </div>
+            <button onclick="downloadPgBgReceivablesCsv()" class="px-4 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 cursor-pointer flex items-center space-x-1.5">
+              <span>📥 Download PG/BG Due List (CSV)</span>
+            </button>
+          </div>
+
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th class="py-3 px-4">Client Organization</th>
+                <th class="py-3 px-4">PO / Contract Ref</th>
+                <th class="py-3 px-4">Invoice Ref</th>
+                <th class="py-3 px-4">Security Type</th>
+                <th class="py-3 px-4 text-right">Guarantee / Retention (₹)</th>
+                <th class="py-3 px-4">Stipulated Period / Warranty</th>
+                <th class="py-3 px-4">Release Due Date</th>
+                <th class="py-3 px-4 text-center">Alert Status</th>
+                <th class="py-3 px-4 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="pgbg-ar-tbody" class="divide-y divide-slate-100 text-xs">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- VIEW 6: AR Adjustments & Director-Approved Write-Offs -->
         <div id="view-section-adjustments" class="hidden overflow-x-auto p-4 space-y-4">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-purple-50/60 p-4 rounded-xl border border-purple-200">
             <div>
@@ -307,22 +372,41 @@
             </select>
 
             <!-- Real-time Invoice Financial Context Snapshot -->
-            <div id="inv-financial-snapshot" class="hidden grid grid-cols-4 gap-2 pt-1 text-[11px]">
-              <div class="bg-white p-2 rounded border border-indigo-100">
-                <span class="text-slate-400 block text-[9px] uppercase">Invoice Total</span>
-                <span class="font-black text-slate-900" id="snap-inv-total">Rs.0</span>
+            <div id="inv-financial-snapshot" class="hidden space-y-2 pt-1">
+              <div class="grid grid-cols-4 gap-2 text-[11px]">
+                <div class="bg-white p-2 rounded border border-indigo-100">
+                  <span class="text-slate-400 block text-[9px] uppercase">Invoice Total</span>
+                  <span class="font-black text-slate-900" id="snap-inv-total">Rs.0</span>
+                </div>
+                <div class="bg-white p-2 rounded border border-indigo-100">
+                  <span class="text-slate-400 block text-[9px] uppercase">Paid (Cash+TDS)</span>
+                  <span class="font-bold text-emerald-600" id="snap-inv-paid">Rs.0</span>
+                </div>
+                <div class="bg-white p-2 rounded border border-indigo-100">
+                  <span class="text-slate-400 block text-[9px] uppercase">Prior Adjustments</span>
+                  <span class="font-bold text-purple-700" id="snap-inv-adj">Rs.0</span>
+                </div>
+                <div class="bg-white p-2 rounded border border-indigo-100">
+                  <span class="text-slate-400 block text-[9px] uppercase">Current Balance</span>
+                  <span class="font-black text-amber-600" id="snap-inv-bal">Rs.0</span>
+                </div>
               </div>
-              <div class="bg-white p-2 rounded border border-indigo-100">
-                <span class="text-slate-400 block text-[9px] uppercase">Paid (Cash+TDS)</span>
-                <span class="font-bold text-emerald-600" id="snap-inv-paid">Rs.0</span>
-              </div>
-              <div class="bg-white p-2 rounded border border-indigo-100">
-                <span class="text-slate-400 block text-[9px] uppercase">Prior Adjustments</span>
-                <span class="font-bold text-purple-700" id="snap-inv-adj">Rs.0</span>
-              </div>
-              <div class="bg-white p-2 rounded border border-indigo-100">
-                <span class="text-slate-400 block text-[9px] uppercase">Current Balance</span>
-                <span class="font-black text-amber-600" id="snap-inv-bal">Rs.0</span>
+
+              <!-- Agreed 1st Advance from PO / Quote Comparison Banner -->
+              <div id="snap-po-advance-box" class="hidden p-2.5 bg-amber-50 border border-amber-300 rounded-xl text-xs flex flex-col space-y-1">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <span class="font-extrabold text-amber-900">📌 Agreed PO 1st Advance:</span>
+                    <span class="font-black text-amber-800" id="snap-po-adv-val">₹0</span>
+                    <span class="text-[10px] text-amber-700 font-semibold" id="snap-po-adv-tag">(PO Terms)</span>
+                  </div>
+                  <div class="text-[11px] font-bold text-slate-700" id="snap-po-adv-diff">
+                    Checking...
+                  </div>
+                </div>
+                <div id="snap-po-advance-alert" class="hidden text-[10px] font-bold text-rose-800 bg-rose-100/80 p-1.5 rounded-lg border border-rose-200">
+                  ⚠️ Advance Shortfall / Variance Alert: The collection amount differs from the agreed 1st Advance stipulated in PO. This will be automatically communicated in the client acknowledgement email.
+                </div>
               </div>
             </div>
           </div>
@@ -337,6 +421,25 @@
             <div>
               <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Invoice Number (Reference)</label>
               <input type="text" id="inp-pay-invoice" placeholder="INV/2026-27/001" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+            </div>
+          </div>
+
+          <!-- Payment Reason (Prescribed 5-Option Dropdown) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Payment reason *</label>
+              <select id="inp-pay-reason" required onchange="onPaymentReasonChanged(this.value)" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="Advance">Advance</option>
+                <option value="Part payment">Part payment</option>
+                <option value="Final payment">Final payment</option>
+                <option value="Final payment after write-off">Final payment after write-off</option>
+                <option value="Final payment after goodwill adjustment">Final payment after goodwill adjustment</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Date *</label>
+              <input type="text" id="inp-pay-date" required placeholder="DD/MM/YYYY" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </div>
           </div>
 
@@ -389,23 +492,12 @@
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Date *</label>
-              <input type="text" id="inp-pay-date" required placeholder="DD/MM/YYYY" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Payment Type / Milestone</label>
-              <input type="text" id="inp-pay-milestone" placeholder="e.g. 30% Advance Payment / Final Balance" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-            </div>
-
-            <div>
-              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Status *</label>
+              <label class="block font-bold text-slate-700 uppercase tracking-wider mb-1">Validation & Verification Status *</label>
               <select id="inp-pay-status" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option value="Cleared">Cleared (Funds in Bank)</option>
-                <option value="Pending Clearance">Pending Clearance (Cheque in transit)</option>
+                <option value="Cleared">Cleared & Bank Verified (Accounts Approved)</option>
+                <option value="Pending Accounts Verification" selected>Pending Accounts Verification (Recorded by Staff)</option>
               </select>
+              <p class="text-[10px] text-slate-400 mt-1">Note: Only payments verified & cleared by Finance/Accounts reflect in Revenue Dashboard.</p>
             </div>
           </div>
 
@@ -783,6 +875,9 @@
         document.getElementById('view-section-client_ar').classList.toggle('hidden', viewName !== 'client_ar');
         document.getElementById('view-section-project_ar').classList.toggle('hidden', viewName !== 'project_ar');
         document.getElementById('view-section-salesrep_ar').classList.toggle('hidden', viewName !== 'salesrep_ar');
+        if (document.getElementById('view-section-pg_bg')) {
+          document.getElementById('view-section-pg_bg').classList.toggle('hidden', viewName !== 'pg_bg');
+        }
         document.getElementById('view-section-adjustments').classList.toggle('hidden', viewName !== 'adjustments');
 
         renderActivePaymentView();
@@ -895,10 +990,77 @@
         document.getElementById('snap-inv-bal').innerText = formatINR(balance);
         snapBox.classList.remove('hidden');
 
+        // Check for linked Order / Quote 1st Advance terms
+        var orders = window.RevOpsStore.getCollection('orders') || [];
+        var quotes = window.RevOpsStore.getCollection('quotations') || [];
+        var invList = window.RevOpsStore.getCollection('invoices') || [];
+        var currentInv = invList.find(function(i) { return i.id === invId; });
+        
+        var linkedOrder = null;
+        if (currentInv) {
+          linkedOrder = orders.find(function(o) {
+            return (o.poNumber && o.poNumber === currentInv.poNumber) ||
+                   (o.customerName && currentInv.customerName && o.customerName.trim().toLowerCase() === currentInv.customerName.trim().toLowerCase());
+          });
+        }
+
+        var advBox = document.getElementById('snap-po-advance-box');
+        if (linkedOrder && (linkedOrder.expectedAdvanceAmount || linkedOrder.advancePercent)) {
+          var advAmt = Number(linkedOrder.expectedAdvanceAmount) || Math.round((Number(linkedOrder.orderValue) || 0) * 0.5);
+          var advPct = linkedOrder.advancePercent || 50;
+          document.getElementById('snap-po-adv-val').innerText = formatINR(advAmt);
+          document.getElementById('snap-po-adv-tag').innerText = `(${advPct}% of PO #${linkedOrder.poNumber || 'PO'})`;
+          
+          var diffVal = paid - advAmt;
+          var diffEl = document.getElementById('snap-po-adv-diff');
+          if (paid === 0) {
+            diffEl.innerHTML = `<span class="text-amber-800 font-bold">1st Advance Pending (Agreed: ${formatINR(advAmt)})</span>`;
+          } else if (paid >= advAmt) {
+            diffEl.innerHTML = `<span class="text-emerald-700 font-bold">✓ 1st Advance Received in Full (${formatINR(paid)})</span>`;
+          } else {
+            diffEl.innerHTML = `<span class="text-rose-700 font-bold">Partial Advance (${formatINR(paid)} / ${formatINR(advAmt)})</span>`;
+          }
+          advBox.classList.remove('hidden');
+        } else {
+          advBox.classList.add('hidden');
+        }
+
         // Sync client filter dropdown if not already set
         var clientSelect = document.getElementById('inp-pay-client-select');
         if (clientSelect && !clientSelect.value && customer) {
           clientSelect.value = customer;
+        }
+
+        calculateRemainingBalancePreview();
+      }
+
+      function onPaymentReasonChanged(selectedReason) {
+        var milestoneInp = document.getElementById('inp-pay-milestone');
+        var select = document.getElementById('inp-pay-invoice-select');
+        var amountInp = document.getElementById('inp-pay-amount');
+
+        if (selectedReason === 'Advance') {
+          milestoneInp.value = '1st Milestone Advance Payment against Purchase Order';
+          // If linked PO has expected advance, auto-suggest it
+          var advValElem = document.getElementById('snap-po-adv-val');
+          if (advValElem && advValElem.innerText && advValElem.innerText.indexOf('Rs.') !== -1) {
+            var rawAdv = parseInt(advValElem.innerText.replace(/[^0-9]/g, ''), 10);
+            if (!isNaN(rawAdv) && rawAdv > 0) {
+              amountInp.value = rawAdv;
+            }
+          }
+        } else if (selectedReason === 'Final payment') {
+          milestoneInp.value = 'Final Invoice Settlement / Balance Closure';
+          if (select && select.value) {
+            var opt = select.options[select.selectedIndex];
+            if (opt) amountInp.value = Number(opt.getAttribute('data-balance')) || 0;
+          }
+        } else if (selectedReason === 'Final payment after write-off') {
+          milestoneInp.value = 'Final Settlement (Post Director-Approved Write-Off)';
+        } else if (selectedReason === 'Final payment after goodwill adjustment') {
+          milestoneInp.value = 'Final Settlement (Post Commercial Goodwill Concession)';
+        } else {
+          milestoneInp.value = 'Part Milestone Payment';
         }
 
         calculateRemainingBalancePreview();
@@ -919,6 +1081,28 @@
 
         document.getElementById('prev-total-settlement').innerText = formatINR(totalSettled);
         document.getElementById('prev-new-balance').innerText = formatINR(newBal);
+
+        // Advance variance checking
+        var reasonSelect = document.getElementById('inp-pay-reason');
+        var isAdvance = reasonSelect && reasonSelect.value === 'Advance';
+        var advBox = document.getElementById('snap-po-advance-box');
+        var diffEl = document.getElementById('snap-po-adv-diff');
+
+        if (isAdvance && advBox && !advBox.classList.contains('hidden') && diffEl) {
+          var advValElem = document.getElementById('snap-po-adv-val');
+          var rawAgreedAdv = parseInt((advValElem.innerText || '').replace(/[^0-9]/g, ''), 10) || 0;
+          if (rawAgreedAdv > 0) {
+            if (totalSettled === rawAgreedAdv) {
+              diffEl.innerHTML = `<span class="text-emerald-700 font-bold">✓ Entered advance exactly matches agreed PO terms (${formatINR(totalSettled)})</span>`;
+            } else if (totalSettled < rawAgreedAdv) {
+              var shortfall = rawAgreedAdv - totalSettled;
+              diffEl.innerHTML = `<span class="text-amber-800 font-bold">⚠️ Advance shortfall of ${formatINR(shortfall)} (Entered: ${formatINR(totalSettled)} vs Agreed: ${formatINR(rawAgreedAdv)})</span>`;
+            } else {
+              var surplus = totalSettled - rawAgreedAdv;
+              diffEl.innerHTML = `<span class="text-indigo-700 font-bold">ℹ️ Advance surplus of ${formatINR(surplus)} over agreed initial advance (${formatINR(rawAgreedAdv)})</span>`;
+            }
+          }
+        }
       }
 
       function renderActivePaymentView() {
@@ -988,6 +1172,26 @@
           }
         }
 
+        // PG / BG / Retention Expiry & Action Needed Alert Banner check
+        var pgbgReceivables = typeof window.RevOpsStore.getPgBgReceivables === 'function' ? window.RevOpsStore.getPgBgReceivables() : [];
+        var dueSoonOrExpiredPgBg = pgbgReceivables.filter(function(item) {
+          return !item.isReleased && (item.status.indexOf('Due Soon') !== -1 || item.status.indexOf('Overdue') !== -1);
+        });
+
+        var pgbgAlertBanner = document.getElementById('pgbg-due-alert');
+        var pgbgCountBadge = document.getElementById('pgbg-alert-count');
+        var pgbgTabCount = document.getElementById('count-view-pgbg');
+        if (pgbgTabCount) pgbgTabCount.innerText = pgbgReceivables.length;
+
+        if (pgbgAlertBanner && pgbgCountBadge) {
+          if (dueSoonOrExpiredPgBg.length > 0) {
+            pgbgAlertBanner.classList.remove('hidden');
+            pgbgCountBadge.innerText = dueSoonOrExpiredPgBg.length;
+          } else {
+            pgbgAlertBanner.classList.add('hidden');
+          }
+        }
+
         // Render current view
         if (currentPaymentView === 'transactions') {
           renderTransactionsView(payments, invoices, selectedFy, userRole, myEmpId, selectedEmp, searchQuery);
@@ -997,9 +1201,149 @@
           renderProjectArView(invoices, payments, selectedFy, searchQuery);
         } else if (currentPaymentView === 'salesrep_ar') {
           renderSalesRepArView(invoices, payments, selectedFy, searchQuery);
+        } else if (currentPaymentView === 'pg_bg') {
+          renderPgBgView(pgbgReceivables, searchQuery);
         } else if (currentPaymentView === 'adjustments') {
           renderAdjustmentsView(arAdjustments, invoices, selectedFy, userRole, myEmpId, searchQuery);
         }
+      }
+
+      // VIEW: Performance Guarantee (PG), Bank Guarantee (BG) & Warranty Retention Receivables
+      function renderPgBgView(pgbgList, searchQuery) {
+        var filtered = pgbgList.filter(function(item) {
+          var textMatch = (item.clientName || '').toLowerCase().includes(searchQuery) ||
+                          (item.poNumber || '').toLowerCase().includes(searchQuery) ||
+                          (item.invoiceNumber || '').toLowerCase().includes(searchQuery) ||
+                          (item.securityType || '').toLowerCase().includes(searchQuery) ||
+                          (item.bankBranch || '').toLowerCase().includes(searchQuery);
+          return textMatch;
+        });
+
+        var tabBadge = document.getElementById('count-view-pgbg');
+        if (tabBadge) tabBadge.innerText = pgbgList.length;
+
+        var tbody = document.getElementById('pgbg-ar-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = "";
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="9" class="py-8 text-center text-slate-400">No Bank Guarantee (BG), Performance Guarantee (PG), or Retention records found.</td></tr>`;
+          return;
+        }
+
+        filtered.forEach(function(item) {
+          var alertClass = "bg-emerald-50 text-emerald-800 border border-emerald-200";
+          if (item.status.indexOf('Overdue') !== -1) {
+            alertClass = "bg-rose-100 text-rose-900 font-extrabold border border-rose-300 animate-pulse";
+          } else if (item.status.indexOf('Due Soon') !== -1) {
+            alertClass = "bg-amber-100 text-amber-900 font-bold border border-amber-300";
+          } else if (item.status.indexOf('Released') !== -1) {
+            alertClass = "bg-slate-100 text-slate-700 font-semibold";
+          }
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900">${escapeHtml(item.clientName)}</div>
+              <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(item.bankBranch || 'Bank Guarantee Reference')}</div>
+            </td>
+            <td class="py-3 px-4 font-mono font-bold text-indigo-700">
+              ${escapeHtml(item.poNumber)}
+            </td>
+            <td class="py-3 px-4 font-mono text-slate-700">
+              ${escapeHtml(item.invoiceNumber || '--')}
+            </td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 text-slate-800 border border-slate-200">
+                ${escapeHtml(item.securityType)}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-right font-black text-amber-900 text-sm">
+              ${formatINR(item.guaranteeAmount)}
+            </td>
+            <td class="py-3 px-4 text-slate-700 max-w-xs text-[11px]">
+              <div class="font-semibold">${escapeHtml(item.stipulatedPeriod)}</div>
+              <div class="text-[10px] text-slate-400">Valid From: ${escapeHtml(item.validFrom || '--')}</div>
+            </td>
+            <td class="py-3 px-4 font-mono font-bold text-slate-900">
+              <div>${escapeHtml(item.releaseDueDate)}</div>
+              <span class="text-[10px] ${item.daysRemaining < 0 ? 'text-rose-700 font-black' : (item.daysRemaining <= 30 ? 'text-amber-700 font-bold' : 'text-slate-400')}">
+                ${item.isReleased ? 'Released' : (item.daysRemaining < 0 ? Math.abs(item.daysRemaining) + ' days overdue' : item.daysRemaining + ' days left')}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase ${alertClass}">
+                ${escapeHtml(item.status)}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-center whitespace-nowrap">
+              ${item.isReleased ? `
+                <span class="text-[10px] text-emerald-700 font-black">✓ Released</span>
+              ` : `
+                <button onclick="releasePgBgSecurityPrompt('${escapeHtml(item.id)}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-xs cursor-pointer">
+                  🔓 Release / Collect
+                </button>
+              `}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function releasePgBgSecurityPrompt(recId) {
+        var pgbgList = window.RevOpsStore.getPgBgReceivables();
+        var rec = pgbgList.find(function(it) { return it.id === recId; });
+        if (!rec) return;
+
+        var confirmMsg = "Confirm Release / Refund of " + rec.securityType + " for " + rec.clientName + "?\n\nGuarantee Amount: " + formatINR(rec.guaranteeAmount) + "\nPO Ref: " + rec.poNumber + "\n\nHas client issued the official BG Surrender / Release Discharge note?";
+        if (confirm(confirmMsg)) {
+          var res = window.RevOpsStore.releasePgBgSecurity(recId, {
+            date: getFormattedToday(),
+            amount: rec.guaranteeAmount,
+            remarks: "Released and collected after warranty / performance completion."
+          });
+          if (res.success) {
+            alert("✅ " + rec.securityType + " released and marked collected successfully!");
+            renderActivePaymentView();
+          }
+        }
+      }
+
+      // Downloadable PG/BG Receivables Due List in CSV format
+      function downloadPgBgReceivablesCsv() {
+        var pgbgList = window.RevOpsStore.getPgBgReceivables() || [];
+        if (pgbgList.length === 0) {
+          alert("No Performance Guarantee / Bank Guarantee records to export.");
+          return;
+        }
+
+        var headers = ["Client Organization", "PO Number", "Invoice Ref", "Security Type", "Guarantee Amount (INR)", "Stipulated Period / Warranty", "Valid From", "Release Due Date", "Days Remaining / Overdue", "Alert Status", "Bank & Branch Narration", "Remarks"];
+        var rows = pgbgList.map(function(item) {
+          return [
+            `"${(item.clientName || '').replace(/"/g, '""')}"`,
+            `"${(item.poNumber || '').replace(/"/g, '""')}"`,
+            `"${(item.invoiceNumber || '').replace(/"/g, '""')}"`,
+            `"${(item.securityType || '').replace(/"/g, '""')}"`,
+            Number(item.guaranteeAmount) || 0,
+            `"${(item.stipulatedPeriod || '').replace(/"/g, '""')}"`,
+            `"${(item.validFrom || '').replace(/"/g, '""')}"`,
+            `"${(item.releaseDueDate || '').replace(/"/g, '""')}"`,
+            item.daysRemaining,
+            `"${(item.status || '').replace(/"/g, '""')}"`,
+            `"${(item.bankBranch || '').replace(/"/g, '""')}"`,
+            `"${(item.remarks || '').replace(/"/g, '""')}"`
+          ].join(',');
+        });
+
+        var csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+        var encodedUri = encodeURI(csvContent);
+        var link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Measure_DI_PG_BG_Receivables_Report_${getFormattedToday().replace(/\//g, '-')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
 
       function renderAdjustmentsView(arAdjustments, invoices, selectedFy, userRole, myEmpId, searchQuery) {
@@ -1546,6 +1890,7 @@
           var textMatch = (p.customerName || '').toLowerCase().includes(searchQuery) ||
                           (p.invoiceNumber || '').toLowerCase().includes(searchQuery) ||
                           (p.receiptNumber || '').toLowerCase().includes(searchQuery) ||
+                          (p.paymentReason || '').toLowerCase().includes(searchQuery) ||
                           (p.utrNumber || '').toLowerCase().includes(searchQuery);
           return textMatch;
         });
@@ -1560,8 +1905,21 @@
         }
 
         filtered.forEach(function(p) {
-          var statusPill = (p.status === "Cleared") ? "bg-emerald-100 text-emerald-800 font-bold" : "bg-amber-100 text-amber-800";
+          var isCleared = (p.status === "Cleared" || p.status === "Approved");
+          var statusPill = isCleared ? "bg-emerald-100 text-emerald-800 font-bold border border-emerald-300" : "bg-amber-100 text-amber-800 font-bold border border-amber-300 animate-pulse";
           var receiptNum = p.receiptNumber || ('REC-2026-' + p.id.slice(-3));
+
+          // Reason Pill Color
+          var reasonColor = "bg-indigo-50 text-indigo-700 border-indigo-200";
+          if (p.paymentReason === 'Advance') {
+            reasonColor = "bg-purple-50 text-purple-700 border-purple-200 font-black";
+          } else if (p.paymentReason && p.paymentReason.indexOf('write-off') !== -1) {
+            reasonColor = "bg-rose-50 text-rose-800 border-rose-200 font-bold";
+          } else if (p.paymentReason && p.paymentReason.indexOf('goodwill') !== -1) {
+            reasonColor = "bg-amber-50 text-amber-800 border-amber-200 font-bold";
+          } else if (p.paymentReason === 'Final payment') {
+            reasonColor = "bg-emerald-50 text-emerald-800 border-emerald-200 font-bold";
+          }
 
           var tr = document.createElement('tr');
           tr.className = "hover:bg-slate-50 transition-colors";
@@ -1569,6 +1927,11 @@
             <td class="py-3 px-4">
               <div class="font-bold text-slate-900 font-mono text-[11px]">${escapeHtml(receiptNum)}</div>
               <div class="text-[10px] text-slate-400 font-mono">${escapeHtml(p.paymentDate)}</div>
+              ${p.paymentReason ? `
+                <span class="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[9px] uppercase border ${reasonColor}">
+                  ${escapeHtml(p.paymentReason)}
+                </span>
+              ` : ''}
             </td>
             <td class="py-3 px-4">
               <div class="font-bold text-slate-900">${escapeHtml(p.customerName)}</div>
@@ -1588,7 +1951,14 @@
               ${p.utrNumber ? `<span class="block text-[10px] text-slate-400 font-mono">Ref: ${escapeHtml(p.utrNumber)}</span>` : ''}
             </td>
             <td class="py-3 px-4 text-center">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase ${statusPill}">${escapeHtml(p.status)}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase ${statusPill}">
+                ${isCleared ? '✓ Cleared' : '⏳ Pending Accounts Verification'}
+              </span>
+              ${!isCleared && (userRole === 'admin' || userRole === 'super_admin' || userRole === 'manager') ? `
+                <button onclick="verifyPaymentDirectly('${escapeHtml(p.id)}')" class="mt-1 block mx-auto px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[9px] font-bold shadow-xs cursor-pointer" title="Accounts Department Verification">
+                  ✓ Verify in Bank
+                </button>
+              ` : ''}
             </td>
             <td class="py-3 px-4 text-center">
               <button onclick="openSendReceiptModal('${escapeHtml(p.id)}')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-[10px] cursor-pointer" title="Email Settlement Receipt to Client">
@@ -1603,6 +1973,21 @@
           `;
           tbody.appendChild(tr);
         });
+      }
+
+      function verifyPaymentDirectly(payId) {
+        var userRole = localStorage.getItem('userRole');
+        var myName = localStorage.getItem('userName') || 'Finance & Accounts Team';
+
+        if (confirm("Confirm bank clearance and finance verification for this payment collection?\n\nThis will instantly clear the receipt and credit real-time revenue dashboards.")) {
+          var res = window.RevOpsStore.verifyPaymentByAccounts(payId, myName, userRole);
+          if (res.success) {
+            alert("✅ Payment collection verified & cleared by Finance! Revenue accounts updated.");
+            renderActivePaymentView();
+          } else {
+            alert("Error: " + (res.error || "Could not verify payment"));
+          }
+        }
       }
 
       function renderClientArView(invoices, payments, selectedFy, searchQuery) {
@@ -1808,6 +2193,7 @@
       }
 
       function openPaymentModal(prefillInvoiceId) {
+        var userRole = localStorage.getItem('userRole');
         document.getElementById('payment-doc-id').value = "";
         document.getElementById('payment-modal-title').innerText = "Record Payment Collection";
 
@@ -1819,11 +2205,12 @@
         document.getElementById('inp-pay-invoice').value = "";
         document.getElementById('inp-pay-amount').value = 500000;
         document.getElementById('inp-pay-tds').value = 0;
+        document.getElementById('inp-pay-reason').value = "Advance";
         document.getElementById('inp-pay-mode').value = "NEFT/RTGS";
         document.getElementById('inp-pay-utr').value = "";
         document.getElementById('inp-pay-date').value = getFormattedToday();
-        document.getElementById('inp-pay-status').value = "Cleared";
-        document.getElementById('inp-pay-milestone').value = "Milestone Settlement";
+        document.getElementById('inp-pay-status').value = (userRole === 'admin' || userRole === 'super_admin' || userRole === 'manager') ? "Cleared" : "Pending Accounts Verification";
+        document.getElementById('inp-pay-milestone').value = "1st Milestone Advance Payment against Purchase Order";
         document.getElementById('inp-pay-remarks').value = "";
 
         if (prefillInvoiceId) {
@@ -1846,11 +2233,16 @@
         var docId = document.getElementById('payment-doc-id').value;
         var myEmpId = localStorage.getItem('employeeId');
         var myName = localStorage.getItem('userName');
+        var userRole = localStorage.getItem('userRole');
 
         var invoiceId = document.getElementById('inp-pay-invoice-select').value;
         var invoiceNumber = document.getElementById('inp-pay-invoice').value.trim();
         var amount = Number(document.getElementById('inp-pay-amount').value) || 0;
         var tdsAmount = Number(document.getElementById('inp-pay-tds').value) || 0;
+        var paymentReason = document.getElementById('inp-pay-reason').value;
+        var statusVal = document.getElementById('inp-pay-status').value;
+
+        var isCleared = (statusVal === 'Cleared' || statusVal === 'Approved');
 
         var receiptNumber = docId ? '' : window.RevOpsStore.generateNextReceiptNumber();
 
@@ -1860,12 +2252,16 @@
           customerName: document.getElementById('inp-pay-customer').value.trim(),
           amount: amount,
           tdsAmount: tdsAmount,
+          paymentReason: paymentReason,
           paymentMode: document.getElementById('inp-pay-mode').value,
           utrNumber: document.getElementById('inp-pay-utr').value.trim(),
           bankAccount: document.getElementById('inp-pay-bank').value,
           paymentDate: document.getElementById('inp-pay-date').value.trim(),
           paymentMilestone: document.getElementById('inp-pay-milestone').value.trim(),
-          status: document.getElementById('inp-pay-status').value,
+          status: statusVal,
+          verifiedByAccounts: isCleared,
+          accountsVerifiedAt: isCleared ? new Date().toISOString() : null,
+          accountsApproverName: isCleared ? myName : null,
           remarks: document.getElementById('inp-pay-remarks').value.trim(),
           employeeId: myEmpId,
           employeeName: myName,
@@ -1894,7 +2290,11 @@
         renderActivePaymentView();
 
         // Prompt to email receipt
-        if (confirm("✅ Payment collection recorded successfully! Receipt Ref: " + (payData.receiptNumber || 'REC') + ".\n\nWould you like to send the official Payment Settlement Receipt to the client now?")) {
+        var confirmationMsg = isCleared ? 
+          ("✅ Payment collection recorded & verified! Receipt Ref: " + (payData.receiptNumber || 'REC') + ".\n\nWould you like to send the official Payment Settlement Receipt to the client now?") :
+          ("✅ Payment collection recorded (Pending Accounts Verification). Receipt Ref: " + (payData.receiptNumber || 'REC') + ".\n\nWould you like to compose the acknowledgement email for the client now?");
+
+        if (confirm(confirmationMsg)) {
           openSendReceiptModal(savedDocId);
         }
       }
@@ -1917,6 +2317,7 @@
         document.getElementById('inp-pay-invoice').value = p.invoiceNumber || '';
         document.getElementById('inp-pay-amount').value = p.amount;
         document.getElementById('inp-pay-tds').value = p.tdsAmount || 0;
+        document.getElementById('inp-pay-reason').value = p.paymentReason || 'Part payment';
         document.getElementById('inp-pay-mode').value = p.paymentMode;
         document.getElementById('inp-pay-utr').value = p.utrNumber || '';
         document.getElementById('inp-pay-bank').value = p.bankAccount || document.getElementById('inp-pay-bank').options[0].value;
@@ -2102,30 +2503,91 @@
         var tdsAmt = Number(p.tdsAmount) || 0;
         var totalSettled = netAmt + tdsAmt;
 
-        var remainingBalNote = linkedInv ? `Remaining Invoice Balance: ${formatINR(linkedInv.balanceDue)}` : `Status: Cleared`;
+        // Build complete payment history & write-off breakdown for this invoice
+        var allPayments = window.RevOpsStore.getCollection('payments') || [];
+        var linkedPayments = allPayments.filter(function(pay) {
+          return linkedInv && (pay.invoiceId === linkedInv.id || pay.invoiceNumber === linkedInv.invoiceNumber);
+        }).sort(function(a, b) {
+          return new Date(a.paymentDate) - new Date(b.paymentDate);
+        });
 
-        var body = `Dear ${p.customerName} Team,
+        var allAdjustments = window.RevOpsStore.getCollection('arAdjustments') || [];
+        var linkedAdjustments = allAdjustments.filter(function(adj) {
+          return linkedInv && (adj.invoiceId === linkedInv.id || adj.invoiceNumber === linkedInv.invoiceNumber) && (adj.status === 'Approved' || adj.status === 'Approved by Director');
+        });
+
+        var historyLines = [];
+        var cumulativePaid = 0;
+        linkedPayments.forEach(function(pay, idx) {
+          var pNet = Number(pay.amount) || 0;
+          var pTds = Number(pay.tdsAmount) || 0;
+          var pTot = pNet + pTds;
+          cumulativePaid += pTot;
+          var isThis = (pay.id === p.id);
+          historyLines.push(`  ${idx + 1}. [${pay.paymentDate}] Receipt #${pay.receiptNumber || 'REC'} - ${formatINR(pNet)}${pTds > 0 ? ' + TDS ' + formatINR(pTds) : ''} via ${pay.paymentMode} (Ref: ${pay.utrNumber || 'N/A'})${isThis ? '  <-- [THIS TRANSACTION]' : ''}`);
+        });
+
+        var writeOffNotes = [];
+        if (linkedAdjustments.length > 0) {
+          linkedAdjustments.forEach(function(adj) {
+            writeOffNotes.push(`• Concession / Write-Off: ${adj.adjustmentNumber || adj.refNumber} | Amount: ${formatINR(adj.amount)} | Type: ${adj.type} | Authorized by Director (${adj.directorApproval ? adj.directorApproval.approvedBy : 'Board of Directors'})`);
+          });
+        }
+
+        var balanceStatement = "";
+        if (linkedInv) {
+          if (linkedInv.balanceDue <= 0.01) {
+            if (linkedInv.writeOffAmount > 0) {
+              balanceStatement = `\n>>> INVOICE ACCOUNT STATUS: FULLY SETTLED & CLOSED (Post Director-Approved Write-Off of ${formatINR(linkedInv.writeOffAmount)})`;
+            } else if (linkedInv.adjustmentAmount > 0) {
+              balanceStatement = `\n>>> INVOICE ACCOUNT STATUS: FULLY SETTLED & CLOSED (Post Commercial Adjustment of ${formatINR(linkedInv.adjustmentAmount)})`;
+            } else {
+              balanceStatement = `\n>>> INVOICE ACCOUNT STATUS: 100% FULLY PAID & RECONCILED (Balance: Rs.0.00)`;
+            }
+          } else {
+            balanceStatement = `\n>>> REMAINING PENDING BALANCE: ${formatINR(linkedInv.balanceDue)} (Due for remittance)`;
+          }
+        }
+
+        var body = `Dear ${p.customerName} Accounts & Procurement Team,
 
 Greetings from Measure DI Technologies Private Limited.
 
-We gratefully acknowledge receipt of your payment for the amount of ${formatINR(netAmt)}${tdsAmt > 0 ? ' (plus TDS of ' + formatINR(tdsAmt) + ')' : ''} towards Invoice Ref: ${p.invoiceNumber || '--'}.
+We gratefully acknowledge receipt of your remittance of ${formatINR(netAmt)}${tdsAmt > 0 ? ' (plus TDS deduction of ' + formatINR(tdsAmt) + ')' : ''} towards Invoice Ref: ${p.invoiceNumber || '--'}.
 
-Payment Receipt Details:
+=======================================================
+CURRENT REMITTANCE ACKNOWLEDGEMENT DETAILS
+=======================================================
 - Official Receipt Number: ${receiptNum}
 - Receipt Date: ${p.paymentDate}
-- Customer: ${p.customerName}
-- Total Settled Amount: ${formatINR(totalSettled)}
-- Payment Mode: ${p.paymentMode}
+- Customer Name: ${p.customerName}
+- Purpose / Milestone: ${p.paymentMilestone || p.paymentReason || 'Commercial Invoice Settlement'}
+- Payment Reason Category: ${p.paymentReason || 'Milestone Collection'}
+- Net Amount Credited: ${formatINR(netAmt)}
+- TDS Deducted: ${tdsAmt > 0 ? formatINR(tdsAmt) : 'Rs.0 (Nil)'}
+- Total Settlement Value: ${formatINR(totalSettled)}
+- Remittance Mode: ${p.paymentMode}
 - Bank Reference / UTR Number: ${p.utrNumber || 'N/A'}
-- ${remainingBalNote}
+- Beneficiary Bank Account: ${p.bankAccount || 'HDFC Bank - 50200049283719'}
 
-Our official Payment Settlement Receipt voucher is attached herewith for your accounting records.
+=======================================================
+INVOICE CUMULATIVE PAYMENT & LEDGER STATEMENT
+=======================================================
+- Commercial Invoice Number: ${p.invoiceNumber || '--'}
+- Total Invoice Grand Total: ${linkedInv ? formatINR(linkedInv.grandTotal) : 'N/A'}
+- Total Payments Credited to Date: ${formatINR(cumulativePaid)}
+${historyLines.length > 0 ? '\nPayment History Breakdown:\n' + historyLines.join('\n') : ''}
+${writeOffNotes.length > 0 ? '\nAuthorized Adjustments / Write-Offs:\n' + writeOffNotes.join('\n') : ''}
+${balanceStatement}
 
-Thank you for your valued partnership.
+Our official stamped & digitally authorized Payment Settlement Receipt voucher (${receiptNum}.pdf) is attached herewith for your records and accounts reconciliation.
+
+Thank you for your valued partnership with Measure DI Technologies.
 
 Warm regards,
 Finance & Accounts Operations
-Measure DI Technologies Pvt Ltd
+Measure DI Technologies Private Limited
+Plot No. 42, SIDCO Industrial Estate, Guindy, Chennai - 600032
 Mobile: +91 98406 29928 | Email: measuredichennai@gmail.com`;
 
         document.getElementById('inp-rec-body').value = body;

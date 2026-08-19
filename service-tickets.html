@@ -485,12 +485,23 @@
           <button onclick="closeRaiseTicketModal()" class="p-1 text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
         </div>
 
+        <!-- Task 10: 10-Day Repeat Complaint Alert Banner -->
+        <div id="repeat-10day-alert-banner" class="hidden p-3 rounded-xl bg-amber-500/10 border-2 border-amber-500 text-amber-900 space-y-1 text-xs">
+          <div class="flex items-center space-x-2 font-black text-amber-800">
+            <span class="text-base">🚨</span>
+            <span class="uppercase tracking-wider">QC Warning: Repeat Defect within 10 Days</span>
+          </div>
+          <p id="repeat-10day-alert-text" class="text-[11px] text-amber-800 font-medium">
+            This equipment was resolved recently. A new ticket within 10 days will be flagged for Quality Audit.
+          </p>
+        </div>
+
         <form id="form-raise-ticket" onsubmit="handleRaiseTicketSubmit(event)" class="space-y-4 text-xs">
           
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block font-bold text-slate-700 mb-1">Ticket Number (Auto)</label>
-              <input type="text" id="input-ticket-num" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 font-bold text-slate-600" />
+              <label class="block font-bold text-slate-700 mb-1">Ticket Number (System Generated)</label>
+              <input type="text" id="input-ticket-num" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2 font-mono font-bold text-[#982B68]" />
             </div>
 
             <div>
@@ -501,18 +512,19 @@
             </div>
           </div>
 
+          <!-- Task 2: Cascading Equipment Model & Serial Number -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block font-bold text-slate-700 mb-1">Equipment Model *</label>
-              <select id="input-equipment-model" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
-                <option value="">-- Select Equipment Model --</option>
+              <label class="block font-bold text-slate-700 mb-1">Equipment Model * <span class="text-[10px] text-slate-400 font-normal">(Filtered by Customer)</span></label>
+              <select id="input-equipment-model" required onchange="handleModelSelectChange(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
+                <option value="">-- First Select Customer --</option>
               </select>
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 mb-1">Equipment Serial Number *</label>
-              <select id="input-equipment-serial" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
-                <option value="">-- Select Serial Number --</option>
+              <label class="block font-bold text-slate-700 mb-1">Equipment Serial Number * <span class="text-[10px] text-slate-400 font-normal">(Filtered by Model)</span></label>
+              <select id="input-equipment-serial" required onchange="handleSerialSelectChange(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#982B68]">
+                <option value="">-- First Select Model --</option>
               </select>
             </div>
           </div>
@@ -527,9 +539,10 @@
               </select>
             </div>
 
+            <!-- Task 3: Complaint Category with 'Other' Option -->
             <div>
               <label class="block font-bold text-slate-700 mb-1">Complaint Category *</label>
-              <select id="input-category" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+              <select id="input-category" required onchange="handleCategorySelectChange(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
                 <option value="Load Cell Drift">Load Cell Drift</option>
                 <option value="Display Communication Failure">Display Communication Failure</option>
                 <option value="Scale Calibration Error">Scale Calibration Error</option>
@@ -537,6 +550,7 @@
                 <option value="Software Sync Disruption">Software Sync Disruption</option>
                 <option value="Power Supply Surge">Power Supply Surge</option>
                 <option value="General Maintenance">General Maintenance</option>
+                <option value="Other">Other (Enter Manually...)</option>
               </select>
             </div>
 
@@ -549,6 +563,12 @@
                 <option value="Low">Low (SLA 120 Hrs)</option>
               </select>
             </div>
+          </div>
+
+          <!-- Task 3: Manual Input for 'Other' Category -->
+          <div id="wrapper-category-other" class="hidden">
+            <label class="block font-bold text-[#982B68] mb-1">Specify Custom Complaint Category *</label>
+            <input type="text" id="input-category-other" placeholder="Enter custom complaint category name..." class="w-full bg-slate-50 border border-[#982B68] rounded-lg p-2 font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#982B68]" />
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -580,8 +600,24 @@
             <textarea id="input-description" required rows="3" placeholder="Describe issue symptoms, site conditions, voltage spikes, moisture exposure..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#982B68]"></textarea>
           </div>
 
+          <!-- Task 6: Image Attachment in Ticket Raising -->
+          <div>
+            <label class="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>📷 Attach Site / Defect Photos <span class="text-slate-400 font-normal">(Optional)</span></span>
+              <span class="text-[10px] text-slate-400" id="raise-photo-count">0 photos</span>
+            </label>
+            <div class="border-2 border-dashed border-slate-300 rounded-xl p-3 bg-slate-50/70 hover:bg-slate-50 transition-colors text-center">
+              <input type="file" id="input-ticket-photos" accept="image/*" multiple onchange="handleTicketPhotosSelect(event)" class="hidden" />
+              <label for="input-ticket-photos" class="cursor-pointer inline-flex items-center space-x-1.5 px-3 py-1.5 bg-white border border-slate-300 rounded-lg shadow-xs hover:bg-slate-100 font-bold text-slate-700">
+                <span>📁 Select Image Files</span>
+              </label>
+              <p class="text-[10px] text-slate-400 mt-1">Upload machine photos, broken cables, error screens, or site condition pictures</p>
+              <div id="raise-photos-preview" class="flex flex-wrap gap-2 mt-2 justify-center"></div>
+            </div>
+          </div>
+
           <div class="pt-3 border-t border-slate-200 flex items-center justify-end space-x-2">
-            <button type="button" onclick="closeRaiseTicketModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg">Cancel</button>
+            <button type="button" onclick="closeRaiseTicketModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg cursor-pointer">Cancel</button>
             <button type="submit" class="px-5 py-2 bg-[#982B68] hover:bg-[#802256] text-white font-bold rounded-lg shadow-xs cursor-pointer">Submit Ticket</button>
           </div>
 
@@ -589,13 +625,13 @@
       </div>
     </div>
 
-    <!-- MODAL 2: EDIT & RESOLVE TICKET (RCA & CSAT) -->
+    <!-- MODAL 2: EDIT & RESOLVE TICKET (RCA, SLA Revision, Signed Report, Spares) -->
     <div id="modal-resolve-ticket" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs hidden flex items-center justify-center p-4 overflow-y-auto">
-      <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl shadow-2xl p-6 text-slate-800 space-y-5 my-8">
+      <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-3xl shadow-2xl p-6 text-slate-800 space-y-5 my-8">
         <div class="flex items-center justify-between pb-3 border-b border-slate-200">
           <div>
             <h3 class="text-base font-bold text-slate-900" id="resolve-modal-title">Update Service Ticket</h3>
-            <p class="text-xs text-slate-500" id="resolve-modal-subtitle">Log resolution notes, Root Cause Analysis (RCA) & CSAT rating</p>
+            <p class="text-xs text-slate-500" id="resolve-modal-subtitle">Log resolution notes, service report images, RCA & CSAT rating</p>
           </div>
           <button onclick="closeResolveModal()" class="p-1 text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
         </div>
@@ -603,18 +639,44 @@
         <form id="form-resolve-ticket" onsubmit="handleResolveSubmit(event)" class="space-y-4 text-xs">
           <input type="hidden" id="edit-ticket-id" />
 
-          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <span class="font-extrabold text-slate-900 text-sm block" id="modal-summary-cust">Customer Name</span>
               <span class="text-slate-500 text-xs" id="modal-summary-equip">Equipment & Serial</span>
+              <span class="text-[10px] text-slate-400 block mt-0.5" id="modal-summary-creator">Raised by: User</span>
             </div>
-            <span class="px-2.5 py-1 rounded-full font-extrabold uppercase text-[10px]" id="modal-summary-severity">High</span>
+            <div class="flex items-center space-x-2">
+              <span class="px-2.5 py-1 rounded-full font-extrabold uppercase text-[10px]" id="modal-summary-severity">High</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-200 text-slate-700" id="modal-summary-ticket-num">TKT-2026-000</span>
+            </div>
+          </div>
+
+          <!-- Task 5: Target SLA Date Modification (Restricted to Creator) -->
+          <div class="bg-slate-50/80 p-3 rounded-xl border border-slate-200 space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="font-bold text-slate-800 flex items-center space-x-1.5">
+                <span>⏱️ Target SLA Commitment Date</span>
+                <span id="sla-edit-permission-badge" class="text-[9px] uppercase px-1.5 py-0.2 rounded font-extrabold bg-indigo-100 text-indigo-800 border border-indigo-200">Creator Control</span>
+              </label>
+              <span class="text-[10px] text-slate-500" id="sla-creator-hint"></span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <input type="date" id="edit-target-sla-date" onchange="handleTargetSlaDateChanged()" class="w-full bg-white border border-slate-300 rounded-lg p-2 font-semibold text-slate-800" />
+              </div>
+              <div>
+                <input type="text" id="edit-sla-change-reason" placeholder="Reason for revising SLA date..." class="w-full bg-white border border-slate-300 rounded-lg p-2 text-slate-800 hidden" />
+              </div>
+            </div>
+            <p id="sla-locked-notice" class="text-[10px] text-rose-600 font-semibold hidden">
+              🔒 Target SLA Date is locked. Only the ticket creator or Director can modify this commitment date.
+            </p>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block font-bold text-slate-700 mb-1">Ticket Status *</label>
-              <select id="edit-status" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
+              <select id="edit-status" required onchange="handleEditStatusChange(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
                 <option value="Open">Open</option>
                 <option value="In Progress">In Progress</option>
                 <option value="Pending Parts">Pending Parts</option>
@@ -630,6 +692,72 @@
                 <!-- Populated dynamically -->
               </select>
             </div>
+          </div>
+
+          <!-- Task 9: Non-Completion Reason Dropdown -->
+          <div id="wrapper-non-completion-reason" class="hidden bg-amber-50/80 p-3 rounded-xl border border-amber-200 space-y-2">
+            <label class="block font-bold text-amber-900">Reason for Non-Completion / Status Impediment *</label>
+            <select id="edit-non-completion-reason" class="w-full bg-white border border-amber-300 rounded-lg p-2 font-semibold text-slate-800">
+              <option value="Awaiting Spare Parts from Factory / Warehouse">Awaiting Spare Parts from Factory / Warehouse</option>
+              <option value="Machine In Active Production / Client Shutdown Denied">Machine In Active Production / Client Shutdown Denied</option>
+              <option value="Site Access / Safety Gate Pass Clearance Pending">Site Access / Safety Gate Pass Clearance Pending</option>
+              <option value="Specialized Calibration Standard / Tooling Required">Specialized Calibration Standard / Tooling Required</option>
+              <option value="Client Commercial / Purchase Approval for Spares Pending">Client Commercial / Purchase Approval for Spares Pending</option>
+              <option value="Additional Root-Cause Defect Discovered on Site">Additional Root-Cause Defect Discovered on Site</option>
+              <option value="Environmental / Power / Voltage Fluctuations on Site">Environmental / Power / Voltage Fluctuations on Site</option>
+              <option value="Other Technical Impediment">Other Technical Impediment (Specify Below)</option>
+            </select>
+            <input type="text" id="edit-non-completion-details" placeholder="Additional details on why complaint is pending..." class="w-full bg-white border border-amber-300 rounded-lg p-2 text-slate-800 text-xs" />
+          </div>
+
+          <!-- Task 7: Complaint Persisting - Waiting for Parts Section -->
+          <div id="wrapper-persisting-parts" class="hidden bg-purple-50/80 p-3 rounded-xl border border-purple-200 space-y-2">
+            <label class="block font-bold text-purple-900">⚙️ Complaint Persisting - Spare Parts Requirement</label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <input type="text" id="inp-persisting-part-name" placeholder="Required Part Name / Description" class="w-full bg-white border border-purple-300 rounded-lg p-2 text-xs" />
+              <input type="text" id="inp-persisting-part-qty" placeholder="Quantity (e.g. 2 Nos)" class="w-full bg-white border border-purple-300 rounded-lg p-2 text-xs" />
+              <select id="inp-persisting-urgency" class="w-full bg-white border border-purple-300 rounded-lg p-2 text-xs font-semibold">
+                <option value="Critical Breakdown">Critical Breakdown</option>
+                <option value="Normal Dispatch" selected>Normal Dispatch</option>
+                <option value="Preventive Spare">Preventive Spare</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Task 8: Record Unattended Complaint due to Machine Unavailability / Client Resources -->
+          <div class="border border-slate-200 rounded-xl p-3 bg-slate-50/60 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-800 flex items-center space-x-1">
+                <span>🚧 Client Site Resource Delay / Machine Shutdown Log</span>
+              </span>
+              <button type="button" onclick="toggleClientDelaySection()" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer">
+                + Add Delay Record
+              </button>
+            </div>
+            
+            <div id="wrapper-client-delay-form" class="hidden space-y-2 pt-2 border-t border-slate-200">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-0.5">Impediment Category</label>
+                  <select id="inp-delay-category" class="w-full bg-white border border-slate-300 rounded-lg p-1.5 text-xs">
+                    <option value="Machine In Active Production (Client Refused Shutdown)">Machine In Active Production (Shutdown Refused)</option>
+                    <option value="Client Power / Civil Infrastructure Not Ready">Client Power / Civil Infrastructure Not Ready</option>
+                    <option value="Site Access / Security Gate Pass Delayed">Site Access / Security Gate Pass Delayed</option>
+                    <option value="Client Operating Personnel Unavailable">Client Operating Personnel Unavailable</option>
+                    <option value="Other Client Resource Delay">Other Client Resource Delay</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-semibold text-slate-700 mb-0.5">Requested SLA Extension Date</label>
+                  <input type="date" id="inp-requested-sla-date" class="w-full bg-white border border-slate-300 rounded-lg p-1.5 text-xs" />
+                </div>
+              </div>
+              <div>
+                <input type="text" id="inp-delay-notes" placeholder="Explain client-side constraints (e.g. Plant production team refused shutdown of weighbridge until night shift)..." class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs" />
+              </div>
+            </div>
+
+            <div id="client-delay-history-list" class="space-y-1"></div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -661,13 +789,42 @@
             <textarea id="edit-resolution-notes" rows="3" placeholder="Describe technical actions taken, spares replaced, recalibration procedure, test results..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-[#982B68]"></textarea>
           </div>
 
+          <!-- Task 7: Physical Signed Service Report Upload (Max 5 Images) & Refusal Tracking -->
+          <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="font-bold text-slate-800 flex items-center space-x-1.5">
+                <span>📄 Upload Signed Physical Service Report</span>
+                <span class="text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-slate-200 text-slate-700" id="report-img-count-badge">0 / 5 Max</span>
+              </label>
+              <label for="input-signed-reports" class="cursor-pointer text-[11px] font-bold text-[#982B68] hover:underline">
+                + Upload Images (Max 5)
+              </label>
+              <input type="file" id="input-signed-reports" accept="image/*" multiple onchange="handleSignedReportImagesSelect(event)" class="hidden" />
+            </div>
+
+            <div id="signed-reports-preview" class="flex flex-wrap gap-2 min-h-[40px] items-center">
+              <span class="text-[10px] text-slate-400 italic" id="signed-reports-empty-msg">No signed service report images uploaded yet.</span>
+            </div>
+
+            <!-- Task 7: Client Refused to Sign Checkbox -->
+            <div class="pt-2 border-t border-slate-200 space-y-2">
+              <label class="flex items-center space-x-2 cursor-pointer font-bold text-slate-700">
+                <input type="checkbox" id="chk-client-refused-sign" onchange="handleClientRefusalToggle(this.checked)" class="rounded border-slate-300 text-[#982B68] focus:ring-[#982B68]" />
+                <span>Client Refused to Sign Physical Service Report</span>
+              </label>
+              <div id="wrapper-refusal-reason" class="hidden">
+                <input type="text" id="inp-refusal-reason" placeholder="Mandatory: Specify why client refused to sign (e.g. Authorized manager on leave, dispute on spare pricing, client policy)..." class="w-full bg-white border border-rose-300 rounded-lg p-2 text-xs text-slate-800" />
+              </div>
+            </div>
+          </div>
+
           <div class="pt-3 border-t border-slate-200 flex items-center justify-between">
             <button type="button" onclick="deleteActiveTicket()" id="btn-delete-ticket" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-lg text-xs cursor-pointer">
               🗑️ Delete Ticket
             </button>
 
             <div class="flex items-center space-x-2">
-              <button type="button" onclick="closeResolveModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg">Cancel</button>
+              <button type="button" onclick="closeResolveModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg cursor-pointer">Cancel</button>
               <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-xs cursor-pointer">Save Changes</button>
             </div>
           </div>
@@ -676,10 +833,103 @@
       </div>
     </div>
 
+    <!-- MODAL 3: POST-CREATION EMAIL PROMPT (Task 11) -->
+    <div id="modal-ticket-email-prompt" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs hidden flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl p-6 text-slate-800 space-y-4 my-8 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 font-black flex items-center justify-center text-2xl mx-auto border border-emerald-200 shadow-xs">
+          ✉️
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-900">Service Ticket Registered!</h3>
+          <p class="text-xs text-slate-500 mt-1" id="prompt-ticket-desc">
+            Ticket TKT-2026-000 has been registered and assigned in the system.
+          </p>
+        </div>
+        
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs text-left space-y-1">
+          <p class="font-bold text-slate-700">Would you like to send an acknowledgement email to the client now?</p>
+          <p class="text-[11px] text-slate-500">Sends formal email with ticket reference, assigned engineer, and target SLA date.</p>
+        </div>
+
+        <div class="flex items-center justify-center space-x-3 pt-2">
+          <button onclick="closeEmailPromptModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs cursor-pointer">
+            Skip for Now
+          </button>
+          <button onclick="openSendTicketEmailModal()" class="px-5 py-2 bg-[#982B68] hover:bg-[#802256] text-white font-bold rounded-lg text-xs shadow-xs cursor-pointer flex items-center space-x-1.5">
+            <span>✉️ Yes, Send Client Email</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: IN-APP EMAIL DISPATCHER (Task 11) -->
+    <div id="modal-send-ticket-email" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs hidden flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl shadow-2xl p-6 text-slate-800 space-y-4 my-8">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-base border border-indigo-200">
+              📧
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-900">Send Service Ticket Email Acknowledgement</h3>
+              <p class="text-xs text-slate-500">Dispatch ticket details & SLA commitment to customer</p>
+            </div>
+          </div>
+          <button onclick="closeSendTicketEmailModal()" class="p-1 text-slate-400 hover:text-slate-700 text-2xl font-bold cursor-pointer">&times;</button>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">Customer Contact Email</label>
+              <input type="email" id="email-client-to" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold text-slate-800" />
+            </div>
+            <div>
+              <label class="block font-bold text-slate-700 mb-1">CC Email(s)</label>
+              <input type="text" id="email-client-cc" value="service@measuredi.com, director@measuredi.com" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold text-slate-800" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Email Subject</label>
+            <input type="text" id="email-client-subject" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800" />
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Email Message Body Preview</label>
+            <textarea id="email-client-body" rows="8" class="w-full font-mono text-[11px] bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-slate-800 leading-relaxed"></textarea>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-200 flex items-center justify-between">
+          <button onclick="closeSendTicketEmailModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs cursor-pointer">
+            Close
+          </button>
+          <div class="flex items-center space-x-2">
+            <a id="btn-email-mailto" href="#" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs shadow-xs cursor-pointer flex items-center space-x-1">
+              <span>Open in Outlook / Mail App</span>
+            </a>
+            <button onclick="dispatchClientTicketEmail()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs shadow-xs cursor-pointer flex items-center space-x-1">
+              <span>🚀 Dispatch Email Now</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- JAVASCRIPT LOGIC ENGINE FOR SERVICE TICKETS & QUALITY MONITORING -->
     <script>
       var currentViewMode = 'table';
       var activeTicketsList = [];
+      var ticketRaisePhotos = [];
+      var signedReportPhotos = [];
+      var pendingCreatedTicket = null;
+      var activeEditTicket = null;
+
+      function escapeHtml(str) {
+        if (!str && str !== 0) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+      }
 
       document.addEventListener('DOMContentLoaded', function() {
         populateMasterDropdowns();
@@ -691,20 +941,114 @@
             renderServiceTicketsModule();
           });
         }
+
+        // Check URL parameters for direct ticket raising from other modules (e.g. Master lists or AMC)
+        var urlParams = new URLSearchParams(window.location.search);
+        var preCustomer = urlParams.get('customer');
+        var preModel = urlParams.get('model');
+        var preSerial = urlParams.get('serial');
+        if (preCustomer || preSerial) {
+          openRaiseTicketModal(preCustomer, preModel, preSerial);
+        }
       });
+
+      // CLIENT & EQUIPMENT REGISTRY (Cascading Data Master)
+      function getClientEquipmentRegistry() {
+        var clientMap = {};
+
+        // 1. Base Master Roster
+        var defaultRegistry = [
+          { customer: 'Tata Steel Long Products', model: 'MDI-WS-9000 Weighbridge System', serial: 'EQ-9042', warranty: 'AMC Contract', vertical: 'Service/Parts', contactEmail: 'procurement@tatasteel.com' },
+          { customer: 'Tata Steel Long Products', model: 'MDI-WS-9000 Weighbridge System', serial: 'EQ-9080', warranty: 'Under Warranty', vertical: 'Service/Parts', contactEmail: 'maintenance@tatasteel.com' },
+          { customer: 'Tata Steel Long Products', model: 'MDI-AX-8000 Dynamic Axle Weigher', serial: 'EQ-8055', warranty: 'AMC Contract', vertical: 'Projects', contactEmail: 'logistics@tatasteel.com' },
+          { customer: 'JSW Steel Ltd - Vijayanagar Works', model: 'MDI-CS-5000 Heavy Crane Scale', serial: 'EQ-5011', warranty: 'AMC Contract', vertical: 'Service/Parts', contactEmail: 'stores@jsw.in' },
+          { customer: 'JSW Steel Ltd - Vijayanagar Works', model: 'MDI-CS-5000 Heavy Crane Scale', serial: 'EQ-5022', warranty: 'Out of Warranty', vertical: 'Service/Parts', contactEmail: 'hotstrip@jsw.in' },
+          { customer: 'JSW Steel Ltd - Vijayanagar Works', model: 'Pitless Digital Truck Scale 100T', serial: 'EQ-9088', warranty: 'Under Warranty', vertical: 'Service/Parts', contactEmail: 'gate@jsw.in' },
+          { customer: 'JSW Cement Toranagallu', model: 'MDI-BS-7000 Belt Conveyor Weigher', serial: 'EQ-7019', warranty: 'AMC Contract', vertical: 'Service/Parts', contactEmail: 'plant@jswcement.in' },
+          { customer: 'JSW Cement Toranagallu', model: 'MDI-BS-7000 Belt Conveyor Weigher', serial: 'EQ-7025', warranty: 'Under Warranty', vertical: 'Service/Parts', contactEmail: 'dispatch@jswcement.in' },
+          { customer: 'Vedanta Ltd Jharsuguda Smelter', model: 'Heavy Duty High Temp Crane Scale', serial: 'EQ-5015', warranty: 'AMC Contract', vertical: 'Service/Parts', contactEmail: 'smelter.service@vedanta.co.in' },
+          { customer: 'Vedanta Ltd Jharsuguda Smelter', model: 'MDI-WS-9000 Weighbridge System', serial: 'EQ-9055', warranty: 'Under Warranty', vertical: 'Projects', contactEmail: 'weigh@vedanta.co.in' },
+          { customer: 'Hindalco Lapanga Smelter', model: 'MDI-CS-5000 Heavy Crane Scale', serial: 'EQ-5030', warranty: 'AMC Contract', vertical: 'Service/Parts', contactEmail: 'potline@adityabirla.com' },
+          { customer: 'Thermax Limited Chinchwad', model: 'MDI-TS-2000 Platform Scale System', serial: 'EQ-2001', warranty: 'Under Warranty', vertical: 'Sales', contactEmail: 'qa@thermaxglobal.com' },
+          { customer: 'Ashok Leyland Mining Fleet', model: 'MDI-OB-3000 Onboard Loader Scale', serial: 'EQ-3088', warranty: 'Under Warranty', vertical: 'Service/Parts', contactEmail: 'mining@ashokleyland.com' },
+          { customer: 'Ashok Leyland Mining Fleet', model: 'MDI-OB-3000 Onboard Loader Scale', serial: 'EQ-3090', warranty: 'Under Warranty', vertical: 'Service/Parts', contactEmail: 'fleet@ashokleyland.com' },
+          { customer: 'Ultratech Cement Maihar Works', model: 'MDI-BS-7000 Belt Conveyor Weigher', serial: 'EQ-7033', warranty: 'AMC Contract', vertical: 'Service/Parts', contactEmail: 'maihar@ultratechcement.com' },
+          { customer: 'Ultratech Cement Maihar Works', model: 'Pitless Digital Truck Scale 100T', serial: 'EQ-9092', warranty: 'Under Warranty', vertical: 'Service/Parts', contactEmail: 'logistics@ultratechcement.com' },
+          { customer: 'KIOCL Kudremukh Iron Ore', model: 'MDI-HS-4000 Hydraulic Excavator Scale', serial: 'EQ-4012', warranty: 'Out of Warranty', vertical: 'Service/Parts', contactEmail: 'works@kioclltd.com' },
+          { customer: 'Kesoram Cement Basantnagar', model: 'MDI-BS-7000 Belt Conveyor Weigher', serial: 'EQ-7040', warranty: 'AMC Contract', vertical: 'Service/Parts', contactEmail: 'cement@kesoram.com' },
+          { customer: 'SAIL Durgapur Steel Plant', model: 'Heavy Duty High Temp Crane Scale', serial: 'EQ-5045', warranty: 'AMC Contract', vertical: 'Service/Parts', contactEmail: 'dsp.maintenance@sail.in' },
+          { customer: 'Bharat Earth Movers Ltd (BEML)', model: 'MDI-OB-3000 Onboard Loader Scale', serial: 'EQ-3095', warranty: 'Under Warranty', vertical: 'Projects', contactEmail: 'mining@beml.co.in' },
+          { customer: 'SECL Korba Coalfields', model: 'MDI-AX-8000 Dynamic Axle Weigher', serial: 'EQ-8060', warranty: 'AMC Contract', vertical: 'Service/Parts', contactEmail: 'korba@secl.gov.in' },
+          { customer: 'Jindal Steel & Power Angul', model: 'MDI-WS-9000 Weighbridge System', serial: 'EQ-9065', warranty: 'AMC Contract', vertical: 'Service/Parts', contactEmail: 'angul.service@jindalsteel.com' },
+          { customer: 'Singareni Collieries Co Ltd (SCCL)', model: 'MDI-WS-9000 Weighbridge System', serial: 'EQ-9072', warranty: 'AMC Contract', vertical: 'Service/Parts', contactEmail: 'kothagudem@scclmines.com' }
+        ];
+
+        defaultRegistry.forEach(function(item) {
+          if (!clientMap[item.customer]) clientMap[item.customer] = {};
+          if (!clientMap[item.customer][item.model]) clientMap[item.customer][item.model] = [];
+          clientMap[item.customer][item.model].push({
+            serial: item.serial,
+            warranty: item.warranty,
+            vertical: item.vertical,
+            contactEmail: item.contactEmail
+          });
+        });
+
+        // 2. Supplement from Orders
+        var orders = window.RevOpsStore ? (window.RevOpsStore.getCollection('orders') || []) : [];
+        orders.forEach(function(o) {
+          var cName = (o.customerName || o.customer || '').trim();
+          var model = (o.productGroup || o.productName || 'MDI Standard System').trim();
+          var serial = (o.equipmentSerial || ('EQ-' + (o.orderNumber || '1000').slice(-4))).trim();
+          if (cName && model) {
+            if (!clientMap[cName]) clientMap[cName] = {};
+            if (!clientMap[cName][model]) clientMap[cName][model] = [];
+            var exists = clientMap[cName][model].some(function(x) { return x.serial === serial; });
+            if (!exists) {
+              clientMap[cName][model].push({
+                serial: serial,
+                warranty: o.warrantyStatus || 'Under Warranty',
+                vertical: o.vertical || 'Sales',
+                contactEmail: o.contactEmail || ''
+              });
+            }
+          }
+        });
+
+        // 3. Supplement from existing Service Tickets
+        var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
+        tickets.forEach(function(t) {
+          var cName = (t.customerName || '').trim();
+          var model = (t.equipmentModel || '').trim();
+          var serial = (t.equipmentSerial || '').trim();
+          if (cName && model && serial) {
+            if (!clientMap[cName]) clientMap[cName] = {};
+            if (!clientMap[cName][model]) clientMap[cName][model] = [];
+            var exists = clientMap[cName][model].some(function(x) { return x.serial === serial; });
+            if (!exists) {
+              clientMap[cName][model].push({
+                serial: serial,
+                warranty: t.warrantyStatus || 'AMC Contract',
+                vertical: t.vertical || 'Service/Parts',
+                contactEmail: t.clientEmail || ''
+              });
+            }
+          }
+        });
+
+        return clientMap;
+      }
 
       function populateMasterDropdowns() {
         populateTechnicianDropdowns();
         populateCustomerDropdown();
-        populateEquipmentModelDropdown();
-        populateEquipmentSerialDropdown();
       }
 
       function populateTechnicianDropdowns() {
         var emps = window.RevOpsStore ? (window.RevOpsStore.getCollection('employees') || []) : [];
         
         // Exclude Managing Director / Executive Leadership (E-001 / Ravichandran)
-        // Show ONLY Engineers and Service Technicians
+        // Show ONLY Field Engineers and Service Technicians
         var engineers = emps.filter(function(e) {
           if (!e) return false;
           if (e.isActive === false) return false;
@@ -751,170 +1095,337 @@
         var custSelect = document.getElementById('input-customer-name');
         if (!custSelect) return;
 
-        var customersSet = new Set();
+        var registry = getClientEquipmentRegistry();
+        var customerNames = Object.keys(registry).sort();
 
-        // 1. From Orders
-        var orders = window.RevOpsStore ? (window.RevOpsStore.getCollection('orders') || []) : [];
-        orders.forEach(function(o) {
-          var cName = o.customerName || o.customer;
-          if (cName && typeof cName === 'string' && cName.trim()) {
-            customersSet.add(cName.trim());
-          }
-        });
-
-        // 2. From Leads
-        var leads = window.RevOpsStore ? (window.RevOpsStore.getCollection('leads') || []) : [];
-        leads.forEach(function(l) {
-          var cName = l.companyName || l.customerName;
-          if (cName && typeof cName === 'string' && cName.trim()) {
-            customersSet.add(cName.trim());
-          }
-        });
-
-        // 3. From Service Tickets
-        var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
-        tickets.forEach(function(t) {
-          if (t.customerName && t.customerName.trim()) {
-            customersSet.add(t.customerName.trim());
-          }
-        });
-
-        // 4. Default Master List of Customers
-        var defaultCusts = [
-          'Tata Steel Long Products',
-          'JSW Steel Ltd - Vijayanagar Works',
-          'JSW Cement Toranagallu',
-          'Vedanta Ltd Jharsuguda Smelter',
-          'Hindalco Lapanga Smelter',
-          'Thermax Limited Chinchwad',
-          'Ashok Leyland Mining Fleet',
-          'Ultratech Cement Maihar Works',
-          'KIOCL Kudremukh Iron Ore',
-          'Kesoram Cement Basantnagar',
-          'Hindalco Industries Renukoot',
-          'SAIL Durgapur Steel Plant',
-          'Telangana State Power Gen Corp',
-          'Sagar Cements Mattampally',
-          'Caterpillar India Logistics',
-          'Bharat Earth Movers Ltd (BEML)',
-          'Cummins India Pune',
-          'SECL Korba Coalfields',
-          'Jaypee Rewa Plant',
-          'Jindal Stainless Ltd Jajpur',
-          'Electrosteel Castings Ltd',
-          'Tata Motors Commercial Vehicles',
-          'Jindal Steel & Power Angul',
-          'NTPC Ramagundam Super Thermal',
-          'L&T Construction Machinery',
-          'Heidelberg Cement Ammasandra',
-          'Singareni Collieries Co Ltd (SCCL)',
-          'Godrej & Boyce Mfg Co',
-          'Volvo Construction Equipment'
-        ];
-        defaultCusts.forEach(function(c) { customersSet.add(c); });
-
-        var sortedCusts = Array.from(customersSet).sort();
         var optionsHtml = `<option value="">-- Select Customer from Master List --</option>`;
-        sortedCusts.forEach(function(c) {
-          optionsHtml += `<option value="${c}">${c}</option>`;
+        customerNames.forEach(function(c) {
+          optionsHtml += `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`;
         });
 
         custSelect.innerHTML = optionsHtml;
       }
 
-      function populateEquipmentModelDropdown() {
+      // TASK 2: CASCADING DROPDOWNS (Customer -> Model -> Serial)
+      function handleCustomerSelectChange(custName, preSelectedModel, preSelectedSerial) {
         var modelSelect = document.getElementById('input-equipment-model');
-        if (!modelSelect) return;
-
-        var modelsSet = new Set();
-
-        var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
-        tickets.forEach(function(t) {
-          if (t.equipmentModel && t.equipmentModel.trim()) {
-            modelsSet.add(t.equipmentModel.trim());
-          }
-        });
-
-        var defaultModels = [
-          'MDI-WS-9000 Weighbridge System',
-          'MDI-CS-5000 Heavy Crane Scale',
-          'MDI-OB-3000 Onboard Loader Scale',
-          'MDI-BS-7000 Belt Conveyor Weigher',
-          'MDI-AX-8000 Dynamic Axle Weigher',
-          'MDI-HS-4000 Hydraulic Excavator Scale',
-          'MDI-TS-2000 Platform Scale System',
-          'MDI-FM-1000 Flow Meter Weigher',
-          'Heavy Duty High Temp Crane Scale',
-          'Pitless Digital Truck Scale 100T',
-          'Wireless Telemetry Crane Weigher',
-          'High Precision Multi-Deck Weighbridge'
-        ];
-        defaultModels.forEach(function(m) { modelsSet.add(m); });
-
-        var sortedModels = Array.from(modelsSet).sort();
-        var optionsHtml = `<option value="">-- Select Equipment Model --</option>`;
-        sortedModels.forEach(function(m) {
-          optionsHtml += `<option value="${m}">${m}</option>`;
-        });
-
-        modelSelect.innerHTML = optionsHtml;
-      }
-
-      function populateEquipmentSerialDropdown() {
         var serialSelect = document.getElementById('input-equipment-serial');
-        if (!serialSelect) return;
+        var repeatBanner = document.getElementById('repeat-10day-alert-banner');
+        if (repeatBanner) repeatBanner.classList.add('hidden');
 
-        var serialsSet = new Set();
+        if (!custName) {
+          if (modelSelect) modelSelect.innerHTML = `<option value="">-- First Select Customer --</option>`;
+          if (serialSelect) serialSelect.innerHTML = `<option value="">-- First Select Model --</option>`;
+          return;
+        }
 
-        var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
-        tickets.forEach(function(t) {
-          if (t.equipmentSerial && t.equipmentSerial.trim()) {
-            serialsSet.add(t.equipmentSerial.trim());
+        var registry = getClientEquipmentRegistry();
+        var clientModels = registry[custName] || {};
+        var modelKeys = Object.keys(clientModels).sort();
+
+        if (modelKeys.length === 0) {
+          modelKeys = ['MDI-WS-9000 Weighbridge System', 'MDI-CS-5000 Heavy Crane Scale', 'MDI-BS-7000 Belt Conveyor Weigher'];
+        }
+
+        var modelOptions = `<option value="">-- Select Equipment Model (${modelKeys.length} available) --</option>`;
+        modelKeys.forEach(function(m) {
+          var isSel = (preSelectedModel && preSelectedModel === m) ? 'selected' : '';
+          modelOptions += `<option value="${escapeHtml(m)}" ${isSel}>${escapeHtml(m)}</option>`;
+        });
+
+        if (modelSelect) {
+          modelSelect.innerHTML = modelOptions;
+          if (preSelectedModel) {
+            handleModelSelectChange(preSelectedModel, preSelectedSerial);
+          } else if (modelKeys.length === 1) {
+            modelSelect.value = modelKeys[0];
+            handleModelSelectChange(modelKeys[0], preSelectedSerial);
+          } else {
+            if (serialSelect) serialSelect.innerHTML = `<option value="">-- First Select Model --</option>`;
           }
-        });
-
-        var defaultSerials = [
-          'EQ-9042',
-          'EQ-5011',
-          'EQ-3088',
-          'EQ-7019',
-          'EQ-8055',
-          'EQ-4012',
-          'EQ-2001',
-          'EQ-1005',
-          'EQ-9080',
-          'EQ-5022',
-          'EQ-3090',
-          'EQ-7025',
-          'EQ-8060',
-          'EQ-4020',
-          'EQ-2015',
-          'EQ-1010'
-        ];
-        defaultSerials.forEach(function(s) { serialsSet.add(s); });
-
-        var sortedSerials = Array.from(serialsSet).sort();
-        var optionsHtml = `<option value="">-- Select Serial Number --</option>`;
-        sortedSerials.forEach(function(s) {
-          optionsHtml += `<option value="${s}">${s}</option>`;
-        });
-
-        serialSelect.innerHTML = optionsHtml;
+        }
       }
 
-      function handleCustomerSelectChange(custName) {
-        if (!custName) return;
+      function handleModelSelectChange(modelName, preSelectedSerial) {
+        var custName = document.getElementById('input-customer-name')?.value;
+        var serialSelect = document.getElementById('input-equipment-serial');
+        var repeatBanner = document.getElementById('repeat-10day-alert-banner');
+        if (repeatBanner) repeatBanner.classList.add('hidden');
+
+        if (!modelName || !custName) {
+          if (serialSelect) serialSelect.innerHTML = `<option value="">-- First Select Model --</option>`;
+          return;
+        }
+
+        var registry = getClientEquipmentRegistry();
+        var serialEntries = (registry[custName] && registry[custName][modelName]) ? registry[custName][modelName] : [];
+
+        if (serialEntries.length === 0) {
+          serialEntries = [{ serial: 'EQ-9000-NEW', warranty: 'Under Warranty', vertical: 'Service/Parts' }];
+        }
+
+        var serialOptions = `<option value="">-- Select Serial Number (${serialEntries.length} registered) --</option>`;
+        serialEntries.forEach(function(item) {
+          var isSel = (preSelectedSerial && preSelectedSerial === item.serial) ? 'selected' : '';
+          serialOptions += `<option value="${escapeHtml(item.serial)}" ${isSel} data-warranty="${escapeHtml(item.warranty || 'AMC Contract')}" data-vertical="${escapeHtml(item.vertical || 'Service/Parts')}">${escapeHtml(item.serial)}</option>`;
+        });
+
+        if (serialSelect) {
+          serialSelect.innerHTML = serialOptions;
+          if (preSelectedSerial) {
+            serialSelect.value = preSelectedSerial;
+            handleSerialSelectChange(preSelectedSerial);
+          } else if (serialEntries.length === 1) {
+            serialSelect.value = serialEntries[0].serial;
+            handleSerialSelectChange(serialEntries[0].serial);
+          }
+        }
+      }
+
+      function handleSerialSelectChange(serial) {
+        if (!serial) {
+          document.getElementById('repeat-10day-alert-banner')?.classList.add('hidden');
+          return;
+        }
+
+        // Auto-update warranty status and vertical if available
+        var serialSelect = document.getElementById('input-equipment-serial');
+        var selOpt = serialSelect?.options[serialSelect.selectedIndex];
+        if (selOpt) {
+          var warr = selOpt.getAttribute('data-warranty');
+          var vert = selOpt.getAttribute('data-vertical');
+          if (warr && document.getElementById('input-warranty')) document.getElementById('input-warranty').value = warr;
+          if (vert && document.getElementById('input-vertical')) document.getElementById('input-vertical').value = vert;
+        }
+
+        // TASK 10: 10-Day Repeat Complaint Detection
+        check10DayRepeatDefect(serial);
+      }
+
+      // TASK 10: 10-DAY REPEAT COMPLAINT CHECK ENGINE
+      function check10DayRepeatDefect(serial) {
+        var banner = document.getElementById('repeat-10day-alert-banner');
+        var bannerText = document.getElementById('repeat-10day-alert-text');
+        if (!banner) return;
+
         var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
-        var matchingTicket = tickets.find(function(t) { return t.customerName === custName; });
-        if (matchingTicket) {
-          var modelSelect = document.getElementById('input-equipment-model');
-          var serialSelect = document.getElementById('input-equipment-serial');
-          if (modelSelect && matchingTicket.equipmentModel) {
-            modelSelect.value = matchingTicket.equipmentModel;
+        var cleanSerial = (serial || '').toLowerCase().trim();
+
+        var matching = tickets.filter(function(t) {
+          return (t.equipmentSerial || '').toLowerCase().trim() === cleanSerial;
+        });
+
+        if (matching.length === 0) {
+          banner.classList.add('hidden');
+          return;
+        }
+
+        var now = new Date();
+        var recentRepeat = null;
+        var minDiffDays = 999;
+
+        matching.forEach(function(t) {
+          var dateToCheck = t.resolvedDate ? new Date(t.resolvedDate) : parseDateDMY(t.createdDate);
+          if (dateToCheck && !isNaN(dateToCheck.getTime())) {
+            var diffDays = Math.floor((now - dateToCheck) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays <= 10 && diffDays < minDiffDays) {
+              minDiffDays = diffDays;
+              recentRepeat = t;
+            }
           }
-          if (serialSelect && matchingTicket.equipmentSerial) {
-            serialSelect.value = matchingTicket.equipmentSerial;
+        });
+
+        if (recentRepeat) {
+          banner.classList.remove('hidden');
+          if (bannerText) {
+            bannerText.innerHTML = `
+              <strong>⚠️ REPETITIVE DEFECT DETECTED:</strong> Serial <code>${escapeHtml(serial)}</code> had ticket <strong>${escapeHtml(recentRepeat.ticketNumber || recentRepeat.id)}</strong> (${escapeHtml(recentRepeat.complaintCategory)}) closed/logged <strong>${minDiffDays} day(s) ago</strong>.
+              <br/>This complaint is automatically escalated to <strong>High QC Audit Priority</strong> and flagged for root-cause verification.
+            `;
           }
+          var sevSelect = document.getElementById('input-severity');
+          if (sevSelect && (sevSelect.value === 'Low' || sevSelect.value === 'Medium')) {
+            sevSelect.value = 'High';
+          }
+        } else {
+          banner.classList.add('hidden');
+        }
+      }
+
+      function parseDateDMY(dateStr) {
+        if (!dateStr) return null;
+        var parts = dateStr.split('/');
+        if (parts.length === 3) {
+          return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10));
+        }
+        var partsHyphen = dateStr.split('-');
+        if (partsHyphen.length === 3) {
+          return new Date(parseInt(partsHyphen[0], 10), parseInt(partsHyphen[1], 10) - 1, parseInt(partsHyphen[2], 10));
+        }
+        return new Date(dateStr);
+      }
+
+      // TASK 3: COMPLAINT CATEGORY WITH 'OTHER'
+      function handleCategorySelectChange(catVal) {
+        var otherWrapper = document.getElementById('wrapper-category-other');
+        var otherInput = document.getElementById('input-category-other');
+        if (catVal === 'Other') {
+          if (otherWrapper) otherWrapper.classList.remove('hidden');
+          if (otherInput) {
+            otherInput.setAttribute('required', 'required');
+            otherInput.focus();
+          }
+        } else {
+          if (otherWrapper) otherWrapper.classList.add('hidden');
+          if (otherInput) {
+            otherInput.removeAttribute('required');
+            otherInput.value = '';
+          }
+        }
+      }
+
+      // TASK 6: PHOTO ATTACHMENT IN TICKET RAISING
+      function handleTicketPhotosSelect(e) {
+        var files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        files.forEach(function(file) {
+          var reader = new FileReader();
+          reader.onload = function(evt) {
+            ticketRaisePhotos.push({
+              name: file.name,
+              size: (file.size / 1024).toFixed(0) + ' KB',
+              dataUrl: evt.target.result
+            });
+            renderTicketRaisePhotosPreview();
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function renderTicketRaisePhotosPreview() {
+        var container = document.getElementById('raise-photos-preview');
+        var countEl = document.getElementById('raise-photo-count');
+        if (!container) return;
+
+        if (countEl) countEl.textContent = `${ticketRaisePhotos.length} photo(s) attached`;
+
+        container.innerHTML = ticketRaisePhotos.map(function(p, idx) {
+          return `
+            <div class="relative group w-14 h-14 rounded-lg overflow-hidden border border-slate-300 bg-slate-100 shadow-2xs">
+              <img src="${p.dataUrl}" alt="Photo" class="w-full h-full object-cover" />
+              <button type="button" onclick="removeTicketRaisePhoto(${idx})" class="absolute top-0.5 right-0.5 w-4 h-4 bg-rose-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold opacity-80 hover:opacity-100">
+                &times;
+              </button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function removeTicketRaisePhoto(idx) {
+        ticketRaisePhotos.splice(idx, 1);
+        renderTicketRaisePhotosPreview();
+      }
+
+      // TASK 7: SIGNED SERVICE REPORT IMAGES (MAX 5)
+      function handleSignedReportImagesSelect(e) {
+        var files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        if (signedReportPhotos.length + files.length > 5) {
+          alert("Maximum 5 signed service report images allowed per ticket.");
+        }
+
+        var availableSlots = 5 - signedReportPhotos.length;
+        files.slice(0, availableSlots).forEach(function(file) {
+          var reader = new FileReader();
+          reader.onload = function(evt) {
+            signedReportPhotos.push({
+              name: file.name,
+              dataUrl: evt.target.result,
+              uploadedAt: new Date().toISOString()
+            });
+            renderSignedReportsPreview();
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function renderSignedReportsPreview() {
+        var container = document.getElementById('signed-reports-preview');
+        var badge = document.getElementById('report-img-count-badge');
+        var emptyMsg = document.getElementById('signed-reports-empty-msg');
+        if (!container) return;
+
+        if (badge) badge.textContent = `${signedReportPhotos.length} / 5 Max`;
+
+        if (signedReportPhotos.length === 0) {
+          container.innerHTML = `<span class="text-[10px] text-slate-400 italic" id="signed-reports-empty-msg">No signed service report images uploaded yet.</span>`;
+          return;
+        }
+
+        container.innerHTML = signedReportPhotos.map(function(img, idx) {
+          return `
+            <div class="relative group w-16 h-16 rounded-xl overflow-hidden border border-slate-300 bg-slate-100 shadow-xs">
+              <img src="${img.dataUrl}" alt="Service Report" class="w-full h-full object-cover" />
+              <button type="button" onclick="removeSignedReportPhoto(${idx})" class="absolute top-1 right-1 w-5 h-5 bg-rose-600 text-white rounded-full flex items-center justify-center text-xs font-bold opacity-90 hover:opacity-100 cursor-pointer">
+                &times;
+              </button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      function removeSignedReportPhoto(idx) {
+        signedReportPhotos.splice(idx, 1);
+        renderSignedReportsPreview();
+      }
+
+      // TASK 7: CLIENT REFUSAL TO SIGN
+      function handleClientRefusalToggle(isChecked) {
+        var wrapper = document.getElementById('wrapper-refusal-reason');
+        var input = document.getElementById('inp-refusal-reason');
+        if (isChecked) {
+          wrapper?.classList.remove('hidden');
+          input?.setAttribute('required', 'required');
+          input?.focus();
+        } else {
+          wrapper?.classList.add('hidden');
+          input?.removeAttribute('required');
+          if (input) input.value = '';
+        }
+      }
+
+      // TASK 8: CLIENT DELAYS & UNATTENDED LOG
+      function toggleClientDelaySection() {
+        var form = document.getElementById('wrapper-client-delay-form');
+        if (form) form.classList.toggle('hidden');
+      }
+
+      // TASK 9: EDIT STATUS & NON-COMPLETION REASON
+      function handleEditStatusChange(newStatus) {
+        var nonCompWrapper = document.getElementById('wrapper-non-completion-reason');
+        var partsWrapper = document.getElementById('wrapper-persisting-parts');
+
+        if (newStatus !== 'Resolved' && newStatus !== 'Closed') {
+          nonCompWrapper?.classList.remove('hidden');
+        } else {
+          nonCompWrapper?.classList.add('hidden');
+        }
+
+        if (newStatus === 'Pending Parts') {
+          partsWrapper?.classList.remove('hidden');
+        } else {
+          partsWrapper?.classList.add('hidden');
+        }
+      }
+
+      // TASK 5: TARGET SLA DATE MODIFICATION (Creator Security Check)
+      function handleTargetSlaDateChanged() {
+        var reasonInput = document.getElementById('edit-sla-change-reason');
+        if (reasonInput) {
+          reasonInput.classList.remove('hidden');
+          reasonInput.focus();
         }
       }
 
@@ -1437,19 +1948,46 @@
         }
       }
 
-      // MODAL FUNCTIONS
-      function openRaiseTicketModal() {
+      // MODAL FUNCTIONS & LIFECYCLE
+      function openRaiseTicketModal(preCust, preModel, preSerial) {
         populateMasterDropdowns();
+        ticketRaisePhotos = [];
+        renderTicketRaisePhotosPreview();
+
+        // TASK 1: Unique System Generated Ticket Number
         var numInput = document.getElementById('input-ticket-num');
         if (numInput) {
-          numInput.value = 'TKT-2026-' + Math.floor(100 + Math.random() * 900);
+          if (window.RevOpsStore && typeof window.RevOpsStore.generateNextTicketNumber === 'function') {
+            numInput.value = window.RevOpsStore.generateNextTicketNumber();
+          } else {
+            numInput.value = 'TKT-2026-' + Math.floor(100 + Math.random() * 900);
+          }
         }
+
+        // Set default SLA date to +2 days from now
         var slaDateInput = document.getElementById('input-sla-date');
         if (slaDateInput) {
           var targetDate = new Date();
           targetDate.setDate(targetDate.getDate() + 2);
           slaDateInput.value = targetDate.toISOString().slice(0, 10);
         }
+
+        // Reset Other category input
+        var catSelect = document.getElementById('input-category');
+        if (catSelect) catSelect.value = 'Load Cell Drift';
+        handleCategorySelectChange('Load Cell Drift');
+
+        // Handle pre-fill if provided
+        if (preCust) {
+          var custSelect = document.getElementById('input-customer-name');
+          if (custSelect) {
+            custSelect.value = preCust;
+            handleCustomerSelectChange(preCust, preModel, preSerial);
+          }
+        } else {
+          handleCustomerSelectChange('');
+        }
+
         document.getElementById('modal-raise-ticket')?.classList.remove('hidden');
       }
 
@@ -1464,7 +2002,8 @@
         var equipModel = document.getElementById('input-equipment-model').value;
         var equipSerial = document.getElementById('input-equipment-serial').value;
         var vert = document.getElementById('input-vertical').value;
-        var cat = document.getElementById('input-category').value;
+        var catSelect = document.getElementById('input-category').value;
+        var finalCat = catSelect === 'Other' ? (document.getElementById('input-category-other')?.value || 'Other Custom Defect') : catSelect;
         var sev = document.getElementById('input-severity').value;
         var warr = document.getElementById('input-warranty').value;
         var techSelect = document.getElementById('input-assigned-to');
@@ -1473,7 +2012,20 @@
         var slaDate = document.getElementById('input-sla-date').value;
         var desc = document.getElementById('input-description').value;
 
-        // Check if repeat defect
+        // Current logged-in employee info
+        var currEmpId = localStorage.getItem('employeeId') || 'E-004';
+        var currEmpName = localStorage.getItem('userName') || 'Priya Sharma';
+
+        // Find customer contact email from registry
+        var registry = getClientEquipmentRegistry();
+        var clientEmail = '';
+        if (registry[custName] && registry[custName][equipModel]) {
+          var match = registry[custName][equipModel].find(function(x) { return x.serial === equipSerial; });
+          if (match && match.contactEmail) clientEmail = match.contactEmail;
+        }
+        if (!clientEmail) clientEmail = 'service@' + custName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com';
+
+        // Check if repeat defect in historical records
         var existing = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
         var repeatCount = existing.filter(function(x) {
           return (x.equipmentSerial || '').toLowerCase().trim() === equipSerial.toLowerCase().trim();
@@ -1483,15 +2035,18 @@
           id: tNum,
           ticketNumber: tNum,
           customerName: custName,
+          clientEmail: clientEmail,
           equipmentModel: equipModel,
           equipmentSerial: equipSerial,
           vertical: vert,
-          complaintCategory: cat,
+          complaintCategory: finalCat,
           complaintDescription: desc,
           severity: sev,
           status: 'Open',
           assignedTo: techId,
           assignedToName: techName,
+          createdBy: currEmpId,
+          createdByName: currEmpName,
           createdDate: new Date().toLocaleDateString('en-GB'),
           targetSlaDate: slaDate,
           resolvedDate: '',
@@ -1500,42 +2055,143 @@
           isRepetitiveDefect: repeatCount > 1,
           repeatCountIn30Days: repeatCount,
           csatRating: 0,
-          warrantyStatus: warr
+          warrantyStatus: warr,
+          attachments: ticketRaisePhotos,
+          signedReportImages: [],
+          clientRefusedToSign: false,
+          refusalReason: '',
+          clientDelays: [],
+          slaModificationHistory: []
         };
 
         if (window.RevOpsStore) {
           window.RevOpsStore.addItem('serviceTickets', newTicket);
         }
 
+        pendingCreatedTicket = newTicket;
+
         closeRaiseTicketModal();
         renderServiceTicketsModule();
-        alert(`Service Ticket ${tNum} successfully raised and assigned to ${techName}! SLA target set for ${slaDate}.`);
+
+        // Open Task 11 Email Prompt Modal
+        openEmailPromptModal(newTicket);
       }
 
+      // OPEN RESOLVE & UPDATE MODAL
       function openResolveModal(ticketId) {
         var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
         var target = tickets.find(function(t) { return t.id === ticketId || t.ticketNumber === ticketId; });
         if (!target) return;
 
+        activeEditTicket = target;
+        signedReportPhotos = target.signedReportImages ? [...target.signedReportImages] : [];
+
         document.getElementById('edit-ticket-id').value = target.id;
         document.getElementById('modal-summary-cust').textContent = target.customerName;
         document.getElementById('modal-summary-equip').textContent = `${target.equipmentModel} (${target.equipmentSerial})`;
+        document.getElementById('modal-summary-creator').textContent = `Raised by: ${target.createdByName || target.createdBy || 'Priya Sharma'} on ${target.createdDate || 'Recent'}`;
         document.getElementById('modal-summary-severity').textContent = target.severity;
+        document.getElementById('modal-summary-ticket-num').textContent = target.ticketNumber || target.id;
 
+        // TASK 5: TARGET SLA DATE MODIFICATION PERMISSION LOCK
+        var currEmpId = localStorage.getItem('employeeId') || 'E-004';
+        var userRole = localStorage.getItem('userRole') || 'employee';
+        var isCreator = (target.createdBy === currEmpId) || (userRole === 'super_admin' || userRole === 'admin' || currEmpId === 'E-001');
+
+        var slaInput = document.getElementById('edit-target-sla-date');
+        var slaBadge = document.getElementById('sla-edit-permission-badge');
+        var slaNotice = document.getElementById('sla-locked-notice');
+        var slaHint = document.getElementById('sla-creator-hint');
+        var slaReasonInput = document.getElementById('edit-sla-change-reason');
+
+        if (slaInput) {
+          slaInput.value = target.targetSlaDate ? new Date(target.targetSlaDate).toISOString().slice(0, 10) : '';
+          if (isCreator) {
+            slaInput.removeAttribute('disabled');
+            slaInput.classList.remove('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+            if (slaBadge) slaBadge.className = "text-[9px] uppercase px-1.5 py-0.2 rounded font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200";
+            if (slaBadge) slaBadge.textContent = "Editable by You (Creator / Admin)";
+            if (slaNotice) slaNotice.classList.add('hidden');
+            if (slaHint) slaHint.textContent = `You raised this ticket. You may adjust the SLA date if needed.`;
+          } else {
+            slaInput.setAttribute('disabled', 'disabled');
+            slaInput.classList.add('bg-slate-100', 'cursor-not-allowed', 'text-slate-500');
+            if (slaBadge) slaBadge.className = "text-[9px] uppercase px-1.5 py-0.2 rounded font-extrabold bg-rose-100 text-rose-800 border border-rose-200";
+            if (slaBadge) slaBadge.textContent = "🔒 Locked (Creator Only)";
+            if (slaNotice) slaNotice.classList.remove('hidden');
+            if (slaHint) slaHint.textContent = `Only ${target.createdByName || target.createdBy || 'Creator'} can alter SLA.`;
+          }
+        }
+        if (slaReasonInput) {
+          slaReasonInput.classList.add('hidden');
+          slaReasonInput.value = '';
+        }
+
+        // Status & Engineer
         document.getElementById('edit-status').value = target.status || 'Open';
+        handleEditStatusChange(target.status || 'Open');
+
         document.getElementById('edit-assigned-to').value = target.assignedTo || 'E-004';
         document.getElementById('edit-resolved-date').value = target.resolvedDate ? new Date(target.resolvedDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
         document.getElementById('edit-csat').value = target.csatRating || 0;
         document.getElementById('edit-root-cause').value = target.rootCause || '';
         document.getElementById('edit-resolution-notes').value = target.resolutionNotes || '';
 
+        // Non-completion reason
+        if (target.nonCompletionReason && document.getElementById('edit-non-completion-reason')) {
+          document.getElementById('edit-non-completion-reason').value = target.nonCompletionReason;
+        }
+        if (target.nonCompletionDetails && document.getElementById('edit-non-completion-details')) {
+          document.getElementById('edit-non-completion-details').value = target.nonCompletionDetails;
+        }
+
+        // Signed report photos
+        renderSignedReportsPreview();
+
+        // Refusal checkbox
+        var refusalChk = document.getElementById('chk-client-refused-sign');
+        var refusalInput = document.getElementById('inp-refusal-reason');
+        if (refusalChk) {
+          refusalChk.checked = !!target.clientRefusedToSign;
+          handleClientRefusalToggle(!!target.clientRefusedToSign);
+          if (refusalInput) refusalInput.value = target.refusalReason || '';
+        }
+
+        // Client delays history
+        renderClientDelayHistory(target.clientDelays || []);
+
         document.getElementById('modal-resolve-ticket')?.classList.remove('hidden');
+      }
+
+      function renderClientDelayHistory(delays) {
+        var container = document.getElementById('client-delay-history-list');
+        if (!container) return;
+
+        if (delays.length === 0) {
+          container.innerHTML = `<span class="text-[10px] text-slate-400 italic">No client site resource delays recorded.</span>`;
+          return;
+        }
+
+        container.innerHTML = delays.map(function(d) {
+          return `
+            <div class="bg-amber-50 p-2 rounded-lg border border-amber-200 text-[11px] text-slate-800 flex items-start justify-between">
+              <div>
+                <span class="font-bold text-amber-900 block">${escapeHtml(d.category)}</span>
+                <p class="text-slate-600 text-[10px] mt-0.5">${escapeHtml(d.notes)}</p>
+                <span class="text-[9px] text-slate-400">Logged on ${escapeHtml(d.recordedDate || 'Today')} by ${escapeHtml(d.recordedBy || 'Engineer')}</span>
+              </div>
+              ${d.requestedSlaDate ? `<span class="px-1.5 py-0.5 bg-amber-200 text-amber-900 rounded font-mono font-bold text-[9px]">Req: ${escapeHtml(d.requestedSlaDate)}</span>` : ''}
+            </div>
+          `;
+        }).join('');
       }
 
       function closeResolveModal() {
         document.getElementById('modal-resolve-ticket')?.classList.add('hidden');
+        activeEditTicket = null;
       }
 
+      // SUBMIT RESOLVE & UPDATE TICKET
       function handleResolveSubmit(e) {
         e.preventDefault();
         var id = document.getElementById('edit-ticket-id').value;
@@ -1548,16 +2204,70 @@
         var rca = document.getElementById('edit-root-cause').value;
         var notes = document.getElementById('edit-resolution-notes').value;
 
-        if (window.RevOpsStore) {
-          window.RevOpsStore.updateItem('serviceTickets', id, {
-            status: status,
-            assignedTo: techId,
-            assignedToName: techName,
-            resolvedDate: resDate,
-            csatRating: csat,
-            rootCause: rca,
-            resolutionNotes: notes
+        // SLA Date updates
+        var newSlaDate = document.getElementById('edit-target-sla-date').value;
+        var slaChangeReason = document.getElementById('edit-sla-change-reason').value;
+        var currEmpName = localStorage.getItem('userName') || 'User';
+
+        var updates = {
+          status: status,
+          assignedTo: techId,
+          assignedToName: techName,
+          resolvedDate: (status === 'Resolved' || status === 'Closed') ? resDate : '',
+          csatRating: csat,
+          rootCause: rca,
+          resolutionNotes: notes,
+          signedReportImages: signedReportPhotos,
+          clientRefusedToSign: document.getElementById('chk-client-refused-sign')?.checked || false,
+          refusalReason: document.getElementById('inp-refusal-reason')?.value || ''
+        };
+
+        // Task 9: Non-completion reason if not resolved/closed
+        if (status !== 'Resolved' && status !== 'Closed') {
+          updates.nonCompletionReason = document.getElementById('edit-non-completion-reason')?.value || '';
+          updates.nonCompletionDetails = document.getElementById('edit-non-completion-details')?.value || '';
+        }
+
+        // Persisting parts requirement if applicable
+        var partName = document.getElementById('inp-persisting-part-name')?.value;
+        if (partName && (status === 'Pending Parts' || status === 'In Progress')) {
+          updates.persistingPart = {
+            name: partName,
+            quantity: document.getElementById('inp-persisting-part-qty')?.value || '1 Nos',
+            urgency: document.getElementById('inp-persisting-urgency')?.value || 'Normal Dispatch'
+          };
+        }
+
+        // Check if SLA Date was modified
+        if (activeEditTicket && activeEditTicket.targetSlaDate !== newSlaDate && newSlaDate) {
+          updates.targetSlaDate = newSlaDate;
+          var slaHistory = activeEditTicket.slaModificationHistory ? [...activeEditTicket.slaModificationHistory] : [];
+          slaHistory.push({
+            oldDate: activeEditTicket.targetSlaDate,
+            newDate: newSlaDate,
+            changedBy: currEmpName,
+            changedAt: new Date().toISOString(),
+            reason: slaChangeReason || 'Schedule adjusted per operational conditions'
           });
+          updates.slaModificationHistory = slaHistory;
+        }
+
+        // Check if new client delay record was entered
+        var delayNotes = document.getElementById('inp-delay-notes')?.value;
+        if (delayNotes && delayNotes.trim()) {
+          var clientDelays = activeEditTicket.clientDelays ? [...activeEditTicket.clientDelays] : [];
+          clientDelays.push({
+            category: document.getElementById('inp-delay-category')?.value,
+            notes: delayNotes.trim(),
+            requestedSlaDate: document.getElementById('inp-requested-sla-date')?.value || '',
+            recordedBy: currEmpName,
+            recordedDate: new Date().toLocaleDateString('en-GB')
+          });
+          updates.clientDelays = clientDelays;
+        }
+
+        if (window.RevOpsStore) {
+          window.RevOpsStore.updateItem('serviceTickets', id, updates);
         }
 
         closeResolveModal();
@@ -1575,6 +2285,83 @@
         }
       }
 
+      // TASK 11: EMAIL DISPATCH ENGINE
+      function openEmailPromptModal(ticket) {
+        var promptDesc = document.getElementById('prompt-ticket-desc');
+        if (promptDesc) {
+          promptDesc.textContent = `Ticket ${ticket.ticketNumber} for ${ticket.customerName} (${ticket.equipmentModel}) has been logged.`;
+        }
+        document.getElementById('modal-ticket-email-prompt')?.classList.remove('hidden');
+      }
+
+      function closeEmailPromptModal() {
+        document.getElementById('modal-ticket-email-prompt')?.classList.add('hidden');
+      }
+
+      function openSendTicketEmailModal() {
+        closeEmailPromptModal();
+        var ticket = pendingCreatedTicket || activeEditTicket;
+        if (!ticket) return;
+
+        var toInput = document.getElementById('email-client-to');
+        var subjInput = document.getElementById('email-client-subject');
+        var bodyArea = document.getElementById('email-client-body');
+        var mailtoBtn = document.getElementById('btn-email-mailto');
+
+        var subject = `[Measure DI Service] Service Ticket Registered: ${ticket.ticketNumber} - ${ticket.equipmentModel} (${ticket.equipmentSerial})`;
+        var toEmail = ticket.clientEmail || 'service@client.com';
+
+        var body = `Dear ${ticket.customerName} Team,
+
+Greetings from Measure Dynamics & Instrumentation (Measure DI) Customer Support.
+
+Your service request has been officially registered in our system with the following details:
+
+========================================
+SERVICE TICKET REFERENCE
+========================================
+• Ticket Number: ${ticket.ticketNumber}
+• Customer Name: ${ticket.customerName}
+• Equipment Model: ${ticket.equipmentModel}
+• Serial Number: ${ticket.equipmentSerial}
+• Warranty / AMC Status: ${ticket.warrantyStatus || 'AMC Contract'}
+• Reported Issue: ${ticket.complaintCategory}
+• Description: ${ticket.complaintDescription}
+• Priority / Severity: ${ticket.severity}
+• Assigned Service Engineer: ${ticket.assignedToName || 'Priya Sharma'}
+• Target SLA Resolution Date: ${ticket.targetSlaDate}
+========================================
+
+Our service team has been dispatched/assigned and will coordinate with your site plant engineers to resolve this issue in adherence to our agreed Service Level Agreement (SLA).
+
+For any urgent assistance or site gate pass coordination, please reach our 24x7 Helpdesk at service@measuredi.com.
+
+Best Regards,
+Measure Dynamics & Instrumentation Private Limited
+Service & Quality Assurance Division`;
+
+        if (toInput) toInput.value = toEmail;
+        if (subjInput) subjInput.value = subject;
+        if (bodyArea) bodyArea.value = body;
+
+        var mailtoUrl = `mailto:${encodeURIComponent(toEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        if (mailtoBtn) mailtoBtn.href = mailtoUrl;
+
+        document.getElementById('modal-send-ticket-email')?.classList.remove('hidden');
+      }
+
+      function closeSendTicketEmailModal() {
+        document.getElementById('modal-send-ticket-email')?.classList.add('hidden');
+      }
+
+      function dispatchClientTicketEmail() {
+        var to = document.getElementById('email-client-to')?.value;
+        var subj = document.getElementById('email-client-subject')?.value;
+        
+        alert(`🚀 Email confirmation dispatched successfully to ${to}!\n\nSubject: "${subj}"\n\nA confirmation record has been logged in the system communication registry.`);
+        closeSendTicketEmailModal();
+      }
+
       function exportServiceTicketsCSV() {
         var tickets = window.RevOpsStore ? (window.RevOpsStore.getCollection('serviceTickets') || []) : [];
         if (tickets.length === 0) {
@@ -1583,7 +2370,7 @@
         }
 
         var csvLines = [
-          "Ticket ID,Customer Name,Equipment Model,Serial Number,Vertical,Category,Severity,Status,Assigned Engineer,Created Date,Target SLA Date,Resolved Date,RCA,Repeat Defect,CSAT Rating"
+          "Ticket ID,Customer Name,Equipment Model,Serial Number,Vertical,Category,Severity,Status,Assigned Engineer,Created Date,Target SLA Date,Resolved Date,RCA,Repeat Defect,CSAT Rating,Non Completion Reason"
         ];
 
         tickets.forEach(function(t) {
@@ -1602,7 +2389,8 @@
             `"${t.resolvedDate || ''}"`,
             `"${(t.rootCause || '').replace(/"/g, '""')}"`,
             `"${t.isRepetitiveDefect ? 'Yes' : 'No'}"`,
-            `"${t.csatRating || 0}"`
+            `"${t.csatRating || 0}"`,
+            `"${(t.nonCompletionReason || '').replace(/"/g, '""')}"`
           ];
           csvLines.push(row.join(','));
         });

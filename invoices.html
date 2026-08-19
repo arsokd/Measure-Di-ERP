@@ -26,19 +26,34 @@
           <div class="flex items-center space-x-2">
             <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Commercial Invoices & Billing Operations</h1>
             <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">GST Compliance</span>
+            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">Finance & Accounts</span>
           </div>
-          <p class="text-sm text-slate-500 mt-1">Tax & Proforma Invoices, Senior Approval Workflow, Client Dispatch & AR Settlement Linkage</p>
+          <p class="text-sm text-slate-500 mt-1">Tax & Proforma Invoices, Auto-PO Import, Senior Approval Gate, Client Dispatch & AR Settlement Linkage</p>
         </div>
 
         <div class="flex items-center space-x-3">
           <a href="payments.html" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors flex items-center space-x-1.5">
             <span>💳 Payment Collections & Receipts</span>
           </a>
-          <button onclick="openInvoiceModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer">
+          <button id="btn-raise-invoice" onclick="openInvoiceModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             <span>+ Raise New Invoice</span>
           </button>
         </div>
+      </div>
+
+      <!-- Finance Department Exclusive Access Notice (Shown to Sales/Staff users) -->
+      <div id="finance-role-notice" class="hidden bg-linear-to-r from-blue-500/10 via-blue-50 to-indigo-500/10 border-2 border-indigo-300 rounded-2xl p-5 shadow-xs flex items-center justify-between gap-4">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-lg shadow-xs shrink-0">
+            🔒
+          </div>
+          <div>
+            <h3 class="text-xs font-black text-indigo-950 uppercase tracking-wide">Commercial Invoicing Governance: Accounts & Finance Department Only</h3>
+            <p class="text-xs text-indigo-900 mt-0.5">Commercial & GST Tax Invoices are raised strictly by the Finance Department. Sales executives should ensure all Lead details, Quotation lines, and Client Purchase Orders are up-to-date.</p>
+          </div>
+        </div>
+        <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-bold shrink-0">Read Only View</span>
       </div>
 
       <!-- Senior Approval Action Banner (Shown when pending approvals exist for Admins) -->
@@ -172,19 +187,24 @@
           <input type="hidden" id="inv-doc-id" />
 
           <!-- Source Selector Banner: Raise from Approved Quotation or Sales Order -->
-          <div class="p-3.5 bg-indigo-50/60 border border-indigo-200 rounded-xl space-y-2">
-            <span class="text-[11px] font-bold uppercase text-indigo-900">Import Source (Optional)</span>
+          <div class="p-4 bg-indigo-50/80 border border-indigo-200 rounded-xl space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-black uppercase tracking-wider text-indigo-900 flex items-center gap-1.5">
+                <span>⚡ Auto-Populate Commercial Invoice from PO or Quote</span>
+              </span>
+              <span class="text-[10px] text-indigo-700 font-semibold" id="pending-po-count-label">Showing pending un-invoiced POs</span>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">Select Approved Quotation</label>
-                <select id="inp-inv-quote-source" onchange="autoPopulateFromQuote(this.value)" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                  <option value="">-- Custom Invoice (No Quote) --</option>
+                <label class="block text-[10px] font-bold text-slate-700 uppercase mb-0.5">Select Commercial Purchase Order (Un-Invoiced Only)</label>
+                <select id="inp-inv-order-source" onchange="autoPopulateFromOrder(this.value)" class="w-full px-2.5 py-1.5 bg-white border border-indigo-300 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs">
+                  <option value="">-- Select Pending Purchase Order --</option>
                 </select>
               </div>
               <div>
-                <label class="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">Select Sales Order / Contract</label>
-                <select id="inp-inv-order-source" onchange="autoPopulateFromOrder(this.value)" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                  <option value="">-- Custom Invoice (No Order) --</option>
+                <label class="block text-[10px] font-bold text-slate-700 uppercase mb-0.5">Or Select Approved Quotation</label>
+                <select id="inp-inv-quote-source" onchange="autoPopulateFromQuote(this.value)" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                  <option value="">-- Custom Invoice (No Quote) --</option>
                 </select>
               </div>
             </div>
@@ -263,6 +283,61 @@
             </div>
           </div>
 
+          <!-- Performance Guarantee (PG) & Retention Terms Card -->
+          <div class="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wide text-amber-900 flex items-center gap-1.5">
+                <i class="fa-solid fa-shield-halved text-amber-600"></i>
+                <span>Performance Guarantee (PG / BG) & Retention Clauses</span>
+              </span>
+              <span class="text-[10px] text-amber-800 font-semibold">Statutory Contract Safeguards</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- PG / BG -->
+              <div class="space-y-2 bg-white/80 p-3 rounded-lg border border-amber-200/80">
+                <div class="flex items-center justify-between">
+                  <label class="text-[11px] font-bold text-slate-800">Bank Guarantee (BG) Required?</label>
+                  <select id="inp-inv-bgreq" onchange="toggleInvoiceBgFields()" class="px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs font-bold">
+                    <option value="No">No</option>
+                    <option value="Yes">Yes (PG Required)</option>
+                  </select>
+                </div>
+                <div id="inv-bg-fields" class="hidden space-y-2 pt-1 border-t border-amber-100">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">PG / BG Amount (₹)</label>
+                    <input type="number" id="inp-inv-bgamt" placeholder="e.g. 150000" class="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs font-mono" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">BG Expiry / Validity Date</label>
+                    <input type="text" id="inp-inv-bgdate" placeholder="DD/MM/YYYY" class="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs font-mono" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Retention -->
+              <div class="space-y-2 bg-white/80 p-3 rounded-lg border border-amber-200/80">
+                <div class="flex items-center justify-between">
+                  <label class="text-[11px] font-bold text-slate-800">Retention Clause Applicable?</label>
+                  <select id="inp-inv-retreq" onchange="toggleInvoiceRetFields()" class="px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs font-bold">
+                    <option value="No">No</option>
+                    <option value="Yes">Yes (Retention)</option>
+                  </select>
+                </div>
+                <div id="inv-ret-fields" class="hidden space-y-2 pt-1 border-t border-amber-100">
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">Retention Amount (₹)</label>
+                    <input type="number" id="inp-inv-retamt" placeholder="e.g. 100000" class="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs font-mono" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">Retention Release Condition / Period</label>
+                    <input type="text" id="inp-inv-retperiod" placeholder="e.g. Upon completion of 12 months warranty" class="w-full px-2.5 py-1 bg-white border border-slate-200 rounded text-xs" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Line Items Table -->
           <div class="space-y-2">
             <div class="flex items-center justify-between">
@@ -320,16 +395,49 @@
           <!-- Payment Terms and Bank Selection -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Company Bank Account for Remittance</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Company Bank Account (Bank Master)</label>
+                <a href="master-data.html" target="_blank" class="text-[10px] font-bold text-indigo-600 hover:underline">Manage Banks &rarr;</a>
+              </div>
               <select id="inp-inv-bank" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="HDFC Bank - Current A/c No: 50200049283719 (IFSC: HDFC0000123, Guindy Chennai)">HDFC Bank - 50200049283719 (Guindy Branch)</option>
-                <option value="SBI - Current A/c No: 39281726351 (IFSC: SBIN0001824, Industrial Branch)">State Bank of India - 39281726351</option>
+                <!-- Dynamically populated from bankDetailsMaster -->
               </select>
             </div>
 
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Payment & Commercial Terms</label>
               <input type="text" id="inp-inv-terms" value="Payment within 30 days of invoice date. 18% p.a. interest applicable on delayed payments." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+          </div>
+
+          <!-- Commercial Document Attachments & Client PO Copy Manager (Max 10 files, 100 MB Limit) -->
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <i class="fa-solid fa-paperclip text-indigo-600"></i>
+                  <span>Commercial Attachments & PO Copy</span>
+                </span>
+                <p class="text-[10px] text-slate-500">Attach Client PO scan, Delivery Challan, Quality Reports (Max 10 files, 100 MB aggregate)</p>
+              </div>
+              <div class="text-[11px] font-mono font-bold text-slate-600" id="inv-attachments-count-badge">
+                0 / 10 Files (0 MB)
+              </div>
+            </div>
+
+            <!-- Upload drop area -->
+            <div class="flex items-center gap-3">
+              <label class="px-3.5 py-2 bg-white hover:bg-slate-100 text-indigo-600 border border-indigo-300 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs">
+                <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+                <span>+ Upload Supporting Files</span>
+                <input type="file" id="inp-inv-file-upload" multiple onchange="handleInvoiceFileUpload(event)" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" class="hidden" />
+              </label>
+              <span class="text-[10px] text-slate-400">PDF, JPG, PNG, DOC, XLS up to 100MB</span>
+            </div>
+
+            <!-- Attached Files Grid -->
+            <div id="inv-attachments-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <!-- Rendered dynamically -->
             </div>
           </div>
 
@@ -406,10 +514,12 @@
               <input type="text" id="inp-send-cc" value="measuredichennai@gmail.com" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
             <div>
-              <label class="block font-bold text-slate-700 uppercase mb-1">Invoice Attachment</label>
-              <div class="px-3 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl font-bold flex items-center justify-between">
-                <span id="send-attachment-name">Tax_Invoice.pdf</span>
-                <span class="text-[10px] bg-indigo-200 text-indigo-900 px-1.5 py-0.5 rounded">PDF</span>
+              <label class="block font-bold text-slate-700 uppercase mb-1">Attached Files For Dispatch</label>
+              <div id="send-attachments-list" class="space-y-1 bg-slate-50 p-2 rounded-xl border border-slate-200">
+                <div class="px-2.5 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg font-bold flex items-center justify-between">
+                  <span id="send-attachment-name" class="truncate">Tax_Invoice.pdf</span>
+                  <span class="text-[10px] bg-indigo-200 text-indigo-900 px-1.5 py-0.5 rounded font-black">SYSTEM PDF</span>
+                </div>
               </div>
             </div>
           </div>
@@ -471,6 +581,7 @@
     <script>
       var currentTab = 'All';
       var pendingReviewInvoiceId = null;
+      var currentInvoiceAttachments = [];
 
       document.addEventListener('DOMContentLoaded', function() {
         if (checkAuth(['admin', 'manager', 'staff'])) {
@@ -482,27 +593,105 @@
         var userRole = localStorage.getItem('userRole');
         var employees = window.RevOpsStore.getCollection('employees') || [];
 
+        // Role Governance: Finance/Accounts vs Sales Staff
+        var raiseBtn = document.getElementById('btn-raise-invoice');
+        var financeNotice = document.getElementById('finance-role-notice');
+        if (userRole === 'staff') {
+          // Sales staff can view invoices but creation is restricted to Finance/Admin
+          if (financeNotice) financeNotice.classList.remove('hidden');
+          if (raiseBtn) {
+            raiseBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            raiseBtn.title = "Commercial Invoices can only be raised by Finance & Accounting Department";
+            raiseBtn.onclick = function() {
+              alert("🔒 Access Restricted: Commercial Invoices must be raised exclusively by Finance & Accounts department per company policy.");
+            };
+          }
+        }
+
         if (userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') {
           var wrapper = document.getElementById('invoice-emp-filter-wrapper');
           var select = document.getElementById('invoice-emp-filter');
-          wrapper.classList.remove('hidden');
-
-          select.innerHTML = `<option value="All">All Sales Representatives</option>`;
-          employees.forEach(function(e) {
-            var opt = document.createElement('option');
-            opt.value = e.employeeId;
-            opt.innerText = e.fullName + " (" + e.employeeId + ")";
-            select.appendChild(opt);
-          });
+          if (wrapper && select) {
+            wrapper.classList.remove('hidden');
+            select.innerHTML = `<option value="All">All Sales Representatives</option>`;
+            employees.forEach(function(e) {
+              var opt = document.createElement('option');
+              opt.value = e.employeeId;
+              opt.innerText = e.fullName + " (" + e.employeeId + ")";
+              select.appendChild(opt);
+            });
+          }
         }
 
+        populateBankDropdown();
         populateQuoteAndOrderSources();
         renderInvoicesTable();
+      }
+
+      function populateBankDropdown() {
+        var bankSelect = document.getElementById('inp-inv-bank');
+        if (!bankSelect) return;
+
+        var banks = window.RevOpsStore.getCollection('bankDetailsMaster') || [];
+        if (banks.length === 0) {
+          // Default fallbacks
+          banks = [
+            { id: 'bank-1', bankName: 'HDFC Bank', accountNumber: '50200049283719', ifscCode: 'HDFC0000123', branchName: 'Guindy, Chennai', isDefault: true },
+            { id: 'bank-2', bankName: 'State Bank of India', accountNumber: '39281726351', ifscCode: 'SBIN0001824', branchName: 'Industrial Estate, Chennai', isDefault: false },
+            { id: 'bank-3', bankName: 'ICICI Bank', accountNumber: '001105029384', ifscCode: 'ICIC0000011', branchName: 'Nandanam, Chennai', isDefault: false }
+          ];
+        }
+
+        bankSelect.innerHTML = "";
+        banks.forEach(function(b) {
+          var opt = document.createElement('option');
+          opt.value = b.bankName + ' - Current A/c: ' + b.accountNumber + ' (IFSC: ' + b.ifscCode + ', ' + (b.branchName || '') + ')';
+          opt.innerText = b.bankName + ' - ' + b.accountNumber + ' (' + (b.branchName || 'Primary') + ')';
+          if (b.isDefault) opt.selected = true;
+          bankSelect.appendChild(opt);
+        });
       }
 
       function populateQuoteAndOrderSources() {
         var quotes = window.RevOpsStore.getCollection('quotations') || [];
         var orders = window.RevOpsStore.getCollection('orders') || [];
+        var invoices = window.RevOpsStore.getCollection('invoices') || [];
+
+        // Track order IDs and quote numbers that already have an issued Tax invoice
+        var invoicedOrderIds = {};
+        var invoicedPoRefs = {};
+        invoices.forEach(function(inv) {
+          if (inv.status !== 'Cancelled') {
+            if (inv.orderId) invoicedOrderIds[inv.orderId] = true;
+            if (inv.poRef) invoicedPoRefs[inv.poRef] = true;
+          }
+        });
+
+        // Filter orders: only show pending orders that are not yet invoiced
+        var pendingOrders = orders.filter(function(ord) {
+          if (ord.invoicedStatus === 'Invoiced') return false;
+          if (invoicedOrderIds[ord.id] || invoicedOrderIds[ord.orderId]) return false;
+          if (ord.poNumber && invoicedPoRefs[ord.poNumber]) return false;
+          return true;
+        });
+
+        var orderSelect = document.getElementById('inp-inv-order-source');
+        var countLabel = document.getElementById('pending-po-count-label');
+        if (countLabel) {
+          countLabel.innerText = pendingOrders.length + " pending un-invoiced PO(s) available";
+        }
+
+        if (orderSelect) {
+          orderSelect.innerHTML = `<option value="">-- Select Pending Purchase Order (${pendingOrders.length} Pending) --</option>`;
+          pendingOrders.forEach(function(ord) {
+            var opt = document.createElement('option');
+            opt.value = ord.id;
+            var poNum = ord.poNumber || ord.orderId || 'PO-';
+            var val = formatINR(ord.orderValue || 0);
+            opt.innerText = `${poNum} - ${ord.customerName} (${val}) [Un-invoiced]`;
+            orderSelect.appendChild(opt);
+          });
+        }
 
         var quoteSelect = document.getElementById('inp-inv-quote-source');
         if (quoteSelect) {
@@ -514,17 +703,93 @@
             quoteSelect.appendChild(opt);
           });
         }
+      }
 
-        var orderSelect = document.getElementById('inp-inv-order-source');
-        if (orderSelect) {
-          orderSelect.innerHTML = `<option value="">-- Custom Invoice (No Order) --</option>`;
-          orders.forEach(function(ord) {
-            var opt = document.createElement('option');
-            opt.value = ord.id;
-            opt.innerText = (ord.orderId || ord.invoiceNumber || 'ORD-') + ' - ' + ord.customerName + ' (' + formatINR(ord.orderValue) + ')';
-            orderSelect.appendChild(opt);
-          });
+      function toggleInvoiceBgFields() {
+        var req = document.getElementById('inp-inv-bgreq').value;
+        var box = document.getElementById('inv-bg-fields');
+        if (req === 'Yes') box.classList.remove('hidden');
+        else box.classList.add('hidden');
+      }
+
+      function toggleInvoiceRetFields() {
+        var req = document.getElementById('inp-inv-retreq').value;
+        var box = document.getElementById('inv-ret-fields');
+        if (req === 'Yes') box.classList.remove('hidden');
+        else box.classList.add('hidden');
+      }
+
+      function handleInvoiceFileUpload(e) {
+        var files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        if (currentInvoiceAttachments.length + files.length > 10) {
+          alert("Maximum 10 supporting files allowed per commercial invoice.");
+          return;
         }
+
+        // Calculate aggregate size
+        var existingBytes = currentInvoiceAttachments.reduce(function(acc, f) { return acc + (f.size || 0); }, 0);
+        var newBytes = files.reduce(function(acc, f) { return acc + f.size; }, 0);
+        var totalMB = (existingBytes + newBytes) / (1024 * 1024);
+
+        if (totalMB > 100) {
+          alert("Total attachments exceed 100 MB aggregate size limit (" + totalMB.toFixed(1) + " MB). Please select smaller files.");
+          return;
+        }
+
+        files.forEach(function(file) {
+          var reader = new FileReader();
+          reader.onload = function(evt) {
+            currentInvoiceAttachments.push({
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              data: evt.target.result,
+              uploadedAt: new Date().toISOString()
+            });
+            renderInvoiceAttachments();
+          };
+          reader.readAsDataURL(file);
+        });
+
+        // Reset input
+        e.target.value = "";
+      }
+
+      function removeInvoiceAttachment(index) {
+        currentInvoiceAttachments.splice(index, 1);
+        renderInvoiceAttachments();
+      }
+
+      function renderInvoiceAttachments() {
+        var container = document.getElementById('inv-attachments-container');
+        var badge = document.getElementById('inv-attachments-count-badge');
+        if (!container || !badge) return;
+
+        var totalBytes = currentInvoiceAttachments.reduce(function(acc, f) { return acc + (f.size || 0); }, 0);
+        var totalMB = (totalBytes / (1024 * 1024)).toFixed(2);
+        badge.innerText = `${currentInvoiceAttachments.length} / 10 Files (${totalMB} MB)`;
+
+        if (currentInvoiceAttachments.length === 0) {
+          container.innerHTML = `<div class="col-span-2 text-center text-slate-400 text-xs py-2 italic">No companion files attached yet.</div>`;
+          return;
+        }
+
+        container.innerHTML = currentInvoiceAttachments.map(function(att, idx) {
+          var sizeKb = Math.round((att.size || 0) / 1024);
+          var isPo = att.isClientPo ? '⭐ Client PO' : 'Doc';
+          return `
+            <div class="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200 text-xs shadow-2xs">
+              <div class="flex items-center space-x-2 truncate">
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-black ${att.isClientPo ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-700'}">${isPo}</span>
+                <span class="font-semibold text-slate-800 truncate" title="${escapeHtml(att.name)}">${escapeHtml(att.name)}</span>
+                <span class="text-[10px] text-slate-400 font-mono">(${sizeKb} KB)</span>
+              </div>
+              <button type="button" onclick="removeInvoiceAttachment(${idx})" class="text-rose-500 hover:text-rose-700 font-bold px-1.5 py-0.5">&times;</button>
+            </div>
+          `;
+        }).join('');
       }
 
       function filterByTab(tabName) {
@@ -777,6 +1042,21 @@
         document.getElementById('inp-inv-milestone').value = "Standard Commercial Milestone";
         document.getElementById('inp-inv-interstate').checked = false;
 
+        // Reset PG and Retention
+        document.getElementById('inp-inv-bgreq').value = "No";
+        document.getElementById('inp-inv-bgamt').value = "";
+        document.getElementById('inp-inv-bgdate').value = "";
+        toggleInvoiceBgFields();
+
+        document.getElementById('inp-inv-retreq').value = "No";
+        document.getElementById('inp-inv-retamt').value = "";
+        document.getElementById('inp-inv-retperiod').value = "";
+        toggleInvoiceRetFields();
+
+        // Reset attachments
+        currentInvoiceAttachments = [];
+        renderInvoiceAttachments();
+
         // Initialize line items
         var tbody = document.getElementById('invoice-items-tbody');
         tbody.innerHTML = "";
@@ -886,17 +1166,101 @@
       function autoPopulateFromOrder(orderId) {
         if (!orderId) return;
         var orders = window.RevOpsStore.getCollection('orders') || [];
+        var quotes = window.RevOpsStore.getCollection('quotations') || [];
+        var leads = window.RevOpsStore.getCollection('leads') || [];
+
         var ord = orders.find(function(item) { return item.id === orderId; });
         if (!ord) return;
 
+        // Auto fill basic customer & commercial data
         document.getElementById('inp-inv-customer').value = ord.customerName || '';
         document.getElementById('inp-inv-gstin').value = ord.customerGstin || '';
+        document.getElementById('inp-inv-email').value = ord.customerEmail || (ord.contactEmail || '');
+        document.getElementById('inp-inv-contact').value = (ord.contactPerson || '') + (ord.contactPhone ? ' / ' + ord.contactPhone : '');
         document.getElementById('inp-inv-vertical').value = ord.vertical || 'Sales';
-        document.getElementById('inp-inv-poref').value = ord.orderId || ord.invoiceNumber || '';
         
+        var poRefStr = (ord.poNumber || ord.orderId || '') + (ord.poDate ? ' dt. ' + ord.poDate : '');
+        document.getElementById('inp-inv-poref').value = poRefStr;
+        
+        if (ord.advancePercent) {
+          document.getElementById('inp-inv-milestone').value = ord.advancePercent + '% Advance on PO / Order Acceptance';
+        }
+
+        // Auto-fill PG / BG terms
+        if (ord.bgRequired === 'Yes') {
+          document.getElementById('inp-inv-bgreq').value = 'Yes';
+          document.getElementById('inp-inv-bgamt').value = ord.bgAmount || '';
+          document.getElementById('inp-inv-bgdate').value = ord.bgExpiryDate || '';
+          toggleInvoiceBgFields();
+        } else {
+          document.getElementById('inp-inv-bgreq').value = 'No';
+          toggleInvoiceBgFields();
+        }
+
+        // Auto-fill Retention terms
+        if (ord.retentionRequired === 'Yes') {
+          document.getElementById('inp-inv-retreq').value = 'Yes';
+          document.getElementById('inp-inv-retamt').value = ord.retentionAmount || '';
+          document.getElementById('inp-inv-retperiod').value = ord.retentionPeriod || '';
+          toggleInvoiceRetFields();
+        } else {
+          document.getElementById('inp-inv-retreq').value = 'No';
+          toggleInvoiceRetFields();
+        }
+
+        // Auto-attach Client PO Copy if present in Order
+        currentInvoiceAttachments = [];
+        if (ord.poFileData) {
+          currentInvoiceAttachments.push({
+            name: ord.poFileName || (ord.poNumber ? ord.poNumber + '_PO_Copy.jpg' : 'Client_Purchase_Order.jpg'),
+            size: ord.poFileSize || 150000,
+            type: 'image/jpeg',
+            data: ord.poFileData,
+            isClientPo: true,
+            uploadedAt: new Date().toISOString()
+          });
+        }
+        renderInvoiceAttachments();
+
+        // 3-way Line Items Extraction: Pull line items from linked Quote or Lead
+        var linkedQuote = null;
+        if (ord.quotationId) {
+          linkedQuote = quotes.find(function(q) { return q.id === ord.quotationId || q.quoteNumber === ord.quotationId; });
+        }
+        if (!linkedQuote && ord.quoteNumber) {
+          linkedQuote = quotes.find(function(q) { return q.quoteNumber === ord.quoteNumber; });
+        }
+
         var tbody = document.getElementById('invoice-items-tbody');
         tbody.innerHTML = "";
-        addInvoiceLineItem("Contract Order Fulfillment: " + (ord.customerName || ''), "90318000", 1, ord.orderValue || 100000, 0, 18);
+
+        if (linkedQuote && linkedQuote.items && linkedQuote.items.length > 0) {
+          linkedQuote.items.forEach(function(it) {
+            addInvoiceLineItem(
+              it.description || it.productName || 'Equipment Item',
+              it.hsnCode || '90318000',
+              it.quantity || 1,
+              it.unitPrice || 0,
+              it.lineDiscountPercent || 0,
+              it.taxPercent || 18
+            );
+          });
+        } else if (ord.items && ord.items.length > 0) {
+          ord.items.forEach(function(it) {
+            addInvoiceLineItem(
+              it.description || it.productName || 'Order Item',
+              it.hsnCode || '90318000',
+              it.quantity || 1,
+              it.unitPrice || 0,
+              it.lineDiscountPercent || 0,
+              it.taxPercent || 18
+            );
+          });
+        } else {
+          var desc = "Fulfillment of Commercial Purchase Order: " + (ord.poNumber || ord.orderId) + " - " + ord.customerName;
+          addInvoiceLineItem(desc, "90318000", 1, ord.orderValue || 100000, 0, 18);
+        }
+
         calculateInvoiceTotals();
       }
 
@@ -944,6 +1308,7 @@
 
         var grandTotal = taxableTotal + taxTotal;
         var isInterstate = document.getElementById('inp-inv-interstate').checked;
+        var selectedOrderId = document.getElementById('inp-inv-order-source').value;
 
         // Approval Logic: If raised by admin/super_admin, auto-approved. If staff, requires Senior Approval.
         var initialStatus = (userRole === 'admin' || userRole === 'super_admin') ? 'Approved' : 'Pending Senior Approval';
@@ -951,7 +1316,7 @@
           approvedBy: myName + ' (' + myEmpId + ')',
           approvedRole: userRole,
           approvedDate: getFormattedToday() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          seniorRemarks: 'Auto-approved by Senior Admin upon generation.'
+          seniorRemarks: 'Auto-approved by Senior Finance Administrator upon generation.'
         } : null;
 
         var invData = {
@@ -963,11 +1328,19 @@
           customerEmail: document.getElementById('inp-inv-email').value.trim(),
           contactPerson: document.getElementById('inp-inv-contact').value.trim(),
           poRef: document.getElementById('inp-inv-poref').value.trim(),
+          orderId: selectedOrderId || null,
           invoiceDate: document.getElementById('inp-inv-date').value.trim(),
           dueDate: document.getElementById('inp-inv-duedate').value.trim(),
           milestoneTag: document.getElementById('inp-inv-milestone').value.trim(),
+          bgRequired: document.getElementById('inp-inv-bgreq').value,
+          bgAmount: Number(document.getElementById('inp-inv-bgamt').value) || 0,
+          bgExpiryDate: document.getElementById('inp-inv-bgdate').value.trim(),
+          retentionRequired: document.getElementById('inp-inv-retreq').value,
+          retentionAmount: Number(document.getElementById('inp-inv-retamt').value) || 0,
+          retentionPeriod: document.getElementById('inp-inv-retperiod').value.trim(),
           bankDetails: document.getElementById('inp-inv-bank').value,
           terms: document.getElementById('inp-inv-terms').value.trim(),
+          attachments: currentInvoiceAttachments,
           isInterstate: isInterstate,
           items: items,
           taxableValue: taxableTotal,
@@ -998,11 +1371,21 @@
           invData.createdAt = new Date().toISOString();
           invData.emailDispatchHistory = [];
           window.RevOpsStore.addItem('invoices', invData);
+
+          // If linked to an order, mark the order as Invoiced so it is filtered out next time
+          if (selectedOrderId) {
+            window.RevOpsStore.updateItem('orders', selectedOrderId, {
+              invoicedStatus: 'Invoiced',
+              invoiceNumber: invData.invoiceNumber,
+              invoiceDate: invData.invoiceDate
+            });
+          }
         }
 
         closeInvoiceModal();
+        populateQuoteAndOrderSources();
         renderInvoicesTable();
-        alert(initialStatus === 'Approved' ? "✅ Invoice created & approved successfully!" : "📋 Invoice submitted for Senior Authorization.");
+        alert(initialStatus === 'Approved' ? "✅ Commercial Invoice created & approved successfully!" : "📋 Commercial Invoice submitted for Senior Authorization.");
       }
 
       function editInvoice(docId) {
@@ -1024,6 +1407,22 @@
         document.getElementById('inp-inv-duedate').value = inv.dueDate || '';
         document.getElementById('inp-inv-milestone').value = inv.milestoneTag || '';
         document.getElementById('inp-inv-interstate').checked = !!inv.isInterstate;
+
+        // PG / BG
+        document.getElementById('inp-inv-bgreq').value = inv.bgRequired || 'No';
+        document.getElementById('inp-inv-bgamt').value = inv.bgAmount || '';
+        document.getElementById('inp-inv-bgdate').value = inv.bgExpiryDate || '';
+        toggleInvoiceBgFields();
+
+        // Retention
+        document.getElementById('inp-inv-retreq').value = inv.retentionRequired || 'No';
+        document.getElementById('inp-inv-retamt').value = inv.retentionAmount || '';
+        document.getElementById('inp-inv-retperiod').value = inv.retentionPeriod || '';
+        toggleInvoiceRetFields();
+
+        // Attachments
+        currentInvoiceAttachments = inv.attachments || [];
+        renderInvoiceAttachments();
 
         var tbody = document.getElementById('invoice-items-tbody');
         tbody.innerHTML = "";
@@ -1107,12 +1506,56 @@
       // Email Client Dispatch Modal Functions
       function openSendInvoiceModal(invId) {
         var invoices = window.RevOpsStore.getCollection('invoices') || [];
+        var quotes = window.RevOpsStore.getCollection('quotations') || [];
+        var orders = window.RevOpsStore.getCollection('orders') || [];
         var inv = invoices.find(function(it) { return it.id === invId; });
         if (!inv) return;
 
         document.getElementById('send-inv-id').value = inv.id;
         document.getElementById('inp-send-to').value = inv.customerEmail || 'accounts@client.com';
-        document.getElementById('send-attachment-name').innerText = (inv.invoiceNumber.replace(/\//g, '_')) + '.pdf';
+        
+        // CC Logic: Auto-populate CC from Quotation / Order details + Accounts
+        var ccList = ['measuredichennai@gmail.com'];
+        if (inv.orderId) {
+          var ord = orders.find(function(o) { return o.id === inv.orderId; });
+          if (ord) {
+            if (ord.ccEmails) {
+              ord.ccEmails.split(',').forEach(function(em) { if (em.trim() && !ccList.includes(em.trim())) ccList.push(em.trim()); });
+            }
+            if (ord.quotationId) {
+              var q = quotes.find(function(item) { return item.id === ord.quotationId || item.quoteNumber === ord.quotationId; });
+              if (q && q.ccEmails) {
+                q.ccEmails.split(',').forEach(function(em) { if (em.trim() && !ccList.includes(em.trim())) ccList.push(em.trim()); });
+              }
+            }
+          }
+        }
+        document.getElementById('inp-send-cc').value = ccList.join(', ');
+
+        // Render Attached Files For Dispatch
+        var attachList = document.getElementById('send-attachments-list');
+        if (attachList) {
+          var invPdfName = (inv.invoiceNumber.replace(/\//g, '_')) + '.pdf';
+          var html = `
+            <div class="px-2.5 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg font-bold flex items-center justify-between text-xs">
+              <span class="truncate">📄 ${invPdfName}</span>
+              <span class="text-[10px] bg-indigo-200 text-indigo-900 px-1.5 py-0.5 rounded font-black">TAX INVOICE PDF</span>
+            </div>
+          `;
+          if (inv.attachments && inv.attachments.length > 0) {
+            inv.attachments.forEach(function(att) {
+              var badge = att.isClientPo ? '⭐ CLIENT PO' : 'DOC';
+              var bgClass = att.isClientPo ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-slate-100 text-slate-800 border-slate-200';
+              html += `
+                <div class="px-2.5 py-1.5 ${bgClass} border rounded-lg font-semibold flex items-center justify-between text-xs">
+                  <span class="truncate" title="${escapeHtml(att.name)}">📎 ${escapeHtml(att.name)}</span>
+                  <span class="text-[10px] bg-white text-slate-700 px-1.5 py-0.5 rounded font-bold border border-slate-200">${badge}</span>
+                </div>
+              `;
+            });
+          }
+          attachList.innerHTML = html;
+        }
         
         var subject = `[Measure DI Technologies] ${inv.invoiceType || 'Tax Invoice'} ${inv.invoiceNumber} - ${inv.customerName}`;
         document.getElementById('inp-send-subject').value = subject;
@@ -1129,7 +1572,7 @@ Invoice Summary:
 - Total Amount Payable: ${formatINR(inv.grandTotal)}
 - Payment Due Date: ${inv.dueDate || 'Immediate'}
 - Milestone / Purpose: ${inv.milestoneTag || 'Commercial Supply / Services'}
-
+${inv.bgRequired === 'Yes' ? `- Bank Guarantee / PG: ${formatINR(inv.bgAmount)} (Exp: ${inv.bgExpiryDate || '--'})\n` : ''}${inv.retentionRequired === 'Yes' ? `- Retention Clause: ${formatINR(inv.retentionAmount)} (${inv.retentionPeriod || '--'})\n` : ''}
 Remittance Bank Details:
 - Account Name: Measure DI Technologies Private Limited
 - Bank: ${inv.bankDetails || 'HDFC Bank - Current A/c No: 50200049283719, IFSC: HDFC0000123'}
@@ -1196,7 +1639,7 @@ Mobile: +91 98406 29928 | Web: www.measuredi.com`;
         window.RevOpsStore.updateItem('invoices', inv.id, updates);
         closeSendInvoiceModal();
         renderInvoicesTable();
-        alert("🚀 Official Invoice dispatched to client " + toEmail + " and recorded in audit ledger!");
+        alert("🚀 Official Invoice dispatched to client " + toEmail + " with all companion attachments and recorded in audit ledger!");
       }
 
       function openInvoiceInMailClient() {
@@ -1235,6 +1678,35 @@ Mobile: +91 98406 29928 | Web: www.measuredi.com`;
           });
         }
 
+        // PG / BG & Retention block
+        var guaranteeBlock = '';
+        if (inv.bgRequired === 'Yes' || inv.retentionRequired === 'Yes') {
+          guaranteeBlock = `
+            <div class="mt-4 p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl text-xs space-y-1.5">
+              <span class="font-bold text-amber-900 uppercase block text-[11px]">Commercial Guarantees & Retention Terms:</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700 text-[11px]">
+                ${inv.bgRequired === 'Yes' ? `<div><strong>Bank Guarantee (BG/PG):</strong> <span class="font-mono font-bold text-amber-900">${formatINR(inv.bgAmount)}</span> (Validity: ${escapeHtml(inv.bgExpiryDate || 'As per PO')})</div>` : ''}
+                ${inv.retentionRequired === 'Yes' ? `<div><strong>Retention Amount:</strong> <span class="font-mono font-bold text-amber-900">${formatINR(inv.retentionAmount)}</span> (Period: ${escapeHtml(inv.retentionPeriod || '12 Months Warranty')})</div>` : ''}
+              </div>
+            </div>
+          `;
+        }
+
+        // Attached Files List in print view
+        var attachmentsBadgeHtml = '';
+        if (inv.attachments && inv.attachments.length > 0) {
+          attachmentsBadgeHtml = `
+            <div class="mt-3 p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+              <span class="font-bold text-slate-700 uppercase block text-[10px] mb-1">Attached Companion Documents (${inv.attachments.length}):</span>
+              <div class="flex flex-wrap gap-1.5">
+                ${inv.attachments.map(function(a) {
+                  return `<span class="px-2 py-0.5 rounded bg-white text-slate-800 border border-slate-200 text-[10px] font-medium">${a.isClientPo ? '⭐ ' : '📎 '}${escapeHtml(a.name)}</span>`;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        }
+
         wrapper.innerHTML = `
           <!-- Header -->
           <div class="flex justify-between items-start border-b-2 border-slate-900 pb-4">
@@ -1268,10 +1740,10 @@ Mobile: +91 98406 29928 | Web: www.measuredi.com`;
             </div>
             <div>
               <span class="text-[10px] font-bold uppercase text-slate-400 block mb-1">Commercial & Dispatch Reference:</span>
-              <div class="text-slate-700"><strong>PO Reference:</strong> <span class="font-mono">${escapeHtml(inv.poRef || 'As per Contract')}</span></div>
+              <div class="text-slate-700"><strong>PO Reference:</strong> <span class="font-mono font-bold">${escapeHtml(inv.poRef || 'As per Contract')}</span></div>
               <div class="text-slate-700"><strong>Vertical / Division:</strong> ${escapeHtml(inv.vertical || 'Sales')}</div>
               <div class="text-slate-700"><strong>Milestone:</strong> ${escapeHtml(inv.milestoneTag || 'Commercial Billing')}</div>
-              <div class="text-slate-700"><strong>Place of Supply:</strong> ${inv.isInterstate ? 'Inter-State Supply' : 'Tamil Nadu (State Code: 33)'}</div>
+              <div class="text-slate-700"><strong>Place of Supply:</strong> ${inv.isInterstate ? 'Inter-State Supply (IGST)' : 'Tamil Nadu (State Code: 33 - CGST/SGST)'}</div>
             </div>
           </div>
 
@@ -1297,13 +1769,16 @@ Mobile: +91 98406 29928 | Web: www.measuredi.com`;
             </table>
           </div>
 
+          ${guaranteeBlock}
+          ${attachmentsBadgeHtml}
+
           <!-- Totals Breakdown & Bank Details -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
             <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2">
               <span class="font-bold text-slate-800 uppercase block text-[11px]">Bank Remittance Instructions:</span>
               <p class="text-slate-600 leading-relaxed font-mono text-[11px]">
                 <strong>Account Name:</strong> Measure DI Technologies Pvt Ltd<br>
-                <strong>Bank:</strong> ${escapeHtml(inv.bankDetails || 'HDFC Bank, Guindy Chennai')}<br>
+                <strong>Bank & Branch:</strong> ${escapeHtml(inv.bankDetails || 'HDFC Bank, Current A/c No: 50200049283719, IFSC: HDFC0000123')}<br>
                 <strong>Payment Mode:</strong> RTGS / NEFT / IMPS<br>
                 <strong>Terms:</strong> ${escapeHtml(inv.terms || 'Payment within 30 days')}
               </p>
@@ -1340,17 +1815,19 @@ Mobile: +91 98406 29928 | Web: www.measuredi.com`;
           </div>
 
           <!-- Signatures & Authorization -->
-          <div class="flex justify-between items-end border-t border-slate-200 pt-8 text-xs">
+          <div class="flex justify-between items-end border-t border-slate-200 pt-6 text-xs">
             <div class="text-[11px] text-slate-500 max-w-sm">
-              This is a computer generated commercial document authenticated under Digital Signature Protocol.
-              ${inv.approvalInfo ? `<br><strong class="text-emerald-700">Senior Sign-off:</strong> ${escapeHtml(inv.approvalInfo.approvedBy)} on ${escapeHtml(inv.approvalInfo.approvedDate)}` : ''}
+              This is a system generated commercial invoice authenticated under Digital Signature Protocol.
+              ${inv.approvalInfo ? `<br><strong class="text-emerald-700">Senior Authorization:</strong> ${escapeHtml(inv.approvalInfo.approvedBy)} on ${escapeHtml(inv.approvalInfo.approvedDate)}` : ''}
             </div>
             <div class="text-center">
-              <div class="w-36 h-12 border-b border-slate-400 mx-auto flex items-center justify-center text-[10px] text-slate-400 italic">
-                [Authorized Digital Seal]
+              <div class="w-48 py-2 px-3 bg-slate-50 border border-slate-300 rounded-lg mx-auto flex flex-col items-center justify-center">
+                <span class="text-[10px] font-serif italic text-indigo-950 font-bold tracking-wider">M. Ravichandran</span>
+                <span class="text-[9px] text-emerald-700 font-mono font-bold">✓ Digitally Signed</span>
+                <span class="text-[8px] text-slate-400 font-mono">Cert: DSC-MDI-2026-98406</span>
               </div>
-              <span class="font-bold text-slate-900 block mt-1">For MEASURE DI TECHNOLOGIES PVT LTD</span>
-              <span class="text-[10px] text-slate-500">Authorized Commercial Signatory</span>
+              <span class="font-bold text-slate-900 block mt-1.5 text-xs">For MEASURE DI TECHNOLOGIES PVT LTD</span>
+              <span class="text-[10px] text-slate-600 font-semibold">M. Ravichandran, Managing Director & CEO</span>
             </div>
           </div>
         `;

@@ -22765,6 +22765,47 @@ window.RevOpsStore.initSeedData = function() {
         ]));
       }
 
+      if (!localStorage.getItem('bankDetailsMaster') || JSON.parse(localStorage.getItem('bankDetailsMaster') || '[]').length === 0) {
+        localStorage.setItem('bankDetailsMaster', JSON.stringify([
+          {
+            id: 'bank_1',
+            bankName: 'HDFC Bank',
+            branch: 'Guindy Industrial Estate, Chennai - 600032',
+            accountNumber: '50200049283719',
+            ifscCode: 'HDFC0000123',
+            accountType: 'Current Account',
+            beneficiaryName: 'MEASURE DI TECHNOLOGIES PRIVATE LIMITED',
+            upiId: 'measuredi@hdfcbank',
+            swiftCode: 'HDFCINBBCHE',
+            isActive: true
+          },
+          {
+            id: 'bank_2',
+            bankName: 'State Bank of India (SBI)',
+            branch: 'Industrial Complex Branch, Guindy, Chennai - 600032',
+            accountNumber: '39281726351',
+            ifscCode: 'SBIN0001824',
+            accountType: 'Current Account',
+            beneficiaryName: 'MEASURE DI TECHNOLOGIES PRIVATE LIMITED',
+            upiId: 'measuredi@sbi',
+            swiftCode: 'SBININBB443',
+            isActive: true
+          },
+          {
+            id: 'bank_3',
+            bankName: 'ICICI Bank',
+            branch: 'Nungambakkam High Road Branch, Chennai - 600034',
+            accountNumber: '000905034821',
+            ifscCode: 'ICIC0000009',
+            accountType: 'Current Account',
+            beneficiaryName: 'MEASURE DI TECHNOLOGIES PRIVATE LIMITED',
+            upiId: 'measuredi@icici',
+            swiftCode: 'ICICINBBCTS',
+            isActive: true
+          }
+        ]));
+      }
+
       localStorage.setItem('revops_seeded_v25', 'true');
       localStorage.setItem('revops_seeded_v27', 'true');
     }

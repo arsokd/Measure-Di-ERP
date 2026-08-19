@@ -690,6 +690,20 @@ Object.assign(window.RevOpsStore, {
     return 'REC-2026-' + String(maxNum + 1).padStart(3, '0');
   },
 
+  generateNextTicketNumber: function() {
+    var tickets = this.getCollection('serviceTickets') || [];
+    var prefix = 'TKT-2026-';
+    var maxNum = 0;
+    tickets.forEach(function(t) {
+      var numStr = t.ticketNumber || t.id || '';
+      if (numStr.indexOf(prefix) !== -1) {
+        var numPart = parseInt(numStr.replace(prefix, ''), 10);
+        if (!isNaN(numPart) && numPart > maxNum) maxNum = numPart;
+      }
+    });
+    return prefix + String(maxNum + 1).padStart(3, '0');
+  },
+
   generateNextInvoiceNumber: function(isProforma) {
     var invoices = this.getCollection('invoices') || [];
     var prefix = isProforma ? 'PI/2026-27/' : 'INV/2026-27/';
@@ -744,6 +758,163 @@ Object.assign(window.RevOpsStore, {
 
     console.log("✅ Converted Proforma", proforma.invoiceNumber, "-> Tax Invoice", nextTaxInvNumber);
     return { success: true, taxInvoice: newTaxInvoice, proforma: proforma };
+  },
+
+  // Performance Guarantee (PG), Bank Guarantee (BG) & Warranty Retention Management
+  getPgBgReceivables: function() {
+    var orders = this.getCollection('orders') || [];
+    var invoices = this.getCollection('invoices') || [];
+    var pgbgList = this.getCollection('pgbgReceivables') || [];
+
+    // If pgbgReceivables collection is empty, automatically derive from orders and invoices with contract security terms
+    if (pgbgList.length === 0) {
+      var seedPgBg = [
+        {
+          id: 'pgbg_1',
+          clientName: 'Tata Steel Limited - Kalinganagar Works',
+          poNumber: 'TSL/2026/PO-8821',
+          invoiceNumber: 'INV/2026-27/001',
+          securityType: 'Performance Bank Guarantee (PBG)',
+          guaranteeAmount: 480000,
+          stipulatedPeriod: '12 Months Warranty from Commissioning',
+          validFrom: '15/04/2025',
+          releaseDueDate: '15/04/2026',
+          status: 'Due Soon',
+          isReleased: false,
+          bankBranch: 'SBI Industrial Finance Guindy (BG #9021-PBG-2025)',
+          remarks: '10% PBG against Blast Furnace Hot Metal scale contract.'
+        },
+        {
+          id: 'pgbg_2',
+          clientName: 'JSW Steel Limited - Vijayanagar Plant',
+          poNumber: 'JSW/VIJ/CAPEX/4409',
+          invoiceNumber: 'INV/2026-27/004',
+          securityType: 'Contract Retention (10%)',
+          guaranteeAmount: 325000,
+          stipulatedPeriod: '18 Months Operational Performance Guarantee',
+          validFrom: '10/05/2025',
+          releaseDueDate: '10/11/2026',
+          status: 'Active',
+          isReleased: false,
+          bankBranch: 'Contractual Retention withheld in client ledger',
+          remarks: '10% Retention payable upon submission of Final Acceptance Certificate (FAC).'
+        },
+        {
+          id: 'pgbg_3',
+          clientName: 'Jindal Steel & Power Ltd (JSPL) - Angul',
+          poNumber: 'JSPL/ANG/ORD/3012',
+          invoiceNumber: 'INV/2025-26/089',
+          securityType: 'Bank Guarantee (BG)',
+          guaranteeAmount: 250000,
+          stipulatedPeriod: '24 Months Warranty Period',
+          validFrom: '20/01/2024',
+          releaseDueDate: '20/01/2026',
+          status: 'Overdue / Action Needed',
+          isReleased: false,
+          bankBranch: 'HDFC Bank Corporate Guindy (BG #HDFC-BG-8812)',
+          remarks: 'Warranty expired on 20/01/2026. BG claim letter / surrender discharge note pending from client.'
+        },
+        {
+          id: 'pgbg_4',
+          clientName: 'Steel Authority of India Ltd (SAIL) - Bhilai Steel Plant',
+          poNumber: 'SAIL/BSP/PO/99120',
+          invoiceNumber: 'INV/2026-27/007',
+          securityType: 'Performance Bank Guarantee (PBG)',
+          guaranteeAmount: 620000,
+          stipulatedPeriod: '12 Months Warranty + 3 Months Claim Period',
+          validFrom: '01/06/2025',
+          releaseDueDate: '01/09/2026',
+          status: 'Active',
+          isReleased: false,
+          bankBranch: 'Canara Bank Commercial Chennai',
+          remarks: 'PBG for Crane weighing systems installation and commissioning.'
+        },
+        {
+          id: 'pgbg_5',
+          clientName: 'Adani Ports & Special Economic Zone - Mundra',
+          poNumber: 'APSEZ/MUN/2025/1102',
+          invoiceNumber: 'INV/2025-26/044',
+          securityType: 'Warranty Security Deposit',
+          guaranteeAmount: 180000,
+          stipulatedPeriod: '12 Months Warranty',
+          validFrom: '10/02/2025',
+          releaseDueDate: '10/02/2026',
+          status: 'Overdue / Action Needed',
+          isReleased: false,
+          bankBranch: 'Client Security Deposit A/c',
+          remarks: '12 months warranty completed. Refund release communication to be initiated with Adani Finance.'
+        }
+      ];
+
+      this.saveCollection('pgbgReceivables', seedPgBg);
+      pgbgList = seedPgBg;
+    }
+
+    // Recalculate dynamic days remaining and alert status
+    var today = new Date();
+    today.setHours(0,0,0,0);
+
+    pgbgList.forEach(function(item) {
+      if (item.isReleased) {
+        item.status = 'Released / Collected';
+        item.daysRemaining = 0;
+        return;
+      }
+
+      var dueDate = parseDateDDMMYYYY(item.releaseDueDate);
+      var diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+      item.daysRemaining = diffDays;
+
+      if (diffDays < 0) {
+        item.status = 'Overdue / Action Needed';
+      } else if (diffDays <= 30) {
+        item.status = 'Due Soon (< 30 Days)';
+      } else {
+        item.status = 'Active';
+      }
+    });
+
+    return pgbgList;
+  },
+
+  releasePgBgSecurity: function(recordId, releaseData) {
+    var pgbgList = this.getPgBgReceivables();
+    var rec = pgbgList.find(function(it) { return it.id === recordId; });
+    if (!rec) return { success: false, error: "PG/BG record not found." };
+
+    rec.isReleased = true;
+    rec.status = 'Released / Collected';
+    rec.releasedDate = releaseData && releaseData.date ? releaseData.date : getFormattedToday();
+    rec.releasedAmount = releaseData && releaseData.amount ? Number(releaseData.amount) : rec.guaranteeAmount;
+    rec.releaseRef = releaseData && releaseData.ref ? releaseData.ref : 'BG-REL-' + Math.floor(100000 + Math.random() * 900000);
+    rec.releaseRemarks = releaseData && releaseData.remarks ? releaseData.remarks : 'Discharge note received and original BG returned by client.';
+    rec.updatedAt = new Date().toISOString();
+
+    this.saveCollection('pgbgReceivables', pgbgList);
+    return { success: true, record: rec };
+  },
+
+  // 2-Step Verification for Payment Collection (Staff Record -> Finance/Accounts Approval)
+  verifyPaymentByAccounts: function(paymentId, approverName, approverRole) {
+    var payments = this.getCollection('payments') || [];
+    var p = payments.find(function(it) { return it.id === paymentId; });
+    if (!p) return { success: false, error: "Payment record not found." };
+
+    p.status = 'Cleared';
+    p.verifiedByAccounts = true;
+    p.accountsVerifiedAt = new Date().toISOString();
+    p.accountsApproverName = approverName || 'Finance & Accounts Team';
+    p.accountsApproverRole = approverRole || 'admin';
+    p.updatedAt = new Date().toISOString();
+
+    this.updateItem('payments', paymentId, p);
+
+    // Synchronize invoice balance immediately so revenue dashboards and statements update
+    if (p.invoiceId || p.invoiceNumber) {
+      this.syncInvoicePaymentStatus(p.invoiceId || p.invoiceNumber);
+    }
+
+    return { success: true, payment: p };
   },
 
   sanitizeRecord: function(item) {

@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Measure DI RevOps - Warranty Management & Equipment Health Hub</title>
+    <link rel="stylesheet" href="/src/index.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="js/firebase-init.js" defer></script>
+    <script src="js/store.js" defer></script>
+    <script src="js/seed-data.js" defer></script>
+    <script src="auth-guard.js" defer></script>
+  </head>
+  <body class="bg-slate-900 min-h-screen text-slate-100 font-sans antialiased">
+    
+    <!-- Navbar Container -->
+    <div id="navbar-container"></div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      
+      <!-- Top Header & Action Controls -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-850 p-6 rounded-2xl border border-slate-800 shadow-xl">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              Service & Quality Engine
+            </span>
+            <span class="text-xs text-slate-400 font-semibold">• Installed Base Warranty & RMA Tracking</span>
+          </div>
+          <h1 class="text-2xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
+            <span>Warranty Management & Installed Base</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/80">RevOps v28</span>
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">Equipment commissioning warranty tracking, countdown alerts, RMA claims, replacement parts & seamless 1-click AMC conversion funnel.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+          <a href="service-tickets.html" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer" title="Service Tickets">
+            <i class="fa-solid fa-screwdriver-wrench text-amber-400"></i>
+            <span>Service Tickets</span>
+          </a>
+          <a href="amc-contracts.html" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer" title="AMC Contracts Hub">
+            <i class="fa-solid fa-file-contract text-emerald-400"></i>
+            <span>AMC Contracts</span>
+          </a>
+          <button onclick="openNewWarrantyModal()" class="px-4 py-2 bg-[#982B68] hover:bg-[#802256] text-white font-bold text-xs rounded-xl shadow-lg shadow-[#982B68]/30 transition-all flex items-center space-x-1.5 cursor-pointer">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>+ Register Equipment Warranty</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1 -->
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-wider text-slate-400">Active Warranted Units</div>
+            <div class="text-2xl font-black text-white mt-1" id="stat-active-warranties">0</div>
+            <div class="text-[11px] text-emerald-400 font-semibold mt-0.5" id="stat-installed-base">Total Base: 0 Units</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-shield-check"></i>
+          </div>
+        </div>
+
+        <!-- KPI 2 -->
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-wider text-amber-400">Expiring in &le; 45 Days</div>
+            <div class="text-2xl font-black text-amber-400 mt-1" id="stat-expiring-warranties">0</div>
+            <div class="text-[11px] text-slate-400 font-semibold mt-0.5">High-Priority AMC Conversion</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-hourglass-half"></i>
+          </div>
+        </div>
+
+        <!-- KPI 3 -->
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-wider text-purple-400">Warranty-to-AMC Rate</div>
+            <div class="text-2xl font-black text-purple-400 mt-1" id="stat-amc-conversion-rate">72.4%</div>
+            <div class="text-[11px] text-slate-400 font-semibold mt-0.5">Target: &ge; 65.0% Conversion</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-arrows-spin"></i>
+          </div>
+        </div>
+
+        <!-- KPI 4 -->
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-xl flex items-center justify-between">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-wider text-rose-400">RMA & Claims Rate</div>
+            <div class="text-2xl font-black text-rose-400 mt-1" id="stat-claims-rate">2.1%</div>
+            <div class="text-[11px] text-slate-400 font-semibold mt-0.5" id="stat-claims-count">0 Claims Recorded</div>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-hand-holding-hand"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Controls & Search -->
+      <div class="bg-slate-850 p-4 rounded-2xl border border-slate-800 shadow-xl flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-[300px]">
+          <!-- Search -->
+          <div class="relative flex-1 min-w-[200px]">
+            <input type="text" id="warranty-search-input" oninput="renderWarrantyTable()" placeholder="Search by Serial #, Customer, Model, Order Ref..." class="w-full pl-8 pr-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500" />
+            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-3 text-slate-500 text-xs"></i>
+          </div>
+
+          <!-- Status Filter -->
+          <select id="warranty-status-filter" onchange="renderWarrantyTable()" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300 font-semibold focus:outline-none focus:border-purple-500">
+            <option value="All">All Warranty Statuses</option>
+            <option value="Active">Under Active Warranty</option>
+            <option value="Expiring Soon">Expiring Soon (&le; 45 Days)</option>
+            <option value="Expired">Out of Warranty (Expired)</option>
+            <option value="Converted to AMC">Converted to AMC</option>
+          </select>
+
+          <!-- Type Filter -->
+          <select id="warranty-type-filter" onchange="renderWarrantyTable()" class="px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-300 font-semibold focus:outline-none focus:border-purple-500">
+            <option value="All">All Warranty Types</option>
+            <option value="Standard 12-Month OEM">Standard 12-Month OEM</option>
+            <option value="Extended 24-Month Premium">Extended 24-Month Premium</option>
+            <option value="Replacement Part 6-Month">Replacement Part 6-Month</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400 font-bold" id="warranty-count-badge">0 units</span>
+          <button onclick="exportWarrantyCSV()" class="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-download text-xs text-slate-400"></i>
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Warranty Master Registry Table -->
+      <div class="bg-slate-850 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-900/80 border-b border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                <th class="py-3 px-4">Serial Number & Order Ref</th>
+                <th class="py-3 px-4">Customer & Plant Site</th>
+                <th class="py-3 px-4">Equipment Model & Vertical</th>
+                <th class="py-3 px-4">Commissioning & Expiry</th>
+                <th class="py-3 px-4 text-center">Warranty Tier</th>
+                <th class="py-3 px-4 text-center">Status & Countdown</th>
+                <th class="py-3 px-4 text-center">RMA / Claims</th>
+                <th class="py-3 px-4 text-center">Actions & AMC Funnel</th>
+              </tr>
+            </thead>
+            <tbody id="warranty-tbody" class="divide-y divide-slate-800 text-xs">
+              <!-- Dynamically populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+
+    <!-- MODAL 1: REGISTER / EDIT EQUIPMENT WARRANTY -->
+    <div id="warranty-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-2xl shadow-2xl p-6 text-slate-200 space-y-5 my-8">
+        
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-9 h-9 rounded-xl bg-purple-500 text-white flex items-center justify-center font-black text-sm">
+              <i class="fa-solid fa-shield"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-white uppercase tracking-wider" id="warranty-modal-title">Register Equipment Warranty</h3>
+              <p class="text-[11px] text-slate-400">Record equipment commissioning date, warranty period & customer site details</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeWarrantyModal()" class="text-slate-400 hover:text-white text-lg font-bold p-1 cursor-pointer">&times;</button>
+        </div>
+
+        <form id="warranty-form" onsubmit="handleSaveWarranty(event)" class="space-y-4">
+          <input type="hidden" id="warranty-doc-id" value="" />
+
+          <!-- Row 1: Customer & Order Ref -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Customer Name *</label>
+              <input type="text" id="inp-warr-customer" required placeholder="e.g. JSW Steel Limited" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-semibold focus:outline-none focus:border-purple-500" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Original Order / Contract #</label>
+              <input type="text" id="inp-warr-order" placeholder="ORD-2025-042" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-mono focus:outline-none focus:border-purple-500" />
+            </div>
+          </div>
+
+          <!-- Row 2: Equipment Model & Serial No -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Equipment Model *</label>
+              <input type="text" id="inp-warr-model" required placeholder="Wireless Crane Scale 50T (CS-50W)" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-semibold focus:outline-none focus:border-purple-500" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Serial Number *</label>
+              <input type="text" id="inp-warr-serial" required placeholder="CS-50T-2025-104" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-purple-500" />
+            </div>
+          </div>
+
+          <!-- Row 3: Commissioning Date, Tier & Expiry -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Commissioning Date *</label>
+              <input type="date" id="inp-warr-comm-date" required onchange="calculateWarrantyExpiryDate()" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Warranty Period Tier *</label>
+              <select id="inp-warr-tier" required onchange="calculateWarrantyExpiryDate()" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-semibold focus:outline-none focus:border-purple-500">
+                <option value="Standard 12-Month OEM" selected>Standard 12-Month OEM</option>
+                <option value="Extended 24-Month Premium">Extended 24-Month Premium</option>
+                <option value="Replacement Part 6-Month">Replacement Part 6-Month</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Warranty Expiry Date *</label>
+              <input type="date" id="inp-warr-expiry-date" required class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-amber-300 font-bold focus:outline-none focus:border-purple-500" />
+            </div>
+          </div>
+
+          <!-- Row 4: Site Location & Service Vertical -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plant / Site Location</label>
+              <input type="text" id="inp-warr-location" placeholder="Bay 3 Blast Furnace, Toranagallu" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-purple-500" />
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Service Vertical</label>
+              <select id="inp-warr-vertical" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-semibold focus:outline-none focus:border-purple-500">
+                <option value="Crane" selected>Crane Scales</option>
+                <option value="Projects">Projects (Train Weighers / Ladle)</option>
+                <option value="Onboard">Onboard Scales</option>
+                <option value="Service and Parts">Service and Parts</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+            <button type="button" onclick="closeWarrantyModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">
+              Cancel
+            </button>
+            <button type="submit" class="px-5 py-2 bg-[#982B68] hover:bg-[#802256] text-white font-bold text-xs rounded-xl shadow-md transition-colors flex items-center space-x-1.5 cursor-pointer">
+              <i class="fa-solid fa-floppy-disk text-xs"></i>
+              <span>Save Warranty Record</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 2: LOG WARRANTY CLAIM / RMA -->
+    <div id="claim-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg shadow-2xl p-6 text-slate-200 space-y-4 my-8">
+        
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center font-black text-sm">
+              <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-white uppercase tracking-wider">Log Warranty Claim / RMA</h3>
+              <p class="text-[11px] text-slate-400" id="claim-modal-subtitle">Record zero-cost warranty part replacement & root cause</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeClaimModal()" class="text-slate-400 hover:text-white text-lg font-bold p-1 cursor-pointer">&times;</button>
+        </div>
+
+        <form id="claim-form" onsubmit="handleSaveClaim(event)" class="space-y-3.5">
+          <input type="hidden" id="claim-warr-id" value="" />
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">RMA Claim #</label>
+              <input type="text" id="claim-rma-num" readonly class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-rose-400 font-mono font-bold" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Claim Date *</label>
+              <input type="date" id="claim-date" required class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-rose-500" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Failed Component *</label>
+            <input type="text" id="claim-component" required placeholder="e.g. 50T Shear Beam Load Cell #1 (Bridge Zero Shift)" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-rose-500" />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Failure Root Cause *</label>
+              <select id="claim-rca" required class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-semibold focus:outline-none focus:border-rose-500">
+                <option value="Component Infant Mortality">Component Infant Mortality</option>
+                <option value="Power Surge / Lightning">Power Surge / Electrical Surge</option>
+                <option value="Mechanical Overload Impact">Mechanical Overload Impact</option>
+                <option value="Moisture Ingress / Corrosion">Moisture Ingress / Corrosion</option>
+                <option value="Cable Shearing / Physical Damage">Cable Shearing / Physical Damage</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Replacement Part S/N</label>
+              <input type="text" id="claim-replacement-sn" placeholder="SP-LC-2026-904" class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-emerald-400 font-mono focus:outline-none focus:border-rose-500" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Action & Technician Findings</label>
+            <textarea id="claim-findings" rows="2.5" placeholder="Replaced defective strain gauge sensor on-site under zero-cost warranty. Re-calibrated with 20T standard weights. Client signed CSR." class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-rose-500"></textarea>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+            <button type="button" onclick="closeClaimModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold text-xs rounded-xl cursor-pointer">
+              Cancel
+            </button>
+            <button type="submit" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md transition-colors flex items-center space-x-1.5 cursor-pointer">
+              <i class="fa-solid fa-shield-virus text-xs"></i>
+              <span>Authorize & Log RMA Claim</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Page Logic Script -->
+    <script>
+      var activeWarranties = [];
+
+      document.addEventListener('DOMContentLoaded', function() {
+        renderWarrantyTable();
+
+        if (window.RevOpsStore && typeof window.RevOpsStore.subscribeRealtimeSync === 'function') {
+          window.RevOpsStore.subscribeRealtimeSync('clientEquipmentMaster', function() {
+            renderWarrantyTable();
+          });
+        }
+      });
+
+      function getWarrantiesList() {
+        var list = window.RevOpsStore ? (window.RevOpsStore.getCollection('clientEquipmentMaster') || []) : [];
+        if (list.length === 0) {
+          list = [
+            {
+              id: "warr_001",
+              serialNumber: "CS-50T-2025-001",
+              customerName: "JSW Steel Limited",
+              location: "Toranagallu Slag Yard, Ballari, Karnataka",
+              equipmentModel: "Wireless Crane Scale 50T (CS-50W)",
+              vertical: "Crane",
+              orderRef: "ORD-2025-012",
+              commissioningDate: "2025-09-15",
+              warrantyTier: "Standard 12-Month OEM",
+              expiryDate: "2026-09-14",
+              claims: [],
+              statusOverride: null
+            },
+            {
+              id: "warr_002",
+              serialNumber: "IMW-500-2025-004",
+              customerName: "Tata Steel Limited",
+              location: "Kalinganagar Blast Furnace Bay 2, Odisha",
+              equipmentModel: "Dynamic In-Motion Train Weigher (IMW-500)",
+              vertical: "Projects",
+              orderRef: "ORD-2025-018",
+              commissioningDate: "2025-07-10",
+              warrantyTier: "Extended 24-Month Premium",
+              expiryDate: "2027-07-09",
+              claims: [
+                { rmaNumber: "RMA-2026-01", date: "2026-02-14", component: "Optical Axle Detector", rca: "Moisture Ingress / Corrosion", replacementSn: "OPT-2026-88" }
+              ],
+              statusOverride: null
+            },
+            {
+              id: "warr_003",
+              serialNumber: "OTW-30T-2025-088",
+              customerName: "UltraTech Cement",
+              location: "Awarpur Cement Works, Maharashtra",
+              equipmentModel: "Onboard Tipper Scale (OTW-30T)",
+              vertical: "Onboard",
+              orderRef: "ORD-2025-029",
+              commissioningDate: "2025-08-01",
+              warrantyTier: "Standard 12-Month OEM",
+              expiryDate: "2026-07-31",
+              claims: [],
+              statusOverride: null
+            },
+            {
+              id: "warr_004",
+              serialNumber: "LTW-350-2025-002",
+              customerName: "Vedanta Aluminium",
+              location: "Jharsuguda Smelter Plant, Odisha",
+              equipmentModel: "Ladle Turret Weighing System (LTW-350)",
+              vertical: "Projects",
+              orderRef: "ORD-2025-034",
+              commissioningDate: "2025-10-20",
+              warrantyTier: "Standard 12-Month OEM",
+              expiryDate: "2026-10-19",
+              claims: [],
+              statusOverride: null
+            },
+            {
+              id: "warr_005",
+              serialNumber: "WB-100T-2024-001",
+              customerName: "Hindalco Industries",
+              location: "Mahan Aluminium Project, MP",
+              equipmentModel: "Electronic Static Pitless Weighbridge (WB-100T)",
+              vertical: "Projects",
+              orderRef: "ORD-2024-009",
+              commissioningDate: "2024-06-01",
+              warrantyTier: "Standard 12-Month OEM",
+              expiryDate: "2025-05-31",
+              claims: [],
+              statusOverride: "Converted to AMC"
+            }
+          ];
+          if (window.RevOpsStore && window.RevOpsStore.saveCollection) {
+            window.RevOpsStore.saveCollection('clientEquipmentMaster', list);
+          }
+        }
+        return list;
+      }
+
+      function computeWarrantyStatus(w) {
+        if (w.statusOverride === 'Converted to AMC') {
+          return { status: "Converted to AMC", badgeClass: "bg-indigo-950 text-indigo-300 border-indigo-700/60", days: 0, label: "Converted to AMC Contract" };
+        }
+
+        var today = new Date();
+        var exp = new Date(w.expiryDate);
+        var diffDays = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) {
+          return { status: "Expired", badgeClass: "bg-rose-950 text-rose-300 border-rose-700/60", days: diffDays, label: "Expired (" + Math.abs(diffDays) + "d ago)" };
+        } else if (diffDays <= 45) {
+          return { status: "Expiring Soon", badgeClass: "bg-amber-950 text-amber-300 border-amber-700/60", days: diffDays, label: "Expires in " + diffDays + " days" };
+        } else {
+          return { status: "Active", badgeClass: "bg-emerald-950 text-emerald-300 border-emerald-700/60", days: diffDays, label: "Active (" + diffDays + "d left)" };
+        }
+      }
+
+      function calculateWarrantyExpiryDate() {
+        var commDateStr = document.getElementById('inp-warr-comm-date')?.value;
+        var tier = document.getElementById('inp-warr-tier')?.value || 'Standard 12-Month OEM';
+        var expInput = document.getElementById('inp-warr-expiry-date');
+        if (!commDateStr || !expInput) return;
+
+        var d = new Date(commDateStr);
+        if (tier.includes('24-Month')) {
+          d.setFullYear(d.getFullYear() + 2);
+        } else if (tier.includes('6-Month')) {
+          d.setMonth(d.getMonth() + 6);
+        } else {
+          d.setFullYear(d.getFullYear() + 1);
+        }
+        d.setDate(d.getDate() - 1);
+
+        var yyyy = d.getFullYear();
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        expInput.value = yyyy + '-' + mm + '-' + dd;
+      }
+
+      function renderWarrantyTable() {
+        var items = getWarrantiesList();
+        activeWarranties = items;
+
+        var searchQuery = (document.getElementById('warranty-search-input')?.value || '').toLowerCase();
+        var statusFilter = document.getElementById('warranty-status-filter')?.value || 'All';
+        var typeFilter = document.getElementById('warranty-type-filter')?.value || 'All';
+
+        var filtered = items.filter(function(w) {
+          if (typeFilter !== 'All' && w.warrantyTier !== typeFilter) return false;
+          var st = computeWarrantyStatus(w);
+          if (statusFilter !== 'All' && st.status !== statusFilter) return false;
+
+          var q = searchQuery;
+          var textMatch = (w.serialNumber || '').toLowerCase().includes(q) ||
+                          (w.customerName || '').toLowerCase().includes(q) ||
+                          (w.equipmentModel || '').toLowerCase().includes(q) ||
+                          (w.orderRef || '').toLowerCase().includes(q) ||
+                          (w.location || '').toLowerCase().includes(q);
+          return textMatch;
+        });
+
+        // Compute KPIs
+        var activeCount = 0;
+        var expiringCount = 0;
+        var totalClaims = 0;
+        var convertedCount = 0;
+        var expiredCount = 0;
+
+        items.forEach(function(w) {
+          var st = computeWarrantyStatus(w);
+          if (st.status === 'Active') activeCount++;
+          if (st.status === 'Expiring Soon') expiringCount++;
+          if (st.status === 'Converted to AMC') convertedCount++;
+          if (st.status === 'Expired') expiredCount++;
+          if (w.claims && Array.isArray(w.claims)) {
+            totalClaims += w.claims.length;
+          }
+        });
+
+        var conversionRate = (convertedCount + expiredCount > 0) ? ((convertedCount / (convertedCount + expiredCount)) * 100).toFixed(1) : '72.4';
+        var claimsRate = items.length > 0 ? ((totalClaims / items.length) * 100).toFixed(1) : '2.1';
+
+        document.getElementById('stat-active-warranties').textContent = activeCount;
+        document.getElementById('stat-installed-base').textContent = 'Total Base: ' + items.length + ' Units';
+        document.getElementById('stat-expiring-warranties').textContent = expiringCount;
+        document.getElementById('stat-amc-conversion-rate').textContent = conversionRate + '%';
+        document.getElementById('stat-claims-rate').textContent = claimsRate + '%';
+        document.getElementById('stat-claims-count').textContent = totalClaims + ' RMA Claims Logged';
+        document.getElementById('warranty-count-badge').textContent = filtered.length + ' units';
+
+        var tbody = document.getElementById('warranty-tbody');
+        tbody.innerHTML = '';
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-500">No equipment warranty records found matching filters.</td></tr>`;
+          return;
+        }
+
+        filtered.forEach(function(w) {
+          var st = computeWarrantyStatus(w);
+          var claimsCount = (w.claims && Array.isArray(w.claims)) ? w.claims.length : 0;
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-800/40 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4">
+              <div class="font-black text-amber-400 font-mono">${escapeHtml(w.serialNumber)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(w.orderRef || 'PO Ref: N/A')}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-white text-xs">${escapeHtml(w.customerName)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5 line-clamp-1">${escapeHtml(w.location || 'Client Facility')}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-semibold text-slate-200 text-xs">${escapeHtml(w.equipmentModel)}</div>
+              <span class="inline-block mt-1 px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(w.vertical || 'Crane')}</span>
+            </td>
+            <td class="py-3 px-4">
+              <div class="text-[11px] text-slate-300">Comm: <span class="font-semibold text-white">${escapeHtml(w.commissioningDate)}</span></div>
+              <div class="text-[10px] text-amber-300 mt-0.5">Exp: <span class="font-bold">${escapeHtml(w.expiryDate)}</span></div>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-purple-950 text-purple-300 border border-purple-800/60">${escapeHtml(w.warrantyTier || '12-Month OEM')}</span>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${st.badgeClass}">${escapeHtml(st.status)}</span>
+              <div class="text-[10px] text-slate-400 mt-1 font-semibold">${escapeHtml(st.label)}</div>
+            </td>
+            <td class="py-3 px-4 text-center">
+              ${claimsCount > 0 ? `<button onclick="openClaimModal('${w.id}')" class="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800/60 font-bold text-[10px] hover:bg-rose-900 cursor-pointer">${claimsCount} Claim(s)</button>` : `<span class="text-slate-500 text-[10px]">0 Claims</span>`}
+            </td>
+            <td class="py-3 px-4 text-center">
+              <div class="flex items-center justify-center space-x-1.5">
+                <button onclick="openClaimModal('${w.id}')" class="p-1.5 bg-rose-950 hover:bg-rose-900 text-rose-300 hover:text-white rounded-lg transition-colors border border-rose-800/60 cursor-pointer" title="Log Warranty Claim / RMA">
+                  <i class="fa-solid fa-clipboard-check text-xs"></i>
+                </button>
+                <a href="amc-quotes.html?prefillCustomer=${encodeURIComponent(w.customerName)}&prefillModel=${encodeURIComponent(w.equipmentModel)}&prefillSerial=${encodeURIComponent(w.serialNumber)}" class="p-1.5 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 hover:text-white rounded-lg transition-colors border border-emerald-800/60 cursor-pointer" title="Convert to AMC Quote">
+                  <i class="fa-solid fa-arrows-spin text-xs"></i>
+                </a>
+                <button onclick="editWarranty('${w.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer" title="Edit Warranty Details">
+                  <i class="fa-solid fa-pen-to-square text-xs"></i>
+                </button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function openNewWarrantyModal() {
+        var form = document.getElementById('warranty-form');
+        form.reset();
+        document.getElementById('warranty-doc-id').value = '';
+        document.getElementById('warranty-modal-title').textContent = "Register Equipment Warranty";
+        
+        var today = new Date().toISOString().slice(0, 10);
+        document.getElementById('inp-warr-comm-date').value = today;
+        calculateWarrantyExpiryDate();
+
+        document.getElementById('warranty-modal').classList.remove('hidden');
+      }
+
+      function closeWarrantyModal() {
+        document.getElementById('warranty-modal').classList.add('hidden');
+      }
+
+      function editWarranty(id) {
+        var items = getWarrantiesList();
+        var w = items.find(function(item) { return item.id === id; });
+        if (!w) return;
+
+        document.getElementById('warranty-doc-id').value = w.id;
+        document.getElementById('warranty-modal-title').textContent = "Edit Equipment Warranty (" + w.serialNumber + ")";
+        document.getElementById('inp-warr-customer').value = w.customerName || '';
+        document.getElementById('inp-warr-order').value = w.orderRef || '';
+        document.getElementById('inp-warr-model').value = w.equipmentModel || '';
+        document.getElementById('inp-warr-serial').value = w.serialNumber || '';
+        document.getElementById('inp-warr-comm-date').value = w.commissioningDate || '';
+        document.getElementById('inp-warr-tier').value = w.warrantyTier || 'Standard 12-Month OEM';
+        document.getElementById('inp-warr-expiry-date').value = w.expiryDate || '';
+        document.getElementById('inp-warr-location').value = w.location || '';
+        document.getElementById('inp-warr-vertical').value = w.vertical || 'Crane';
+
+        document.getElementById('warranty-modal').classList.remove('hidden');
+      }
+
+      function handleSaveWarranty(e) {
+        e.preventDefault();
+        var docId = document.getElementById('warranty-doc-id').value;
+        var items = getWarrantiesList();
+        var existing = docId ? items.find(function(w) { return w.id === docId; }) : null;
+
+        var newWarr = {
+          id: docId || ('warr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+          serialNumber: document.getElementById('inp-warr-serial').value.trim(),
+          customerName: document.getElementById('inp-warr-customer').value.trim(),
+          orderRef: document.getElementById('inp-warr-order').value.trim(),
+          equipmentModel: document.getElementById('inp-warr-model').value.trim(),
+          commissioningDate: document.getElementById('inp-warr-comm-date').value,
+          warrantyTier: document.getElementById('inp-warr-tier').value,
+          expiryDate: document.getElementById('inp-warr-expiry-date').value,
+          location: document.getElementById('inp-warr-location').value.trim(),
+          vertical: document.getElementById('inp-warr-vertical').value,
+          claims: existing ? existing.claims : [],
+          statusOverride: existing ? existing.statusOverride : null,
+          updatedAt: new Date().toISOString()
+        };
+
+        if (existing) {
+          var idx = items.findIndex(function(w) { return w.id === docId; });
+          if (idx !== -1) items[idx] = newWarr;
+        } else {
+          items.unshift(newWarr);
+        }
+
+        if (window.RevOpsStore && window.RevOpsStore.saveCollection) {
+          window.RevOpsStore.saveCollection('clientEquipmentMaster', items);
+          if (window.RevOpsStore.logAudit) {
+            window.RevOpsStore.logAudit('Warranty Master', newWarr.serialNumber, existing ? 'UPDATE' : 'CREATE', (existing ? 'Updated warranty for ' : 'Registered new warranty for ') + newWarr.equipmentModel + ' (S/N: ' + newWarr.serialNumber + ') - ' + newWarr.customerName, existing, newWarr);
+          }
+        }
+
+        closeWarrantyModal();
+        renderWarrantyTable();
+      }
+
+      function openClaimModal(warrId) {
+        var items = getWarrantiesList();
+        var w = items.find(function(item) { return item.id === warrId; });
+        if (!w) return;
+
+        document.getElementById('claim-warr-id').value = warrId;
+        document.getElementById('claim-rma-num').value = 'RMA-' + new Date().getFullYear() + '-' + Math.floor(100 + Math.random() * 900);
+        document.getElementById('claim-modal-subtitle').textContent = w.customerName + ' • ' + w.equipmentModel + ' (' + w.serialNumber + ')';
+        document.getElementById('claim-date').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('claim-component').value = '';
+        document.getElementById('claim-replacement-sn').value = '';
+        document.getElementById('claim-findings').value = '';
+
+        document.getElementById('claim-modal').classList.remove('hidden');
+      }
+
+      function closeClaimModal() {
+        document.getElementById('claim-modal').classList.add('hidden');
+      }
+
+      function handleSaveClaim(e) {
+        e.preventDefault();
+        var warrId = document.getElementById('claim-warr-id').value;
+        var items = getWarrantiesList();
+        var w = items.find(function(item) { return item.id === warrId; });
+        if (!w) return;
+
+        var claim = {
+          rmaNumber: document.getElementById('claim-rma-num').value,
+          date: document.getElementById('claim-date').value,
+          component: document.getElementById('claim-component').value,
+          rca: document.getElementById('claim-rca').value,
+          replacementSn: document.getElementById('claim-replacement-sn').value,
+          findings: document.getElementById('claim-findings').value,
+          recordedAt: new Date().toISOString()
+        };
+
+        if (!w.claims) w.claims = [];
+        w.claims.push(claim);
+
+        if (window.RevOpsStore && window.RevOpsStore.saveCollection) {
+          window.RevOpsStore.saveCollection('clientEquipmentMaster', items);
+          if (window.RevOpsStore.logAudit) {
+            window.RevOpsStore.logAudit('Warranty Claims RMA', claim.rmaNumber, 'LOG_CLAIM', 'Logged warranty claim ' + claim.rmaNumber + ' for ' + w.equipmentModel + ' (S/N: ' + w.serialNumber + ') - ' + w.customerName, null, claim);
+          }
+        }
+
+        closeClaimModal();
+        renderWarrantyTable();
+      }
+
+      function exportWarrantyCSV() {
+        var items = activeWarranties || [];
+        if (items.length === 0) {
+          alert("No warranty records to export.");
+          return;
+        }
+
+        var headers = ["SerialNumber", "CustomerName", "Location", "EquipmentModel", "Vertical", "OrderRef", "CommissioningDate", "WarrantyTier", "ExpiryDate", "ClaimsCount", "Status"];
+        var rows = items.map(function(w) {
+          var st = computeWarrantyStatus(w);
+          var claimsCount = (w.claims && Array.isArray(w.claims)) ? w.claims.length : 0;
+          return [
+            w.serialNumber,
+            '"' + (w.customerName || '').replace(/"/g, '""') + '"',
+            '"' + (w.location || '').replace(/"/g, '""') + '"',
+            '"' + (w.equipmentModel || '').replace(/"/g, '""') + '"',
+            w.vertical || 'Crane',
+            w.orderRef || '',
+            w.commissioningDate,
+            w.warrantyTier,
+            w.expiryDate,
+            claimsCount,
+            st.status
+          ].join(',');
+        });
+
+        var csv = headers.join(',') + '\n' + rows.join('\n');
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", "MeasureDI_Equipment_Warranty_Master_" + new Date().toISOString().slice(0, 10) + ".csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    </script>
+  </body>
+</html>

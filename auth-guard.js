@@ -221,12 +221,13 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
 
   // Categories definitions (Strict SOP Pipeline Order: Leads -> Quotes -> Orders -> Invoices -> Payments)
   var salesItems = [
-    { title: "Leads & Pipeline", path: "leads.html", desc: "CRM pipeline, stage conversions & deals", icon: "📈", show: true },
-    { title: "Quotations & Approvals", path: "quotations.html", desc: "Itemized quotes, discount threshold approvals & revisions", icon: "📑", show: true },
-    { title: "Orders & Contracts", path: "orders.html", desc: "Customer orders, SLA & contribution splits", icon: "📦", show: true },
-    { title: "Invoices & Approvals", path: "invoices.html", desc: "Tax & proforma invoices, senior approval & client dispatch", icon: "🧾", show: true },
+    { title: "Equipment Sales Leads", path: "leads.html", desc: "Capital equipment pipeline (Projects, Onboard, Crane)", icon: "📈", show: true },
+    { title: "Equipment Quotations", path: "quotations.html", desc: "Itemized capital equipment quotes & discount approvals", icon: "📑", show: true },
+    { title: "Equipment Orders", path: "orders.html", desc: "Capital equipment customer purchase orders & contracts", icon: "📦", show: true },
+    { title: "Equipment Invoices", path: "invoices.html", desc: "Equipment commercial invoices, senior approval & dispatch", icon: "🧾", show: true },
     { title: "Payments & Collections", path: "payments.html", desc: "AR collections, BG/PG tracking & milestone invoicing", icon: "💳", show: true },
-    { title: "Master Data & Bulk Upload", path: "master-data.html", desc: "Product Specs, Clients, Equipment & Bank Master Hub", icon: "🗄️", show: true }
+    { title: "Master Data & Bulk Upload", path: "master-data.html", desc: "Product Specs, Clients, Equipment & Bank Master Hub", icon: "🗄️", show: true },
+    { title: "Audit & Activity Trail", path: "audit-logs.html", desc: "Universal ledger of all entries, edits, timestamps & actor diffs", icon: "🛡️", show: isAdmin }
   ];
 
   var financeItems = [
@@ -251,7 +252,14 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
   ];
 
   var serviceItems = [
-    { title: "Service Tickets & Quality", path: "service-tickets.html", desc: "Ticket raising, tracking, SLA, repeat complaint detection & quotes", icon: "🛠️", show: true }
+    { title: "Service Tickets & QC", path: "service-tickets.html", desc: "Ticket raising, live popup alerts, SLA & repeat complaint detection", icon: "🛠️", show: true },
+    { title: "AMC Registration & Monitoring", path: "amc-contracts.html", desc: "Contract registry, quarterly PM visits, SLA & renewal countdown", icon: "📋", show: true },
+    { title: "Service & AMC Leads", path: "service-leads.html", desc: "Dedicated AMC renewals, breakdown calls & service opportunities", icon: "🎯", show: true },
+    { title: "AMC Quotations & Proposals", path: "amc-quotes.html", desc: "Comprehensive & Non-Comprehensive AMC commercial proposals", icon: "📑", show: true },
+    { title: "AMC Order Registration", path: "amc-orders.html", desc: "Booked AMC contracts & milestone execution agreements", icon: "📦", show: true },
+    { title: "AMC Invoice Generation", path: "amc-invoices.html", desc: "Quarterly & annual AMC billing milestones & GST tax invoices", icon: "🧾", show: true },
+    { title: "Parts Sales Revenue Model", path: "parts-sales.html", desc: "High-margin spare parts catalog, COGS, margins & revenue analytics", icon: "⚙️", show: true },
+    { title: "Warranty Management & Claims", path: "warranty-management.html", desc: "Installed base warranty tracking, RMA claims & 1-click AMC conversion", icon: "🛡️", show: true }
   ];
 
   var roleBadgeColor = "bg-[#982B68]/30 text-[#E283BD] border-[#982B68]/50";
@@ -327,6 +335,93 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
     `;
     document.body.appendChild(footer);
   }
+
+  // Trigger popup for assigned tickets if any exist for current user
+  setTimeout(function() {
+    checkAssignedServiceTicketsPopup();
+  }, 400);
+}
+
+// Assigned Service Ticket Pop-up Notification Engine
+function checkAssignedServiceTicketsPopup() {
+  try {
+    var empId = localStorage.getItem('employeeId');
+    var userName = localStorage.getItem('userName') || '';
+    if (!empId || !window.RevOpsStore) return;
+
+    var tickets = window.RevOpsStore.getCollection('serviceTickets') || [];
+    var myAssignedTickets = tickets.filter(function(t) {
+      if (!t) return false;
+      var matchesEmp = (t.assignedTo === empId) || (t.assignedToName && userName && t.assignedToName.toLowerCase().includes(userName.toLowerCase()));
+      var isOpen = (t.status === 'Open' || t.status === 'In Progress' || t.status === 'Pending Parts');
+      return matchesEmp && isOpen;
+    });
+
+    if (myAssignedTickets.length === 0) return;
+
+    // Check if dismissed in this session
+    var sessionKey = 'notified_tickets_' + empId + '_' + new Date().toISOString().slice(0, 10);
+    if (sessionStorage.getItem(sessionKey)) return;
+
+    var popupId = 'assigned-tickets-global-popup';
+    if (document.getElementById(popupId)) return;
+
+    var popup = document.createElement('div');
+    popup.id = popupId;
+    popup.className = "fixed bottom-5 right-5 z-50 max-w-md w-full bg-slate-900 border-2 border-amber-500/80 rounded-2xl shadow-2xl p-5 text-white animate-bounce-short";
+    popup.innerHTML = `
+      <div class="flex items-start justify-between gap-3 pb-2 border-b border-slate-800">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-sm shrink-0">
+            🔔
+          </div>
+          <div>
+            <h4 class="text-xs font-black uppercase tracking-wider text-amber-400">Assigned Service Tickets Alert</h4>
+            <p class="text-[11px] text-slate-300">You have <span class="font-bold text-white">${myAssignedTickets.length} active service ticket(s)</span> assigned to you.</p>
+          </div>
+        </div>
+        <button onclick="dismissAssignedTicketsPopup('${sessionKey}')" class="text-slate-400 hover:text-white text-lg font-bold p-1 cursor-pointer">&times;</button>
+      </div>
+
+      <div class="py-2.5 space-y-2 max-h-48 overflow-y-auto">
+        ${myAssignedTickets.slice(0, 3).map(function(t) {
+          return `
+            <div class="bg-slate-800/90 p-2 rounded-xl border border-slate-700 text-xs">
+              <div class="flex items-center justify-between font-mono font-bold text-amber-300 text-[11px]">
+                <span>${escapeHtml(t.ticketNumber || t.id)}</span>
+                <span class="text-[9px] uppercase px-1.5 py-0.2 rounded font-bold ${t.severity === 'Critical' ? 'bg-rose-950 text-rose-300' : 'bg-amber-950 text-amber-300'}">${escapeHtml(t.severity || 'High')}</span>
+              </div>
+              <div class="font-bold text-white text-xs truncate mt-0.5">${escapeHtml(t.customerName)}</div>
+              <div class="text-[10px] text-slate-400 truncate">${escapeHtml(t.equipmentModel || '')} &bull; SLA: <span class="text-slate-200 font-semibold">${escapeHtml(t.targetSlaDate || 'Pending')}</span></div>
+            </div>
+          `;
+        }).join('')}
+        ${myAssignedTickets.length > 3 ? `<p class="text-[10px] text-center text-slate-400 italic">+ ${myAssignedTickets.length - 3} more tickets in your queue</p>` : ''}
+      </div>
+
+      <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+        <button onclick="dismissAssignedTicketsPopup('${sessionKey}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold cursor-pointer">
+          Dismiss
+        </button>
+        <a href="service-tickets.html" class="px-3.5 py-1.5 bg-[#982B68] hover:bg-[#802256] text-white rounded-lg text-xs font-bold shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
+          <span>Review Tickets</span>
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    `;
+
+    document.body.appendChild(popup);
+  } catch(e) {
+    console.warn("Assigned tickets popup check failed:", e);
+  }
+}
+
+function dismissAssignedTicketsPopup(sessionKey) {
+  try {
+    sessionStorage.setItem(sessionKey, 'true');
+    var el = document.getElementById('assigned-tickets-global-popup');
+    if (el) el.remove();
+  } catch(e) {}
 }
 
 function handleRevOpsLogout() {
@@ -780,8 +875,8 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
       <!-- Middle: Horizontal Category Dropdown Menus (Desktop / Tablet) -->
       <nav class="hidden md:flex items-center space-x-1.5">
         ${isAdmin ? `<a href="dashboard.html" class="${currentPath === 'dashboard.html' ? 'px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[#982B68] text-white shadow-xs' : 'px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all'}">📊 Dashboard</a>` : ''}
-        ${renderTopDropdown("Sales", "📈", salesItems, ['leads.html', 'quotations.html', 'orders.html', 'payments.html'])}
-        ${renderTopDropdown("Service & Quality", "🛠️", serviceItems, ['service-tickets.html'])}
+        ${renderTopDropdown("Sales", "📈", salesItems, ['leads.html', 'quotations.html', 'orders.html', 'invoices.html', 'payments.html', 'master-data.html', 'audit-logs.html'])}
+        ${renderTopDropdown("Service & Quality", "🛠️", serviceItems, ['service-tickets.html', 'amc-contracts.html', 'service-leads.html', 'amc-quotes.html', 'amc-orders.html', 'amc-invoices.html', 'parts-sales.html', 'warranty-management.html'])}
         ${renderTopDropdown("Finance", "💰", financeItems, ['expenses.html', 'payroll.html'])}
         ${renderTopDropdown("People & HR", "👥", hrItems, ['employees.html', 'attendance.html', 'my-team.html'])}
         ${renderTopDropdown("Performance", "🎯", perfItems, ['my-scorecard.html', 'dwm.html', 'kra-targets.html', 'reviews.html', 'aop-targets.html', 'user-guide.html'])}

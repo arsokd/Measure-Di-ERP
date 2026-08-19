@@ -27,21 +27,25 @@
         <div>
           <div class="flex items-center space-x-2">
             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              SOP Funnel Stage 1
+              Sales & Pipeline
             </span>
-            <span class="text-xs text-slate-400 font-semibold">• 8-Stage Conversion Engine</span>
+            <span class="text-xs text-slate-400 font-semibold">• Capital Equipment Sales (Projects, Onboard, Crane)</span>
           </div>
           <h1 class="text-2xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
-            <span>Commercial Leads & Pipeline</span>
+            <span>Equipment Sales Leads</span>
             <span class="text-xs font-bold px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/80">RevOps v28</span>
           </h1>
-          <p class="text-xs text-slate-400 mt-1">Multi-contact inquiries, vertical-filtered product specs, lead sources & automated Quotation / Funnel synchronization.</p>
+          <p class="text-xs text-slate-400 mt-1">Capital equipment commercial leads & 8-stage sales progression funnel. (For AMC & Maintenance, see <a href="service-leads.html" class="text-amber-400 font-bold hover:underline">Service & AMC Leads Hub</a>).</p>
         </div>
 
         <div class="flex items-center gap-3">
+          <a href="service-leads.html" class="px-3.5 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer" title="Go to Service & AMC Leads">
+            <i class="fa-solid fa-screwdriver-wrench"></i>
+            <span>Service & AMC Leads Hub &rarr;</span>
+          </a>
           <button onclick="openLeadModal()" class="px-4 py-2.5 bg-[#982B68] hover:bg-[#802256] text-white font-bold text-xs rounded-xl shadow-lg shadow-[#982B68]/30 transition-all flex items-center space-x-2 cursor-pointer">
             <i class="fa-solid fa-plus text-xs"></i>
-            <span>+ Add New Lead</span>
+            <span>+ Add Equipment Lead</span>
           </button>
         </div>
       </div>
@@ -100,11 +104,10 @@
           
           <div class="flex flex-wrap items-center gap-2.5">
             <select id="lead-vertical-filter" onchange="renderLeadsTable()" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500">
-              <option value="All">All Verticals</option>
-              <option value="Projects">Projects</option>
-              <option value="Onboard">Onboard</option>
-              <option value="Service and Parts">Service and Parts</option>
-              <option value="Crane">Crane</option>
+              <option value="All">All Equipment Verticals</option>
+              <option value="Projects">Projects (Weighbridges & Industrial)</option>
+              <option value="Onboard">Onboard (Tipper, Dumper, Loader)</option>
+              <option value="Crane">Crane (Wireless & Overhead Crane Scales)</option>
             </select>
 
             <select id="lead-stage-filter" onchange="renderLeadsTable()" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500">
@@ -217,7 +220,6 @@
                   <option value="Project">Project</option>
                   <option value="Onboard">Onboard</option>
                   <option value="Crane">Crane</option>
-                  <option value="Spare/Service">Spare/Service</option>
                 </select>
               </div>
 
@@ -241,40 +243,27 @@
             <div class="flex items-center justify-between">
               <div class="text-xs font-black uppercase text-emerald-400 tracking-wider flex items-center gap-2">
                 <i class="fa-solid fa-microchip"></i>
-                <span>Vertical & Filtered Product Specification</span>
+                <span>Vertical & Equipment Line Items (Multi-Product)</span>
               </div>
-              <span class="text-[10px] text-slate-400">Only products matching chosen vertical will be listed</span>
+              <button type="button" onclick="addProductRow()" class="px-2.5 py-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-plus"></i>
+                <span>+ Add Product</span>
+              </button>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Vertical Classification *</label>
-                <select id="inp-lead-vertical" onchange="handleVerticalChange()" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
-                  <option value="Projects">Projects</option>
-                  <option value="Onboard">Onboard</option>
-                  <option value="Crane">Crane</option>
-                  <option value="Service and Parts">Service and Parts</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Product Name (Filtered by Vertical) *</label>
-                <select id="inp-lead-product" onchange="handleProductSelect()" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
-                  <!-- Populated dynamically based on Vertical -->
-                </select>
-              </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Vertical Classification *</label>
+              <select id="inp-lead-vertical" onchange="handleVerticalChange()" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                <option value="Projects">Projects (Weighbridges & Heavy Industrial)</option>
+                <option value="Onboard">Onboard (Tipper, Dumper, Loader Scales)</option>
+                <option value="Crane">Crane (Wireless & Overhead Crane Scales)</option>
+              </select>
+              <p class="text-[10px] text-slate-400 mt-1">Products dropdown will dynamically filter equipment matching this vertical.</p>
             </div>
 
-            <!-- Product Specs and HSN Details -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/90 p-3 rounded-xl border border-slate-700">
-              <div class="sm:col-span-2">
-                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Unique Technical Specification *</label>
-                <input type="text" id="inp-product-spec" required placeholder="e.g. 200T High Speed In-Motion Weigher Pitless Accuracy 0.2%" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-750 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500" />
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">HSN Code</label>
-                <input type="text" id="inp-product-hsn" placeholder="90318000" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-750 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500" />
-              </div>
+            <!-- Multi-Product Line Items Container -->
+            <div id="lead-products-container" class="space-y-3">
+              <!-- Dynamically populated product cards -->
             </div>
           </div>
 
@@ -366,6 +355,7 @@
 
     <script>
       var currentLeadContacts = [];
+      var currentLeadProducts = [];
 
       document.addEventListener('DOMContentLoaded', function() {
         if (checkAuth(['admin', 'manager', 'staff'])) {
@@ -437,33 +427,150 @@
 
       function handleVerticalChange() {
         var vert = document.getElementById('inp-lead-vertical').value;
-        var prodSelect = document.getElementById('inp-lead-product');
         var prods = getProductsByVertical(vert);
         
-        prodSelect.innerHTML = '';
-        prods.forEach(function(p, idx) {
-          var opt = document.createElement('option');
-          opt.value = p.name || p.productName;
-          opt.innerText = p.name || p.productName;
-          opt.dataset.spec = p.spec || p.technicalSpec || '';
-          opt.dataset.hsn = p.hsn || p.hsnCode || '90318000';
-          opt.dataset.price = p.price || p.unitPrice || 0;
-          prodSelect.appendChild(opt);
-        });
-
-        handleProductSelect();
+        // Update any product rows that don't match the new vertical
+        if (currentLeadProducts.length === 0) {
+          addProductRow();
+        } else {
+          // Re-populate product options for all rows
+          currentLeadProducts.forEach(function(p, i) {
+            var exists = prods.some(function(mp) { return (mp.name || mp.productName) === p.name; });
+            if (!exists && prods.length > 0) {
+              var first = prods[0];
+              p.name = first.name || first.productName;
+              p.spec = first.spec || first.technicalSpec || '';
+              p.hsn = first.hsn || first.hsnCode || '90318000';
+              p.unitPrice = first.price || first.unitPrice || 0;
+            }
+          });
+          renderLeadProducts();
+        }
       }
 
-      function handleProductSelect() {
-        var prodSelect = document.getElementById('inp-lead-product');
-        var selectedOpt = prodSelect.options[prodSelect.selectedIndex];
-        if (selectedOpt) {
-          document.getElementById('inp-product-spec').value = selectedOpt.dataset.spec || '';
-          document.getElementById('inp-product-hsn').value = selectedOpt.dataset.hsn || '90318000';
-          var currentVal = document.getElementById('inp-lead-value').value;
-          if (!currentVal || Number(currentVal) === 0) {
-            document.getElementById('inp-lead-value').value = selectedOpt.dataset.price || '';
-          }
+      function addProductRow(existing) {
+        var vert = document.getElementById('inp-lead-vertical').value || 'Projects';
+        var prods = getProductsByVertical(vert);
+        var first = prods.length > 0 ? prods[0] : { name: 'Standard Unit', spec: '', hsn: '90318000', price: 0 };
+
+        var prod = existing || {
+          name: first.name || first.productName,
+          spec: first.spec || first.technicalSpec || '',
+          hsn: first.hsn || first.hsnCode || '90318000',
+          quantity: 1,
+          unitPrice: first.price || first.unitPrice || 0
+        };
+
+        currentLeadProducts.push(prod);
+        renderLeadProducts();
+      }
+
+      function removeProductRow(idx) {
+        if (currentLeadProducts.length <= 1) {
+          alert("A lead must contain at least one product line item.");
+          return;
+        }
+        currentLeadProducts.splice(idx, 1);
+        renderLeadProducts();
+      }
+
+      function renderLeadProducts() {
+        var container = document.getElementById('lead-products-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        var vert = document.getElementById('inp-lead-vertical').value || 'Projects';
+        var availableProducts = getProductsByVertical(vert);
+
+        currentLeadProducts.forEach(function(prod, i) {
+          var card = document.createElement('div');
+          card.className = "bg-slate-900/90 p-3 rounded-xl border border-slate-700 space-y-2.5 relative";
+
+          var optionsHtml = availableProducts.map(function(p) {
+            var pName = p.name || p.productName;
+            var isSel = pName === prod.name ? 'selected' : '';
+            return `<option value="${escapeHtml(pName)}" ${isSel}>${escapeHtml(pName)}</option>`;
+          }).join('');
+
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-extrabold uppercase text-indigo-400 tracking-wider flex items-center gap-1.5">
+                <i class="fa-solid fa-cube"></i> Product Item #${i + 1}
+              </span>
+              ${currentLeadProducts.length > 1 ? `
+                <button type="button" onclick="removeProductRow(${i})" class="text-rose-400 hover:text-rose-300 font-bold text-xs p-1 cursor-pointer flex items-center gap-1">
+                  <i class="fa-solid fa-trash-can"></i> <span>Remove</span>
+                </button>
+              ` : ''}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+              <div class="sm:col-span-8">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Product Name (Filtered by ${vert}) *</label>
+                <select onchange="onLeadProductSelected(${i}, this.value)" class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white font-semibold focus:outline-none focus:border-indigo-500">
+                  ${optionsHtml}
+                </select>
+              </div>
+              <div class="sm:col-span-4">
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">HSN Code</label>
+                <input type="text" value="${escapeHtml(prod.hsn || '')}" oninput="currentLeadProducts[${i}].hsn = this.value" placeholder="90318000" class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Technical Specification (Unique Specs) *</label>
+              <input type="text" value="${escapeHtml(prod.spec || '')}" oninput="currentLeadProducts[${i}].spec = this.value" required placeholder="Detailed specifications, capacity, tolerances..." class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Quantity *</label>
+                <input type="number" min="1" value="${prod.quantity || 1}" oninput="currentLeadProducts[${i}].quantity = Number(this.value) || 1; updateLeadProductsTotal();" class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white font-bold text-center focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Est. Unit Price (₹) *</label>
+                <input type="number" min="0" value="${prod.unitPrice || 0}" oninput="currentLeadProducts[${i}].unitPrice = Number(this.value) || 0; updateLeadProductsTotal();" class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-white font-bold text-right focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Line Total (₹)</label>
+                <div class="px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-xs text-emerald-400 font-black text-right">
+                  ₹${((Number(prod.quantity) || 1) * (Number(prod.unitPrice) || 0)).toLocaleString('en-IN')}
+                </div>
+              </div>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+
+        updateLeadProductsTotal();
+      }
+
+      function onLeadProductSelected(idx, prodName) {
+        var vert = document.getElementById('inp-lead-vertical').value || 'Projects';
+        var prods = getProductsByVertical(vert);
+        var found = prods.find(function(p) { return (p.name || p.productName) === prodName; });
+
+        if (found && currentLeadProducts[idx]) {
+          currentLeadProducts[idx].name = prodName;
+          currentLeadProducts[idx].spec = found.spec || found.technicalSpec || '';
+          currentLeadProducts[idx].hsn = found.hsn || found.hsnCode || '90318000';
+          currentLeadProducts[idx].unitPrice = found.price || found.unitPrice || 0;
+          renderLeadProducts();
+        }
+      }
+
+      function updateLeadProductsTotal() {
+        var total = 0;
+        currentLeadProducts.forEach(function(p) {
+          var q = Number(p.quantity) || 1;
+          var u = Number(p.unitPrice) || 0;
+          total += (q * u);
+        });
+
+        var valInput = document.getElementById('inp-lead-value');
+        if (valInput && total > 0) {
+          valInput.value = Math.round(total);
         }
       }
 
@@ -676,6 +783,15 @@
             return `<div class="text-[11px] leading-tight"><span class="font-bold text-white">${escapeHtml(c.name)}</span> <span class="text-slate-400">(${escapeHtml(c.phone || 'No phone')})</span></div>`;
           }).join('');
 
+          var prodsList = (l.products && Array.isArray(l.products) && l.products.length > 0) ? l.products : [
+            { name: l.productName || 'Equipment', spec: l.productSpec || '', quantity: 1, unitPrice: val }
+          ];
+
+          var prodsHtml = prodsList.map(function(p, pIdx) {
+            return `<div class="text-[11px] font-semibold text-slate-200">${pIdx + 1}. ${escapeHtml(p.name)} ${p.quantity > 1 ? '<span class="text-indigo-400 font-bold">(' + p.quantity + ' Nos)</span>' : ''}</div>
+                    <div class="text-[10px] text-slate-400 line-clamp-1 mb-0.5" title="${escapeHtml(p.spec || '')}">Spec: ${escapeHtml(p.spec || 'Standard')}</div>`;
+          }).join('');
+
           var tr = document.createElement('tr');
           tr.className = "hover:bg-slate-800/40 transition-colors";
           tr.innerHTML = `
@@ -694,9 +810,9 @@
             <td class="py-3 px-4">
               <div class="flex items-center gap-1.5 mb-1">
                 <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-950 text-indigo-300 border border-indigo-800/60">${escapeHtml(l.vertical || 'Projects')}</span>
+                ${prodsList.length > 1 ? `<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-800 text-slate-300">${prodsList.length} items</span>` : ''}
               </div>
-              <div class="font-semibold text-slate-200">${escapeHtml(l.productName || 'Dynamic Scale')}</div>
-              <div class="text-[10px] text-slate-400 line-clamp-1" title="${escapeHtml(l.productSpec || '')}">Spec: ${escapeHtml(l.productSpec || 'Standard Industrial')}</div>
+              ${prodsHtml}
             </td>
             <td class="py-3 px-4 space-y-1">
               ${contactsHtml || '<span class="text-slate-500">No contacts</span>'}
@@ -716,10 +832,10 @@
             </td>
             <td class="py-3 px-4 text-center">
               <div class="flex items-center justify-center space-x-1.5">
-                <button onclick="editLead('${l.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg transition-colors" title="Edit Lead Details">
+                <button onclick="editLead('${l.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg transition-colors cursor-pointer" title="Edit Lead Details">
                   <i class="fa-solid fa-pen-to-square text-xs"></i>
                 </button>
-                <button onclick="createQuoteFromLead('${l.id}')" class="p-1.5 bg-[#982B68]/30 hover:bg-[#982B68] text-[#E283BD] hover:text-white rounded-lg transition-colors border border-[#982B68]/50" title="Generate Quotation with Bi-directional Sync">
+                <button onclick="createQuoteFromLead('${l.id}')" class="p-1.5 bg-[#982B68]/30 hover:bg-[#982B68] text-[#E283BD] hover:text-white rounded-lg transition-colors border border-[#982B68]/50 cursor-pointer" title="Generate Quotation with Bi-directional Sync">
                   <i class="fa-solid fa-file-invoice text-xs"></i>
                 </button>
               </div>
@@ -731,6 +847,7 @@
 
       function openLeadModal(leadData) {
         currentLeadContacts = [];
+        currentLeadProducts = [];
         var modal = document.getElementById('lead-modal');
         var form = document.getElementById('lead-form');
         form.reset();
@@ -754,11 +871,22 @@
           }
 
           document.getElementById('inp-lead-vertical').value = leadData.vertical || 'Projects';
-          handleVerticalChange();
 
-          document.getElementById('inp-lead-product').value = leadData.productName || '';
-          document.getElementById('inp-product-spec').value = leadData.productSpec || '';
-          document.getElementById('inp-product-hsn').value = leadData.hsnCode || '';
+          // Load products
+          if (leadData.products && Array.isArray(leadData.products) && leadData.products.length > 0) {
+            currentLeadProducts = JSON.parse(JSON.stringify(leadData.products));
+          } else if (leadData.productName) {
+            currentLeadProducts = [{
+              name: leadData.productName,
+              spec: leadData.productSpec || '',
+              hsn: leadData.hsnCode || '90318000',
+              quantity: 1,
+              unitPrice: Number(leadData.estimatedValue) || 0
+            }];
+          } else {
+            addProductRow();
+          }
+
           document.getElementById('inp-lead-currency').value = leadData.currency || 'INR';
           document.getElementById('inp-lead-value').value = leadData.estimatedValue || leadData.expectedValue || 0;
           document.getElementById('inp-lead-target-date').value = leadData.targetDate || '';
@@ -782,10 +910,12 @@
           document.getElementById('inp-lead-industry').value = 'Project';
           handleIndustryChange();
           document.getElementById('inp-lead-vertical').value = 'Projects';
-          handleVerticalChange();
+          currentLeadProducts = [];
+          addProductRow();
           currentLeadContacts = [{ name: '', designation: '', phone: '', email: '', autoCc: true }];
         }
 
+        renderLeadProducts();
         renderContactRows();
         modal.classList.remove('hidden');
       }
@@ -830,6 +960,16 @@
         var validContacts = currentLeadContacts.filter(function(c) { return c.name.trim() !== ''; });
         var primaryContact = validContacts[0] || { name: 'Customer Contact', phone: '', email: '' };
 
+        var validProducts = currentLeadProducts.filter(function(p) { return (p.name || '').trim() !== ''; });
+        if (validProducts.length === 0) {
+          alert("Please add at least one valid product for this lead.");
+          return;
+        }
+
+        var primaryProd = validProducts[0];
+        var productNamesSummary = validProducts.map(function(p) { return p.name; }).join(', ');
+        var productSpecsSummary = validProducts.map(function(p) { return p.name + ': ' + (p.spec || ''); }).join(' | ');
+
         var newLead = {
           id: docId || ('lead_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
           leadNumber: nextLeadNum,
@@ -838,9 +978,10 @@
           industry: document.getElementById('inp-lead-industry').value,
           projectSector: sector,
           vertical: document.getElementById('inp-lead-vertical').value,
-          productName: document.getElementById('inp-lead-product').value,
-          productSpec: document.getElementById('inp-product-spec').value.trim(),
-          hsnCode: document.getElementById('inp-product-hsn').value.trim(),
+          products: validProducts,
+          productName: productNamesSummary,
+          productSpec: productSpecsSummary,
+          hsnCode: primaryProd.hsn || '90318000',
           currency: document.getElementById('inp-lead-currency').value,
           estimatedValue: Number(document.getElementById('inp-lead-value').value) || 0,
           expectedValue: Number(document.getElementById('inp-lead-value').value) || 0,

@@ -3,8 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Measure DI RevOps - Leads Management</title>
+    <title>Measure DI RevOps - Commercial Leads & Pipeline</title>
     <link rel="stylesheet" href="/src/index.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -13,82 +15,146 @@
     <script src="js/seed-data.js" defer></script>
     <script src="auth-guard.js" defer></script>
   </head>
-  <body class="bg-slate-50 min-h-screen text-slate-800">
+  <body class="bg-slate-900 min-h-screen text-slate-100 font-sans antialiased">
     
     <!-- Navbar Container -->
     <div id="navbar-container"></div>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
-      <!-- Header -->
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+      <!-- Top Header & Action Controls -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-850 p-6 rounded-2xl border border-slate-800 shadow-xl">
         <div>
-          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Commercial Leads & Pipeline</h1>
-          <p class="text-sm text-slate-500 mt-1">Track pre-sales pipeline opportunities, deal stages & conversion milestones</p>
+          <div class="flex items-center space-x-2">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              SOP Funnel Stage 1
+            </span>
+            <span class="text-xs text-slate-400 font-semibold">• 8-Stage Conversion Engine</span>
+          </div>
+          <h1 class="text-2xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
+            <span>Commercial Leads & Pipeline</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/80">RevOps v28</span>
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">Multi-contact inquiries, vertical-filtered product specs, lead sources & automated Quotation / Funnel synchronization.</p>
         </div>
 
-        <button onclick="openLeadModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          <span>+ Add New Lead</span>
-        </button>
-      </div>
-
-      <!-- 3 Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Active Pipeline Leads</span>
-          <div class="text-3xl font-black text-slate-900 mt-1" id="stat-lead-count">0</div>
-          <p class="text-xs text-slate-400 mt-1">Total Active Commercial Inquiries</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Pipeline Value</span>
-          <div class="text-3xl font-black text-indigo-600 mt-1" id="stat-lead-value">Rs.0</div>
-          <p class="text-xs text-slate-400 mt-1">Estimated Open Pipeline Revenue</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Converted Won Leads</span>
-          <div class="text-3xl font-black text-emerald-600 mt-1" id="stat-lead-won">0</div>
-          <p class="text-xs text-slate-400 mt-1">Successfully Closed Opportunities</p>
+        <div class="flex items-center gap-3">
+          <button onclick="openLeadModal()" class="px-4 py-2.5 bg-[#982B68] hover:bg-[#802256] text-white font-bold text-xs rounded-xl shadow-lg shadow-[#982B68]/30 transition-all flex items-center space-x-2 cursor-pointer">
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>+ Add New Lead</span>
+          </button>
         </div>
       </div>
 
-      <!-- Leads Table -->
-      <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden space-y-4">
-        <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h2 class="text-lg font-bold text-slate-900">Lead Pipeline Registry</h2>
+      <!-- 8-Stage Funnel Pipeline Visual Summary -->
+      <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <i class="fa-solid fa-filter text-emerald-400"></i>
+            <span>8-Stage Live Lead Progression Funnel</span>
+          </span>
+          <span class="text-[11px] text-slate-400" id="funnel-total-caption">Total Pipeline Inquiries</span>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2" id="funnel-stages-bar">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-md">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Active Pipeline Leads</span>
+          <div class="text-2xl font-black text-white mt-1" id="stat-lead-count">0</div>
+          <p class="text-[11px] text-slate-400 mt-1">All Open Opportunities</p>
+        </div>
+
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-md">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Pipeline Value</span>
+          <div class="text-2xl font-black text-indigo-400 mt-1" id="stat-lead-value">₹0</div>
+          <p class="text-[11px] text-slate-400 mt-1">Weighted Estimated Revenue</p>
+        </div>
+
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-md">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Qualified Opportunities</span>
+          <div class="text-2xl font-black text-emerald-400 mt-1" id="stat-lead-qualified">0</div>
+          <p class="text-[11px] text-slate-400 mt-1">Pre-Qual / Lead Qualified (High Win Prob)</p>
+        </div>
+
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-md">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Order Confirmed (Won)</span>
+          <div class="text-2xl font-black text-purple-400 mt-1" id="stat-lead-won">0</div>
+          <p class="text-[11px] text-slate-400 mt-1">Ready for Order Booking</p>
+        </div>
+      </div>
+
+      <!-- Leads Registry Table Container -->
+      <div class="bg-slate-850 rounded-2xl border border-slate-800 shadow-xl overflow-hidden space-y-4">
+        <div class="p-5 border-b border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+              <span>Lead Registry & Opportunity Tracker</span>
+              <span id="filtered-lead-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-700 text-slate-300">0</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Filter by Vertical, Stage, Lead Source, or Owner</p>
+          </div>
           
-          <div class="flex items-center space-x-3">
-            <select id="lead-fy-filter" onchange="renderLeadsTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="2026-27" selected>FY 2026-27 (Current)</option>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <select id="lead-vertical-filter" onchange="renderLeadsTable()" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="All">All Verticals</option>
+              <option value="Projects">Projects</option>
+              <option value="Onboard">Onboard</option>
+              <option value="Service and Parts">Service and Parts</option>
+              <option value="Crane">Crane</option>
+            </select>
+
+            <select id="lead-stage-filter" onchange="renderLeadsTable()" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="All">All Funnel Stages</option>
+              <option value="Customer Contacted / Contact Attempted">1. Customer Contacted / Attempted</option>
+              <option value="Follow-Up Scheduled">2. Follow-Up Scheduled</option>
+              <option value="Site Visit Completed">3. Site Visit Completed</option>
+              <option value="Technical Evaluation in Progress">4. Technical Evaluation</option>
+              <option value="Commercial Offer Submitted">5. Commercial Offer Submitted</option>
+              <option value="Pre-Qualification Completed">6. Pre-Qualification Completed</option>
+              <option value="Lead Qualified">7. Lead Qualified</option>
+              <option value="Order Confirmed">8. Order Confirmed</option>
+              <option value="Lost / Dropped">Lost / Dropped</option>
+            </select>
+
+            <select id="lead-fy-filter" onchange="renderLeadsTable()" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="2026-27" selected>FY 2026-27</option>
               <option value="2025-26">FY 2025-26</option>
               <option value="2024-25">FY 2024-25</option>
-              <option value="All">All FYs (2024 - 2026)</option>
+              <option value="All">All FYs</option>
             </select>
+
             <div id="lead-filter-wrapper" class="hidden">
-              <select id="lead-emp-filter" onchange="renderLeadsTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <select id="lead-emp-filter" onchange="renderLeadsTable()" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500">
                 <!-- Populated dynamically -->
               </select>
             </div>
-            <input type="text" id="lead-search-input" oninput="renderLeadsTable()" placeholder="Search customer, contact..." class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+
+            <div class="relative w-48 sm:w-60">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+              <input type="text" id="lead-search-input" oninput="renderLeadsTable()" placeholder="Search client, product, spec..." class="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500" />
+            </div>
           </div>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <th class="py-3 px-4">Customer Name</th>
-                <th class="py-3 px-4">Contact Person</th>
-                <th class="py-3 px-4">Vertical</th>
-                <th class="py-3 px-4 text-right">Est. Value (Rs.)</th>
-                <th class="py-3 px-4 text-center">Stage</th>
-                <th class="py-3 px-4">Owner</th>
+              <tr class="bg-slate-900/80 border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <th class="py-3 px-4">Lead ID & Date</th>
+                <th class="py-3 px-4">Customer & Industry</th>
+                <th class="py-3 px-4">Vertical & Products / Specs</th>
+                <th class="py-3 px-4">Contacts & Auto-CC</th>
+                <th class="py-3 px-4 text-right">Currency & Est. Value</th>
+                <th class="py-3 px-4 text-center">8-Stage Funnel Status</th>
+                <th class="py-3 px-4">Lead Owner</th>
                 <th class="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody id="leads-tbody" class="divide-y divide-slate-100 text-xs">
+            <tbody id="leads-tbody" class="divide-y divide-slate-800/60 text-xs">
               <!-- Rendered dynamically -->
             </tbody>
           </table>
@@ -97,70 +163,201 @@
 
     </main>
 
-    <!-- Modal: Add/Edit Lead -->
-    <div id="lead-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
-        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <h3 class="text-base font-bold text-slate-900" id="lead-modal-title">Add Commercial Lead</h3>
-          <button onclick="closeLeadModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+    <!-- Modal: Add / Edit Commercial Lead -->
+    <div id="lead-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-slate-900 w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-700 overflow-hidden my-8 max-h-[90vh] flex flex-col">
+        <div class="px-6 py-4 bg-slate-850 border-b border-slate-800 flex items-center justify-between shrink-0">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2" id="lead-modal-title">
+              <i class="fa-solid fa-file-signature text-[#E283BD]"></i>
+              <span>Add New Commercial Lead</span>
+            </h3>
+            <p class="text-xs text-slate-400">Specify industry, cascading product specs, multi-contact stakeholders & funnel stage</p>
+          </div>
+          <button onclick="closeLeadModal()" class="text-slate-400 hover:text-white text-xl font-bold p-1">&times;</button>
         </div>
 
-        <form onsubmit="handleSaveLead(event)" class="p-6 space-y-4">
+        <form id="lead-form" onsubmit="handleSaveLead(event)" class="p-6 space-y-5 overflow-y-auto flex-1">
           <input type="hidden" id="lead-doc-id" />
 
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Customer / Organization Name *</label>
-            <input type="text" id="inp-lead-customer" required placeholder="e.g. Tata Steel Kalinganagar" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <!-- Section 1: Customer & Industry -->
+          <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
+            <div class="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-building"></i>
+              <span>Customer Organization & Industry Origin</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Customer / Organization Name *</label>
+                <input type="text" id="inp-lead-customer" required placeholder="e.g. JSW Steel Limited / Tata Steel" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Lead Source (10 Standard Channels) *</label>
+                <select id="inp-lead-source" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                  <option value="India Mart">1. India Mart</option>
+                  <option value="Tender / E-Procurement Portal">2. Tender / E-Procurement Portal</option>
+                  <option value="SEO">3. SEO</option>
+                  <option value="Existing Client">4. Existing Client</option>
+                  <option value="Customer Reference">5. Customer Reference</option>
+                  <option value="Ariba">6. Ariba</option>
+                  <option value="OEM">7. OEM</option>
+                  <option value="Mail Marketing / Digital Marketing">8. Mail Marketing / Digital Marketing</option>
+                  <option value="Direct Customer Approach">9. Direct Customer Approach</option>
+                  <option value="Exhibition / Trade Fair">10. Exhibition / Trade Fair</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Industry Vertical *</label>
+                <select id="inp-lead-industry" onchange="handleIndustryChange()" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                  <option value="Project">Project</option>
+                  <option value="Onboard">Onboard</option>
+                  <option value="Crane">Crane</option>
+                  <option value="Spare/Service">Spare/Service</option>
+                </select>
+              </div>
+
+              <div id="project-sector-box">
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Project Sector / Origin *</label>
+                <select id="inp-project-sector" onchange="handleProjectSectorChange()" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                  <option value="Steel">Steel</option>
+                  <option value="Cement">Cement</option>
+                  <option value="Power Plant">Power Plant</option>
+                  <option value="Infrastructure (Roads & Highways)">Infrastructure (Roads & Highways)</option>
+                  <option value="Mining">Mining</option>
+                  <option value="Other Industries">Other Industries</option>
+                </select>
+                <input type="text" id="inp-other-sector" placeholder="Specify sector name..." class="hidden mt-2 w-full px-3 py-1.5 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+            </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Contact Person</label>
-              <input type="text" id="inp-lead-contact" placeholder="e.g. Mr. S. K. Mohanty" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <!-- Section 2: Vertical, Products & Technical Specification Details -->
+          <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="text-xs font-black uppercase text-emerald-400 tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-microchip"></i>
+                <span>Vertical & Filtered Product Specification</span>
+              </div>
+              <span class="text-[10px] text-slate-400">Only products matching chosen vertical will be listed</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Vertical Classification *</label>
+                <select id="inp-lead-vertical" onchange="handleVerticalChange()" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                  <option value="Projects">Projects</option>
+                  <option value="Onboard">Onboard</option>
+                  <option value="Crane">Crane</option>
+                  <option value="Service and Parts">Service and Parts</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Product Name (Filtered by Vertical) *</label>
+                <select id="inp-lead-product" onchange="handleProductSelect()" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                  <!-- Populated dynamically based on Vertical -->
+                </select>
+              </div>
+            </div>
+
+            <!-- Product Specs and HSN Details -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-900/90 p-3 rounded-xl border border-slate-700">
+              <div class="sm:col-span-2">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Unique Technical Specification *</label>
+                <input type="text" id="inp-product-spec" required placeholder="e.g. 200T High Speed In-Motion Weigher Pitless Accuracy 0.2%" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-750 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">HSN Code</label>
+                <input type="text" id="inp-product-hsn" placeholder="90318000" class="w-full px-3 py-1.5 bg-slate-950 border border-slate-750 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-indigo-500" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Commercial Terms, Currency & Valuation -->
+          <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
+            <div class="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-coins"></i>
+              <span>Commercial Currency & Estimated Value</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Currency *</label>
+                <select id="inp-lead-currency" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                  <option value="INR" selected>INR - Indian Rupee (₹)</option>
+                  <option value="USD">USD - US Dollar ($)</option>
+                  <option value="EUR">EUR - Euro (€)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Estimated Deal Value *</label>
+                <input type="number" id="inp-lead-value" required min="1" placeholder="4500000" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Target Closing Date</label>
+                <input type="date" id="inp-lead-target-date" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: 8-Stage Funnel Status -->
+          <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
+            <div class="text-xs font-black uppercase text-purple-400 tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-chart-line"></i>
+              <span>8-Stage Funnel Progression Status *</span>
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Phone / Mobile</label>
-              <input type="text" id="inp-lead-phone" placeholder="+91 98300 12345" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Vertical *</label>
-              <select id="inp-lead-vertical" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="Sales">Sales</option>
-                <option value="Service/Parts">Service/Parts</option>
-                <option value="Projects">Projects</option>
+              <select id="inp-lead-stage" required class="w-full px-3 py-2.5 bg-slate-950 border border-slate-750 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-indigo-500">
+                <option value="Customer Contacted / Contact Attempted">Stage 1: Customer Contacted / Contact Attempted</option>
+                <option value="Follow-Up Scheduled">Stage 2: Follow-Up Scheduled</option>
+                <option value="Site Visit Completed">Stage 3: Site Visit Completed</option>
+                <option value="Technical Evaluation in Progress">Stage 4: Technical Evaluation in Progress</option>
+                <option value="Commercial Offer Submitted">Stage 5: Commercial Offer Submitted</option>
+                <option value="Pre-Qualification Completed">Stage 6: Pre-Qualification Completed (Customer & project eligibility verified)</option>
+                <option value="Lead Qualified">Stage 7: Lead Qualified (Genuine confirmed opportunity with high order probability)</option>
+                <option value="Order Confirmed">Stage 8: Order Confirmed (Won - Ready for PO / Order Booking)</option>
+                <option value="Lost / Dropped">Lost / Dropped (Closed without order)</option>
               </select>
             </div>
+          </div>
 
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Est. Deal Value (Rs.) *</label>
-              <input type="number" id="inp-lead-value" required placeholder="1500000" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <!-- Section 5: Multiple Contact Persons (Up to 5) with Auto-CC -->
+          <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="text-xs font-black uppercase text-sky-400 tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-users"></i>
+                <span>Customer Contact Persons (Up to 5) & Auto-CC</span>
+              </div>
+              <button type="button" onclick="addContactRow()" class="px-2.5 py-1 bg-sky-600/30 hover:bg-sky-600/50 text-sky-300 border border-sky-500/40 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>+ Add Contact</span>
+              </button>
+            </div>
+
+            <div id="contacts-container" class="space-y-2.5">
+              <!-- Dynamically populated up to 5 contacts -->
             </div>
           </div>
 
+          <!-- Section 6: Notes / Requirements -->
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Pipeline Stage *</label>
-            <select id="inp-lead-stage" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="New">New Inquiry</option>
-              <option value="In Discussion">In Discussion</option>
-              <option value="Quote Sent">Quote Sent</option>
-              <option value="Won">Won</option>
-              <option value="Lost">Lost</option>
-            </select>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Requirement Notes & Special Client Conditions</label>
+            <textarea id="inp-lead-notes" rows="2" placeholder="Site location, operating environment, integration with SAP / ERP, delivery deadlines..." class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500"></textarea>
           </div>
 
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Lead Notes / Scope</label>
-            <textarea id="inp-lead-notes" rows="2" placeholder="Requirement description, equipment model, quotation reference..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-          </div>
-
-          <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
-            <button type="button" onclick="closeLeadModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
-            <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer">
-              Save Lead
+          <div class="pt-4 border-t border-slate-800 flex items-center justify-end space-x-3 shrink-0">
+            <button type="button" onclick="closeLeadModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-[#982B68] hover:bg-[#802256] text-white text-xs font-bold rounded-xl shadow-lg shadow-[#982B68]/30 transition-all cursor-pointer flex items-center gap-2">
+              <i class="fa-solid fa-check"></i>
+              <span>Save Commercial Lead</span>
             </button>
           </div>
         </form>
@@ -168,6 +365,8 @@
     </div>
 
     <script>
+      var currentLeadContacts = [];
+
       document.addEventListener('DOMContentLoaded', function() {
         if (checkAuth(['admin', 'manager', 'staff'])) {
           initLeadsPage();
@@ -181,32 +380,235 @@
         if (userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') {
           var wrapper = document.getElementById('lead-filter-wrapper');
           var select = document.getElementById('lead-emp-filter');
-          wrapper.classList.remove('hidden');
-
-          select.innerHTML = `<option value="All">All Lead Owners</option>`;
-          employees.forEach(function(e) {
-            var opt = document.createElement('option');
-            opt.value = e.employeeId;
-            opt.innerText = e.fullName + " (" + e.employeeId + ")";
-            select.appendChild(opt);
-          });
+          if (wrapper && select) {
+            wrapper.classList.remove('hidden');
+            select.innerHTML = `<option value="All">All Lead Owners</option>`;
+            employees.forEach(function(e) {
+              var opt = document.createElement('option');
+              opt.value = e.employeeId;
+              opt.innerText = e.fullName + " (" + e.employeeId + ")";
+              select.appendChild(opt);
+            });
+          }
         }
 
+        renderFunnelBar();
         renderLeadsTable();
+      }
+
+      function getProductsByVertical(vertical) {
+        var masterProducts = window.RevOpsStore.getCollection('productsMaster') || [];
+        if (masterProducts.length === 0) {
+          // Default fallbacks by vertical
+          var defaults = {
+            'Projects': [
+              { name: 'Dynamic In-Motion Train Weigher (IMW-500)', spec: '200T Capacity, High-Speed Pitless, Accuracy 0.2%', hsn: '90318000', price: 4500000 },
+              { name: 'Automated Slag Yard Weighing & Tracking (ASW-2000)', spec: 'Heavy Duty Heat Resistant RFID Automation', hsn: '84238900', price: 2800000 },
+              { name: 'Ladle Turret Weighing System (LTW-350)', spec: '350-Ton High Temperature Metrology Grade', hsn: '90318000', price: 3850000 },
+              { name: 'Blast Furnace Automatic Hopper Scale (BFH-100)', spec: 'Batch Dosing +/-0.1% Repeatability', hsn: '84238900', price: 3200000 },
+              { name: 'Surface Laser Profiling Scanner (SLS-4K)', spec: '4K Laser Triangulation 0.01mm resolution', hsn: '90314900', price: 2200000 }
+            ],
+            'Onboard': [
+              { name: 'Onboard Tipper Weighing Scale (OTW-30T)', spec: 'Wireless Axle Load & Gross Weigher for Heavy Tippers', hsn: '84238900', price: 480000 },
+              { name: 'Excavator / Wheel Loader Dynamic Payload Scale (PLS-PRO)', spec: 'Real-time hydraulic lift pressure telemetry', hsn: '84238900', price: 395000 },
+              { name: 'Dumper Truck Onboard Telematics Weigher (DTW-100)', spec: 'CAN-Bus J1939 telemetry with overload buzzer', hsn: '84238900', price: 550000 },
+              { name: 'Garbage Compactor Bin Lifter Weigher (GCW-10)', spec: 'Solar-ready dynamic bin metrology', hsn: '84238900', price: 320000 }
+            ],
+            'Crane': [
+              { name: 'Wireless Crane Scale 50T (CS-50W)', spec: 'Heavy Duty Cast Alloy IP67 with Handheld RF Terminal', hsn: '84238900', price: 240000 },
+              { name: 'Overhead EOT Crane Load Limiter & Indicator (EOT-LL)', spec: 'Dual rope tension cell with display', hsn: '90318000', price: 185000 },
+              { name: 'Digital Crane Scale 20T High Temp Shielded (CS-20HT)', spec: 'Heat radiation deflector for Foundry / Smelter', hsn: '84238900', price: 310000 },
+              { name: 'Crane Boom Angle & Load Moment Indicator (LMI-500)', spec: 'Full color screen with anti-two-block sensor', hsn: '90318000', price: 650000 }
+            ],
+            'Service and Parts': [
+              { name: '50-Ton Shear Beam Load Cell (SP-LC-50T)', spec: 'Stainless Steel IP68 3mV/V Class C3', hsn: '90318000', price: 45000 },
+              { name: 'Optical Rotary Encoder 1000 PPR (SP-ENC-1000)', spec: 'Stainless Steel 10-30V DC Line Driver', hsn: '90319000', price: 18500 },
+              { name: 'High-Brightness 6-Digit LED Scoreboard (SP-DISP-7S)', spec: '4-inch Red LED RS485/Modbus IP65', hsn: '85285900', price: 28000 },
+              { name: 'IP68 Stainless Steel 4-Channel Junction Box (SP-JB-04IP)', spec: 'Surge protected with trim pots', hsn: '85369090', price: 6500 },
+              { name: 'Annual Maintenance Contract (AMC) - Comprehensive', spec: '4 Quarterly PM Visits + 24/7 Breakdown Coverage + Spares', hsn: '998717', price: 180000 },
+              { name: 'Annual Maintenance Contract (AMC) - Non-Comprehensive', spec: '4 Preventive Visits + Breakdown Labor Only', hsn: '998717', price: 75000 },
+              { name: 'Emergency On-Site Calibration & Certification', spec: 'NABL Traceable weights calibration up to 100T', hsn: '998717', price: 35000 }
+            ]
+          };
+          return defaults[vertical] || defaults['Projects'];
+        }
+        return masterProducts.filter(function(p) { return p.vertical === vertical; });
+      }
+
+      function handleVerticalChange() {
+        var vert = document.getElementById('inp-lead-vertical').value;
+        var prodSelect = document.getElementById('inp-lead-product');
+        var prods = getProductsByVertical(vert);
+        
+        prodSelect.innerHTML = '';
+        prods.forEach(function(p, idx) {
+          var opt = document.createElement('option');
+          opt.value = p.name || p.productName;
+          opt.innerText = p.name || p.productName;
+          opt.dataset.spec = p.spec || p.technicalSpec || '';
+          opt.dataset.hsn = p.hsn || p.hsnCode || '90318000';
+          opt.dataset.price = p.price || p.unitPrice || 0;
+          prodSelect.appendChild(opt);
+        });
+
+        handleProductSelect();
+      }
+
+      function handleProductSelect() {
+        var prodSelect = document.getElementById('inp-lead-product');
+        var selectedOpt = prodSelect.options[prodSelect.selectedIndex];
+        if (selectedOpt) {
+          document.getElementById('inp-product-spec').value = selectedOpt.dataset.spec || '';
+          document.getElementById('inp-product-hsn').value = selectedOpt.dataset.hsn || '90318000';
+          var currentVal = document.getElementById('inp-lead-value').value;
+          if (!currentVal || Number(currentVal) === 0) {
+            document.getElementById('inp-lead-value').value = selectedOpt.dataset.price || '';
+          }
+        }
+      }
+
+      function handleIndustryChange() {
+        var ind = document.getElementById('inp-lead-industry').value;
+        var sectorBox = document.getElementById('project-sector-box');
+        if (ind === 'Project') {
+          sectorBox.classList.remove('hidden');
+        } else {
+          sectorBox.classList.add('hidden');
+        }
+
+        // Suggest default vertical match
+        var vertSelect = document.getElementById('inp-lead-vertical');
+        if (ind === 'Project') vertSelect.value = 'Projects';
+        else if (ind === 'Onboard') vertSelect.value = 'Onboard';
+        else if (ind === 'Crane') vertSelect.value = 'Crane';
+        else if (ind === 'Spare/Service') vertSelect.value = 'Service and Parts';
+        handleVerticalChange();
+      }
+
+      function handleProjectSectorChange() {
+        var sector = document.getElementById('inp-project-sector').value;
+        var otherInput = document.getElementById('inp-other-sector');
+        if (sector === 'Other Industries') {
+          otherInput.classList.remove('hidden');
+        } else {
+          otherInput.classList.add('hidden');
+        }
+      }
+
+      function addContactRow(existingContact) {
+        if (currentLeadContacts.length >= 5) {
+          alert("Maximum 5 contacts allowed per lead.");
+          return;
+        }
+
+        var contact = existingContact || {
+          name: '',
+          designation: '',
+          phone: '',
+          email: '',
+          autoCc: true
+        };
+
+        var index = currentLeadContacts.length;
+        currentLeadContacts.push(contact);
+        renderContactRows();
+      }
+
+      function removeContactRow(idx) {
+        if (currentLeadContacts.length <= 1) {
+          alert("At least 1 primary contact is required.");
+          return;
+        }
+        currentLeadContacts.splice(idx, 1);
+        renderContactRows();
+      }
+
+      function renderContactRows() {
+        var container = document.getElementById('contacts-container');
+        container.innerHTML = '';
+
+        currentLeadContacts.forEach(function(c, i) {
+          var row = document.createElement('div');
+          row.className = "bg-slate-900 p-3 rounded-xl border border-slate-750 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center text-xs";
+          row.innerHTML = `
+            <div class="sm:col-span-3">
+              <input type="text" placeholder="Contact Name *" value="${escapeHtml(c.name)}" oninput="currentLeadContacts[${i}].name = this.value" required class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white" />
+            </div>
+            <div class="sm:col-span-2">
+              <input type="text" placeholder="Designation" value="${escapeHtml(c.designation || '')}" oninput="currentLeadContacts[${i}].designation = this.value" class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white" />
+            </div>
+            <div class="sm:col-span-3">
+              <input type="text" placeholder="Mobile / Phone *" value="${escapeHtml(c.phone)}" oninput="currentLeadContacts[${i}].phone = this.value" required class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white" />
+            </div>
+            <div class="sm:col-span-3">
+              <input type="email" placeholder="Email Address" value="${escapeHtml(c.email || '')}" oninput="currentLeadContacts[${i}].email = this.value" class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white" />
+            </div>
+            <div class="sm:col-span-1 flex items-center justify-between sm:justify-end gap-2">
+              <label class="inline-flex items-center cursor-pointer" title="Auto-CC on client emails">
+                <input type="checkbox" ${c.autoCc !== false ? 'checked' : ''} onchange="currentLeadContacts[${i}].autoCc = this.checked" class="rounded text-indigo-500" />
+                <span class="ml-1 text-[10px] text-slate-400 font-bold">CC</span>
+              </label>
+              ${currentLeadContacts.length > 1 ? `
+                <button type="button" onclick="removeContactRow(${i})" class="text-rose-400 hover:text-rose-300 font-bold p-1">&times;</button>
+              ` : ''}
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      }
+
+      var stagesList = [
+        "Customer Contacted / Contact Attempted",
+        "Follow-Up Scheduled",
+        "Site Visit Completed",
+        "Technical Evaluation in Progress",
+        "Commercial Offer Submitted",
+        "Pre-Qualification Completed",
+        "Lead Qualified",
+        "Order Confirmed"
+      ];
+
+      function renderFunnelBar() {
+        var leads = window.RevOpsStore.getCollection('leads') || [];
+        var funnelContainer = document.getElementById('funnel-stages-bar');
+        if (!funnelContainer) return;
+
+        var stageCounts = {};
+        stagesList.forEach(function(s) { stageCounts[s] = 0; });
+        leads.forEach(function(l) {
+          var st = l.stage || l.status;
+          if (stageCounts[st] !== undefined) stageCounts[st]++;
+        });
+
+        funnelContainer.innerHTML = '';
+        stagesList.forEach(function(st, idx) {
+          var count = stageCounts[st] || 0;
+          var stageCard = document.createElement('div');
+          stageCard.className = "bg-slate-900 p-2.5 rounded-xl border border-slate-800 text-center relative overflow-hidden flex flex-col justify-between";
+          stageCard.innerHTML = `
+            <div class="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1">Stage ${idx + 1}</div>
+            <div class="text-lg font-black text-white">${count}</div>
+            <div class="text-[9px] font-bold text-indigo-300 truncate mt-1" title="${st}">${st.split(' ')[0]} ${st.split(' ')[1] || ''}</div>
+          `;
+          funnelContainer.appendChild(stageCard);
+        });
       }
 
       function renderLeadsTable() {
         var userRole = localStorage.getItem('userRole');
         var myEmpId = localStorage.getItem('employeeId');
-        var searchQuery = document.getElementById('lead-search-input').value.toLowerCase();
+        var searchQuery = (document.getElementById('lead-search-input').value || '').toLowerCase();
         
+        var vertFilter = document.getElementById('lead-vertical-filter').value;
+        var stageFilter = document.getElementById('lead-stage-filter').value;
+        var selectedFy = document.getElementById('lead-fy-filter').value;
+
         var selectedFilterEmp = "All";
         var filterElem = document.getElementById('lead-emp-filter');
         if (filterElem && filterElem.value) selectedFilterEmp = filterElem.value;
 
         var leads = window.RevOpsStore.getCollection('leads') || [];
 
-        var selectedFy = document.getElementById('lead-fy-filter') ? document.getElementById('lead-fy-filter').value : '2026-27';
         var filtered = leads.filter(function(l) {
           if (selectedFy !== 'All') {
             var leadFy = typeof getFinancialYear === 'function' ? getFinancialYear(l.createdDate || l.createdAt) : '2026-27';
@@ -214,148 +616,266 @@
           }
           if (userRole === 'staff' && l.employeeId !== myEmpId) return false;
           if (selectedFilterEmp !== 'All' && l.employeeId !== selectedFilterEmp) return false;
+          if (vertFilter !== 'All' && l.vertical !== vertFilter) return false;
+          if (stageFilter !== 'All' && (l.stage || l.status) !== stageFilter) return false;
 
           var textMatch = (l.customerName || '').toLowerCase().includes(searchQuery) ||
+                          (l.leadNumber || '').toLowerCase().includes(searchQuery) ||
+                          (l.productName || '').toLowerCase().includes(searchQuery) ||
+                          (l.productSpec || '').toLowerCase().includes(searchQuery) ||
                           (l.contactPerson || '').toLowerCase().includes(searchQuery);
           return textMatch;
         });
 
-        // Compute Stats
+        // Metrics computation
         var totalVal = 0;
+        var qualifiedCount = 0;
         var wonCount = 0;
+
         filtered.forEach(function(l) {
           var val = Number(l.estimatedValue) || Number(l.expectedValue) || Number(l.dealValue) || 0;
           var st = l.stage || l.status || '';
           totalVal += val;
-          if (st === 'Won') wonCount++;
+          if (st === 'Pre-Qualification Completed' || st === 'Lead Qualified') qualifiedCount++;
+          if (st === 'Order Confirmed' || st === 'Won') wonCount++;
         });
 
         document.getElementById('stat-lead-count').innerText = filtered.length;
         document.getElementById('stat-lead-value').innerText = formatINR(totalVal);
+        document.getElementById('stat-lead-qualified').innerText = qualifiedCount;
         document.getElementById('stat-lead-won').innerText = wonCount;
+        document.getElementById('filtered-lead-count-badge').innerText = filtered.length + ' leads';
 
         var tbody = document.getElementById('leads-tbody');
         tbody.innerHTML = "";
 
         if (filtered.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">No commercial leads found.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-500">No commercial leads found matching the filters.</td></tr>`;
           return;
         }
 
         filtered.forEach(function(l) {
           var val = Number(l.estimatedValue) || Number(l.expectedValue) || Number(l.dealValue) || 0;
-          var st = l.stage || l.status || 'New Inquiry';
+          var currency = l.currency || 'INR';
+          var currSymbol = currency === 'USD' ? '$' : (currency === 'EUR' ? '€' : '₹');
+          var st = l.stage || l.status || 'Customer Contacted / Contact Attempted';
 
-          var stagePill = "bg-slate-100 text-slate-800";
-          if (st === "In Discussion" || st === "Qualified" || st === "Negotiation") stagePill = "bg-amber-100 text-amber-800";
-          else if (st === "Quote Sent" || st === "Quoted" || st === "New Enquiry") stagePill = "bg-blue-100 text-blue-800";
-          else if (st === "Won") stagePill = "bg-emerald-100 text-emerald-800";
-          else if (st === "Lost") stagePill = "bg-rose-100 text-rose-800";
+          var stageBadge = "bg-slate-800 text-slate-300 border-slate-700";
+          if (st.indexOf("Order Confirmed") !== -1 || st === "Won") stageBadge = "bg-emerald-950/80 text-emerald-300 border-emerald-700/60";
+          else if (st.indexOf("Lead Qualified") !== -1 || st.indexOf("Pre-Qualification") !== -1) stageBadge = "bg-purple-950/80 text-purple-300 border-purple-700/60";
+          else if (st.indexOf("Commercial Offer") !== -1) stageBadge = "bg-blue-950/80 text-blue-300 border-blue-700/60";
+          else if (st.indexOf("Technical") !== -1 || st.indexOf("Site Visit") !== -1) stageBadge = "bg-amber-950/80 text-amber-300 border-amber-700/60";
+          else if (st.indexOf("Lost") !== -1) stageBadge = "bg-rose-950/80 text-rose-400 border-rose-700/60";
+
+          var contacts = l.contacts || [];
+          if (contacts.length === 0 && l.contactPerson) {
+            contacts.push({ name: l.contactPerson, phone: l.contactPhone || l.phone, email: l.contactEmail || l.email, designation: '' });
+          }
+
+          var contactsHtml = contacts.map(function(c) {
+            return `<div class="text-[11px] leading-tight"><span class="font-bold text-white">${escapeHtml(c.name)}</span> <span class="text-slate-400">(${escapeHtml(c.phone || 'No phone')})</span></div>`;
+          }).join('');
 
           var tr = document.createElement('tr');
-          tr.className = "hover:bg-slate-50 transition-colors";
+          tr.className = "hover:bg-slate-800/40 transition-colors";
           tr.innerHTML = `
-            <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(l.customerName)}</td>
-            <td class="py-3 px-4 text-slate-700">${escapeHtml(l.contactPerson || '--')}</td>
-            <td class="py-3 px-4 font-medium text-slate-700">${escapeHtml(l.vertical || 'Sales')}</td>
-            <td class="py-3 px-4 text-right font-black text-slate-900">${formatINR(val)}</td>
-            <td class="py-3 px-4 text-center">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${stagePill}">${escapeHtml(st)}</span>
+            <td class="py-3 px-4">
+              <div class="font-black text-indigo-400">${escapeHtml(l.leadNumber || l.id)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(l.createdDate || getFormattedToday())}</div>
+              <span class="inline-block mt-1 px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-slate-800 text-slate-300 border border-slate-700">${escapeHtml(l.leadSource || 'Direct')}</span>
             </td>
-            <td class="py-3 px-4 font-medium text-slate-600">${escapeHtml(l.employeeName || l.employeeId)}</td>
-            <td class="py-3 px-4 text-center space-x-2">
-              <a href="quotations.html?leadId=${escapeHtml(l.id)}" class="inline-flex items-center space-x-1 px-2 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-[10px] font-bold transition-colors">
-                <span>📑 Quote</span>
-              </a>
-              <button onclick="editLead('${escapeHtml(l.id)}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
-              <button onclick="deleteLead('${escapeHtml(l.id)}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
+            <td class="py-3 px-4">
+              <div class="font-bold text-white">${escapeHtml(l.customerName)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                <span class="text-amber-400">${escapeHtml(l.industry || 'Project')}</span>
+                ${l.projectSector ? `<span class="text-slate-500">&bull;</span> <span>${escapeHtml(l.projectSector)}</span>` : ''}
+              </div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-950 text-indigo-300 border border-indigo-800/60">${escapeHtml(l.vertical || 'Projects')}</span>
+              </div>
+              <div class="font-semibold text-slate-200">${escapeHtml(l.productName || 'Dynamic Scale')}</div>
+              <div class="text-[10px] text-slate-400 line-clamp-1" title="${escapeHtml(l.productSpec || '')}">Spec: ${escapeHtml(l.productSpec || 'Standard Industrial')}</div>
+            </td>
+            <td class="py-3 px-4 space-y-1">
+              ${contactsHtml || '<span class="text-slate-500">No contacts</span>'}
+            </td>
+            <td class="py-3 px-4 text-right">
+              <div class="font-black text-white">${currSymbol} ${Number(val).toLocaleString('en-IN')}</div>
+              <div class="text-[10px] text-slate-400">${escapeHtml(currency)}</div>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="inline-block px-2.5 py-1 rounded-full text-[10px] font-black border ${stageBadge}">
+                ${escapeHtml(st)}
+              </span>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-semibold text-slate-200">${escapeHtml(l.employeeName || 'Staff')}</div>
+              <div class="text-[10px] text-slate-400">${escapeHtml(l.employeeId || '')}</div>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <div class="flex items-center justify-center space-x-1.5">
+                <button onclick="editLead('${l.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg transition-colors" title="Edit Lead Details">
+                  <i class="fa-solid fa-pen-to-square text-xs"></i>
+                </button>
+                <button onclick="createQuoteFromLead('${l.id}')" class="p-1.5 bg-[#982B68]/30 hover:bg-[#982B68] text-[#E283BD] hover:text-white rounded-lg transition-colors border border-[#982B68]/50" title="Generate Quotation with Bi-directional Sync">
+                  <i class="fa-solid fa-file-invoice text-xs"></i>
+                </button>
+              </div>
             </td>
           `;
           tbody.appendChild(tr);
         });
       }
 
-      function openLeadModal() {
-        document.getElementById('lead-doc-id').value = "";
-        document.getElementById('lead-modal-title').innerText = "Add Commercial Lead";
+      function openLeadModal(leadData) {
+        currentLeadContacts = [];
+        var modal = document.getElementById('lead-modal');
+        var form = document.getElementById('lead-form');
+        form.reset();
 
-        document.getElementById('inp-lead-customer').value = "";
-        document.getElementById('inp-lead-contact').value = "";
-        document.getElementById('inp-lead-phone').value = "";
-        document.getElementById('inp-lead-vertical').value = "Sales";
-        document.getElementById('inp-lead-value').value = 1000000;
-        document.getElementById('inp-lead-stage').value = "New";
-        document.getElementById('inp-lead-notes').value = "";
+        if (leadData) {
+          document.getElementById('lead-modal-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-[#E283BD]"></i> <span>Edit Commercial Lead (${leadData.leadNumber || leadData.id})</span>`;
+          document.getElementById('lead-doc-id').value = leadData.id;
+          document.getElementById('inp-lead-customer').value = leadData.customerName || '';
+          document.getElementById('inp-lead-source').value = leadData.leadSource || 'Direct Customer Approach';
+          document.getElementById('inp-lead-industry').value = leadData.industry || 'Project';
+          
+          handleIndustryChange();
+          if (leadData.projectSector) {
+            var sectSelect = document.getElementById('inp-project-sector');
+            sectSelect.value = leadData.projectSector;
+            if (sectSelect.value !== leadData.projectSector) {
+              sectSelect.value = 'Other Industries';
+              document.getElementById('inp-other-sector').value = leadData.projectSector;
+              document.getElementById('inp-other-sector').classList.remove('hidden');
+            }
+          }
 
-        document.getElementById('lead-modal').classList.remove('hidden');
+          document.getElementById('inp-lead-vertical').value = leadData.vertical || 'Projects';
+          handleVerticalChange();
+
+          document.getElementById('inp-lead-product').value = leadData.productName || '';
+          document.getElementById('inp-product-spec').value = leadData.productSpec || '';
+          document.getElementById('inp-product-hsn').value = leadData.hsnCode || '';
+          document.getElementById('inp-lead-currency').value = leadData.currency || 'INR';
+          document.getElementById('inp-lead-value').value = leadData.estimatedValue || leadData.expectedValue || 0;
+          document.getElementById('inp-lead-target-date').value = leadData.targetDate || '';
+          document.getElementById('inp-lead-stage').value = leadData.stage || leadData.status || 'Customer Contacted / Contact Attempted';
+          document.getElementById('inp-lead-notes').value = leadData.notes || '';
+
+          if (leadData.contacts && Array.isArray(leadData.contacts)) {
+            currentLeadContacts = JSON.parse(JSON.stringify(leadData.contacts));
+          } else if (leadData.contactPerson) {
+            currentLeadContacts.push({
+              name: leadData.contactPerson,
+              phone: leadData.contactPhone || leadData.phone || '',
+              email: leadData.contactEmail || leadData.email || '',
+              designation: '',
+              autoCc: true
+            });
+          }
+        } else {
+          document.getElementById('lead-modal-title').innerHTML = `<i class="fa-solid fa-file-signature text-[#E283BD]"></i> <span>Add New Commercial Lead</span>`;
+          document.getElementById('lead-doc-id').value = '';
+          document.getElementById('inp-lead-industry').value = 'Project';
+          handleIndustryChange();
+          document.getElementById('inp-lead-vertical').value = 'Projects';
+          handleVerticalChange();
+          currentLeadContacts = [{ name: '', designation: '', phone: '', email: '', autoCc: true }];
+        }
+
+        renderContactRows();
+        modal.classList.remove('hidden');
       }
 
       function closeLeadModal() {
         document.getElementById('lead-modal').classList.add('hidden');
       }
 
-      function editLead(docId) {
+      function editLead(id) {
         var leads = window.RevOpsStore.getCollection('leads') || [];
-        var l = leads.find(function(item) { return item.id === docId; });
-        if (!l) return;
+        var lead = leads.find(function(l) { return l.id === id; });
+        if (lead) {
+          openLeadModal(lead);
+        }
+      }
 
-        document.getElementById('lead-doc-id').value = l.id;
-        document.getElementById('lead-modal-title').innerText = "Edit Commercial Lead";
+      function createQuoteFromLead(leadId) {
+        var leads = window.RevOpsStore.getCollection('leads') || [];
+        var lead = leads.find(function(l) { return l.id === leadId; });
+        if (!lead) return;
 
-        document.getElementById('inp-lead-customer').value = l.customerName;
-        document.getElementById('inp-lead-contact').value = l.contactPerson || '';
-        document.getElementById('inp-lead-phone').value = l.phone || l.contactPhone || '';
-        document.getElementById('inp-lead-vertical').value = l.vertical || 'Sales';
-        document.getElementById('inp-lead-value').value = l.estimatedValue || l.expectedValue || l.dealValue || 0;
-        document.getElementById('inp-lead-stage').value = l.stage || l.status || 'New';
-        document.getElementById('inp-lead-notes').value = l.notes || l.remarks || '';
-
-        document.getElementById('lead-modal').classList.remove('hidden');
+        // Redirect to quotations.html pre-filling lead info
+        sessionStorage.setItem('prefill_quote_lead', JSON.stringify(lead));
+        window.location.href = 'quotations.html?action=new&leadId=' + encodeURIComponent(lead.id);
       }
 
       function handleSaveLead(e) {
         e.preventDefault();
         var docId = document.getElementById('lead-doc-id').value;
-        var myEmpId = localStorage.getItem('employeeId');
-        var myName = localStorage.getItem('userName');
+        var existingLead = docId ? (window.RevOpsStore.getCollection('leads') || []).find(function(l) { return l.id === docId; }) : null;
 
-        var val = Number(document.getElementById('inp-lead-value').value) || 0;
-        var st = document.getElementById('inp-lead-stage').value;
+        var myEmpId = localStorage.getItem('employeeId') || 'E-001';
+        var myEmpName = localStorage.getItem('userName') || 'System User';
 
-        var leadData = {
+        var sector = document.getElementById('inp-project-sector').value;
+        if (sector === 'Other Industries') {
+          sector = document.getElementById('inp-other-sector').value || 'Other Industries';
+        }
+
+        var nextLeadNum = existingLead ? existingLead.leadNumber : ('LD-2026-' + Math.floor(1000 + Math.random() * 9000));
+
+        var validContacts = currentLeadContacts.filter(function(c) { return c.name.trim() !== ''; });
+        var primaryContact = validContacts[0] || { name: 'Customer Contact', phone: '', email: '' };
+
+        var newLead = {
+          id: docId || ('lead_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+          leadNumber: nextLeadNum,
           customerName: document.getElementById('inp-lead-customer').value.trim(),
-          contactPerson: document.getElementById('inp-lead-contact').value.trim(),
-          phone: document.getElementById('inp-lead-phone').value.trim(),
-          contactPhone: document.getElementById('inp-lead-phone').value.trim(),
+          leadSource: document.getElementById('inp-lead-source').value,
+          industry: document.getElementById('inp-lead-industry').value,
+          projectSector: sector,
           vertical: document.getElementById('inp-lead-vertical').value,
-          estimatedValue: val,
-          expectedValue: val,
-          stage: st,
-          status: st,
+          productName: document.getElementById('inp-lead-product').value,
+          productSpec: document.getElementById('inp-product-spec').value.trim(),
+          hsnCode: document.getElementById('inp-product-hsn').value.trim(),
+          currency: document.getElementById('inp-lead-currency').value,
+          estimatedValue: Number(document.getElementById('inp-lead-value').value) || 0,
+          expectedValue: Number(document.getElementById('inp-lead-value').value) || 0,
+          targetDate: document.getElementById('inp-lead-target-date').value,
+          stage: document.getElementById('inp-lead-stage').value,
+          status: document.getElementById('inp-lead-stage').value,
+          contacts: validContacts,
+          contactPerson: primaryContact.name,
+          contactPhone: primaryContact.phone,
+          contactEmail: primaryContact.email,
           notes: document.getElementById('inp-lead-notes').value.trim(),
-          remarks: document.getElementById('inp-lead-notes').value.trim(),
-          employeeId: myEmpId,
-          employeeName: myName,
+          employeeId: existingLead ? existingLead.employeeId : myEmpId,
+          employeeName: existingLead ? existingLead.employeeName : myEmpName,
+          createdDate: existingLead ? existingLead.createdDate : getFormattedToday(),
+          createdAt: existingLead ? existingLead.createdAt : new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
 
-        if (docId) {
-          window.RevOpsStore.updateItem('leads', docId, leadData);
-        } else {
-          leadData.createdAt = new Date().toISOString();
-          leadData.createdDate = new Date().toLocaleDateString('en-GB');
-          window.RevOpsStore.addItem('leads', leadData);
+        window.RevOpsStore.saveRecord('leads', newLead);
+        
+        // Log to Universal Audit Trail
+        if (window.RevOpsStore.logAudit) {
+          window.RevOpsStore.logAudit(
+            'Leads',
+            newLead.leadNumber,
+            existingLead ? 'UPDATE' : 'CREATE',
+            (existingLead ? 'Updated lead ' : 'Created new lead ') + newLead.customerName + ' (' + newLead.vertical + ')',
+            existingLead,
+            newLead
+          );
         }
 
         closeLeadModal();
+        renderFunnelBar();
         renderLeadsTable();
-      }
-
-      function deleteLead(docId) {
-        if (confirm("Are you sure you want to delete this lead?")) {
-          window.RevOpsStore.deleteItem('leads', docId);
-          renderLeadsTable();
-        }
       }
     </script>
   </body>

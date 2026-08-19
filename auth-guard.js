@@ -219,14 +219,14 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
 
   var currentPath = window.location.pathname.split('/').pop() || 'index.html';
 
-  // Categories definitions
+  // Categories definitions (Strict SOP Pipeline Order: Leads -> Quotes -> Orders -> Invoices -> Payments)
   var salesItems = [
     { title: "Leads & Pipeline", path: "leads.html", desc: "CRM pipeline, stage conversions & deals", icon: "📈", show: true },
     { title: "Quotations & Approvals", path: "quotations.html", desc: "Itemized quotes, discount threshold approvals & revisions", icon: "📑", show: true },
+    { title: "Orders & Contracts", path: "orders.html", desc: "Customer orders, SLA & contribution splits", icon: "📦", show: true },
     { title: "Invoices & Approvals", path: "invoices.html", desc: "Tax & proforma invoices, senior approval & client dispatch", icon: "🧾", show: true },
-    { title: "Orders & Contracts", path: "orders.html", desc: "Customer orders, SLA & fulfillment", icon: "📦", show: true },
-    { title: "Payments & Collections", path: "payments.html", desc: "AR collections & milestone invoicing", icon: "💳", show: true },
-    { title: "Master Data & Bulk Upload", path: "master-data.html", desc: "Client, Project, Employee & Spare Parts bulk upload", icon: "🗄️", show: true }
+    { title: "Payments & Collections", path: "payments.html", desc: "AR collections, BG/PG tracking & milestone invoicing", icon: "💳", show: true },
+    { title: "Master Data & Bulk Upload", path: "master-data.html", desc: "Product Specs, Clients, Equipment & Bank Master Hub", icon: "🗄️", show: true }
   ];
 
   var financeItems = [
@@ -251,7 +251,7 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
   ];
 
   var serviceItems = [
-    { title: "Service Tickets & Quality", path: "service-tickets.html", desc: "Ticket raising, tracking, SLA, defect & repeat complaint monitoring", icon: "🛠️", show: true }
+    { title: "Service Tickets & Quality", path: "service-tickets.html", desc: "Ticket raising, tracking, SLA, repeat complaint detection & quotes", icon: "🛠️", show: true }
   ];
 
   var roleBadgeColor = "bg-[#982B68]/30 text-[#E283BD] border-[#982B68]/50";

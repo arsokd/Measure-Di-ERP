@@ -9,7 +9,7 @@ Object.assign(window.RevOpsStore, {
 
   reseedAllData: function() {
     console.log("Force re-seeding complete RevOps dataset...");
-    var collections = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews', 'expenses', 'projectsMaster', 'clientsMaster', 'sparePartsMaster', 'expenseSplits', 'travelPolicyMaster', 'travelApprovals', 'budgets', 'serviceTickets', 'quotations', 'invoices'];
+    var collections = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews', 'expenses', 'projectsMaster', 'clientsMaster', 'sparePartsMaster', 'productsMaster', 'bankDetailsMaster', 'clientEquipmentMaster', 'auditLogs', 'expenseSplits', 'travelPolicyMaster', 'travelApprovals', 'budgets', 'serviceTickets', 'quotations', 'invoices'];
     collections.forEach(function(c) { localStorage.removeItem(c); });
     localStorage.removeItem('revops_seeded_v17');
     localStorage.removeItem('revops_seeded_v18');
@@ -19,6 +19,7 @@ Object.assign(window.RevOpsStore, {
     localStorage.removeItem('revops_seeded_v25');
     localStorage.removeItem('revops_seeded_v26');
     localStorage.removeItem('revops_seeded_v27');
+    localStorage.removeItem('revops_seeded_v28');
     if (window.RevOpsStore.initSeedData) {
       window.RevOpsStore.initSeedData();
     }
@@ -32,7 +33,7 @@ Object.assign(window.RevOpsStore, {
   syncAllToFirestore: function() {
     if (!window.db) return;
     console.log("Syncing data to Firebase Firestore...");
-    var collections = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews', 'expenses', 'projectsMaster', 'clientsMaster', 'sparePartsMaster', 'expenseSplits', 'travelPolicyMaster', 'travelApprovals', 'budgets', 'serviceTickets', 'quotations', 'invoices'];
+    var collections = ['employees', 'kraTargets', 'aopTargets', 'orders', 'dwmActivities', 'attendance', 'leads', 'payments', 'reviews', 'expenses', 'projectsMaster', 'clientsMaster', 'sparePartsMaster', 'productsMaster', 'bankDetailsMaster', 'clientEquipmentMaster', 'auditLogs', 'expenseSplits', 'travelPolicyMaster', 'travelApprovals', 'budgets', 'serviceTickets', 'quotations', 'invoices'];
     collections.forEach(function(colName) {
       var items = window.RevOpsStore.getCollection(colName) || [];
       items.forEach(function(item) {
@@ -42,6 +43,46 @@ Object.assign(window.RevOpsStore, {
         });
       });
     });
+  },
+
+  // Universal Audit Trail Logger (Strictly Director & Super Admin viewable)
+  logAudit: function(module, docId, action, summary, oldValue, newValue) {
+    try {
+      var empId = (typeof localStorage !== 'undefined') ? (localStorage.getItem('employeeId') || 'E-001') : 'E-001';
+      var empName = (typeof localStorage !== 'undefined') ? (localStorage.getItem('userName') || 'System User') : 'System User';
+      var empRole = (typeof localStorage !== 'undefined') ? (localStorage.getItem('userRole') || 'super_admin') : 'super_admin';
+      
+      var auditEntry = {
+        id: 'audit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        timestamp: new Date().toISOString(),
+        formattedDate: getFormattedToday() + ' ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        employeeId: empId,
+        employeeName: empName,
+        employeeRole: empRole,
+        module: module || 'General',
+        docId: docId || 'N/A',
+        action: action || 'UPDATE', // CREATE, UPDATE, DELETE, APPROVE, REJECT, DISPATCH
+        summary: summary || (action + ' on ' + module + ' (' + docId + ')'),
+        oldValue: (oldValue !== undefined && oldValue !== null) ? (typeof oldValue === 'object' ? JSON.stringify(oldValue) : String(oldValue)) : null,
+        newValue: (newValue !== undefined && newValue !== null) ? (typeof newValue === 'object' ? JSON.stringify(newValue) : String(newValue)) : null
+      };
+
+      var logs = this.getCollection('auditLogs') || [];
+      logs.unshift(auditEntry);
+      // Keep latest 2000 log entries
+      if (logs.length > 2000) logs = logs.slice(0, 2000);
+      this.saveCollection('auditLogs', logs);
+
+      if (this.isFirebaseAvailable()) {
+        window.db.collection('auditLogs').doc(auditEntry.id).set(auditEntry).catch(function(err) {
+          console.warn("Firestore audit log error:", err);
+        });
+      }
+      return auditEntry;
+    } catch(e) {
+      console.warn("logAudit error:", e);
+      return null;
+    }
   },
 
   getCollection: function(colName) {

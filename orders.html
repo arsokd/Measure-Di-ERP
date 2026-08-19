@@ -3,8 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Measure DI RevOps - Orders & Revenue Management</title>
+    <title>Measure DI RevOps - Orders & Contracts</title>
     <link rel="stylesheet" href="/src/index.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -13,84 +15,98 @@
     <script src="js/seed-data.js" defer></script>
     <script src="auth-guard.js" defer></script>
   </head>
-  <body class="bg-slate-50 min-h-screen text-slate-800">
+  <body class="bg-slate-900 min-h-screen text-slate-100 font-sans antialiased">
     
     <!-- Navbar Container -->
     <div id="navbar-container"></div>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
       <!-- Header -->
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-850 p-6 rounded-2xl border border-slate-800 shadow-xl">
         <div>
-          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Orders & Revenue Operations</h1>
-          <p class="text-sm text-slate-500 mt-1">Multi-contributor order revenue split, GST invoice tracking & deal pipeline</p>
+          <div class="flex items-center space-x-2">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              SOP Funnel Stage 3
+            </span>
+            <span class="text-xs text-slate-400 font-semibold">• Contract Booking & Contribution Attribution</span>
+          </div>
+          <h1 class="text-2xl font-black text-white tracking-tight mt-1 flex items-center gap-2">
+            <span>Orders & Commercial Contracts</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800/80">PO Booking</span>
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">Multi-contributor revenue splits for KRA/AOP attribution, customer PO & factory technical instructions, and Bank/Performance Guarantee (BG/PG) tracking.</p>
         </div>
 
-        <button onclick="openOrderModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center space-x-1 cursor-pointer">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          <span>+ Add New Order</span>
+        <button onclick="openOrderModal()" class="px-4 py-2.5 bg-[#982B68] hover:bg-[#802256] text-white font-bold text-xs rounded-xl shadow-lg shadow-[#982B68]/30 transition-all flex items-center space-x-2 cursor-pointer">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>+ Book New Order / Contract</span>
         </button>
       </div>
 
-      <!-- 3 Summary Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500" id="label-won-count">Orders Won</span>
-          <div class="text-3xl font-black text-slate-900 mt-1" id="stat-won-count">0</div>
-          <p class="text-xs text-slate-400 mt-1">Closed Commercial Orders</p>
+      <!-- 3 Summary KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-md">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Orders Booked</span>
+          <div class="text-2xl font-black text-white mt-1" id="stat-won-count">0</div>
+          <p class="text-[11px] text-slate-400 mt-1">Signed Commercial Contracts</p>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500" id="label-total-value">Total Order Value</span>
-          <div class="text-3xl font-black text-indigo-600 mt-1" id="stat-total-value">Rs.0</div>
-          <p class="text-xs text-slate-400 mt-1">Full Order Value Before GST</p>
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-md">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Contract Value (Excl. GST)</span>
+          <div class="text-2xl font-black text-indigo-400 mt-1" id="stat-total-value">₹0</div>
+          <p class="text-[11px] text-slate-400 mt-1">Net Booked Revenue Recognized in AOP</p>
         </div>
 
-        <div class="bg-white p-6 rounded-2xl shadow-xs border border-slate-200">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Average Order Value</span>
-          <div class="text-3xl font-black text-emerald-600 mt-1" id="stat-avg-value">Rs.0</div>
-          <p class="text-xs text-slate-400 mt-1">Per Commercial Contract</p>
+        <div class="bg-slate-850 p-5 rounded-2xl border border-slate-800 shadow-md">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Average Order Size</span>
+          <div class="text-2xl font-black text-emerald-400 mt-1" id="stat-avg-value">₹0</div>
+          <p class="text-[11px] text-slate-400 mt-1">Per Commercial Equipment & Turnkey Contract</p>
         </div>
       </div>
 
       <!-- Orders Table Container -->
-      <div class="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden space-y-4">
-        <div class="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h2 class="text-lg font-bold text-slate-900">Commercial Orders Registry</h2>
+      <div class="bg-slate-850 rounded-2xl border border-slate-800 shadow-xl overflow-hidden space-y-4">
+        <div class="p-5 border-b border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <span>Commercial Orders & Fulfillment Registry</span>
+            <span id="order-count-badge" class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-700 text-slate-300">0</span>
+          </h2>
           
-          <div class="flex items-center space-x-3">
-            <select id="order-fy-filter" onchange="renderOrdersTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="2026-27" selected>FY 2026-27 (Current)</option>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <select id="order-fy-filter" onchange="renderOrdersTable()" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="2026-27" selected>FY 2026-27</option>
               <option value="2025-26">FY 2025-26</option>
               <option value="2024-25">FY 2024-25</option>
-              <option value="All">All FYs (2024 - 2026)</option>
+              <option value="All">All FYs</option>
             </select>
             <div id="order-filter-wrapper" class="hidden">
-              <select id="order-emp-filter" onchange="renderOrdersTable()" class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <select id="order-emp-filter" onchange="renderOrdersTable()" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 focus:outline-none focus:border-indigo-500">
                 <!-- Populated dynamically -->
               </select>
             </div>
-            <input type="text" id="order-search-input" oninput="renderOrdersTable()" placeholder="Search customer, invoice, vertical..." class="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <div class="relative w-48 sm:w-60">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+              <input type="text" id="order-search-input" oninput="renderOrdersTable()" placeholder="Search customer, PO ref, vertical..." class="w-full pl-8 pr-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500" />
+            </div>
           </div>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <th class="py-3 px-4">Customer Name</th>
-                <th class="py-3 px-4">Vertical</th>
-                <th class="py-3 px-4 text-right">Order Value (Rs.)</th>
-                <th class="py-3 px-4">Contributors Split</th>
-                <th class="py-3 px-4 text-right">GST Amount</th>
-                <th class="py-3 px-4">Invoice #</th>
-                <th class="py-3 px-4">Order Date</th>
+              <tr class="bg-slate-900/80 border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <th class="py-3 px-4">PO Ref & Date</th>
+                <th class="py-3 px-4">Customer & Vertical</th>
+                <th class="py-3 px-4 text-right">Order Value (Excl. GST)</th>
+                <th class="py-3 px-4">Sales Contribution Split</th>
+                <th class="py-3 px-4">BG / PG Terms</th>
+                <th class="py-3 px-4">Factory Instructions</th>
                 <th class="py-3 px-4 text-center">Status</th>
                 <th class="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody id="orders-tbody" class="divide-y divide-slate-100 text-xs">
+            <tbody id="orders-tbody" class="divide-y divide-slate-800/60 text-xs">
               <!-- Populated dynamically -->
             </tbody>
           </table>
@@ -99,145 +115,186 @@
 
     </main>
 
-    <!-- Modal: Add / Edit Order -->
-    <div id="order-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
-        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
-          <h3 class="text-base font-bold text-slate-900" id="order-modal-title">Add Commercial Order</h3>
-          <button onclick="closeOrderModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+    <!-- Modal: Book New Order / Contract -->
+    <div id="order-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div class="bg-slate-900 w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-700 overflow-hidden my-8 max-h-[92vh] flex flex-col">
+        <div class="px-6 py-4 bg-slate-850 border-b border-slate-800 flex items-center justify-between shrink-0">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2" id="order-modal-title">
+              <i class="fa-solid fa-file-contract text-purple-400"></i>
+              <span>Book Commercial Order / PO</span>
+            </h3>
+            <p class="text-xs text-slate-400">Link quotation, configure contribution split across sales team, attach PO & technical instructions</p>
+          </div>
+          <button onclick="closeOrderModal()" class="text-slate-400 hover:text-white text-xl font-bold p-1">&times;</button>
         </div>
 
-        <form onsubmit="handleSaveOrder(event)" class="p-6 space-y-4 overflow-y-auto">
+        <form id="order-form" onsubmit="handleSaveOrder(event)" class="p-6 space-y-5 overflow-y-auto flex-1">
           <input type="hidden" id="ord-doc-id" />
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Customer Name *</label>
-              <input type="text" id="inp-ord-customer" required placeholder="e.g. JSW Steel Limited" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <!-- Section 1: Customer & Quotation Linkage -->
+          <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
+            <div class="text-xs font-black uppercase text-purple-400 tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-link"></i>
+              <span>Quotation & Customer Linkage</span>
             </div>
 
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Customer GSTIN</label>
-              <input type="text" id="inp-ord-gstin" placeholder="e.g. 19AAACJ1011A1Z2" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono uppercase focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-          </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Approved Quotation Linkage *</label>
+                <select id="inp-ord-quote" onchange="handleQuoteSelectForOrder()" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                  <!-- Populated dynamically with pending approved quotes -->
+                </select>
+              </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Vertical *</label>
-              <select id="inp-ord-vertical" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="Sales">Sales</option>
-                <option value="Service/Parts">Service/Parts</option>
-                <option value="Projects">Projects</option>
-              </select>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Customer / Organization Name *</label>
+                <input type="text" id="inp-ord-customer" required placeholder="e.g. JSW Steel Limited" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+              </div>
             </div>
 
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Sub-Vertical</label>
-              <input type="text" id="inp-ord-subvertical" oninput="checkProjectSalesBanner()" placeholder="e.g. Project Sales" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Order Value (Rs. before GST) *</label>
-              <input type="number" id="inp-ord-value" required placeholder="2000000" oninput="recalculateGst()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">GST % *</label>
-              <select id="inp-ord-gstpct" required onchange="recalculateGst()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="18" selected>18%</option>
-                <option value="0">0%</option>
-                <option value="5">5%</option>
-                <option value="12">12%</option>
-                <option value="28">28%</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Calculated Invoice Total</label>
-              <input type="text" id="inp-ord-total-invoice" readonly class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-black text-indigo-700 cursor-not-allowed" />
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Customer PO Number *</label>
+                <input type="text" id="inp-ord-ponum" required placeholder="PO/2026/JSW/8842" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-mono text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">PO Date *</label>
+                <input type="date" id="inp-ord-podate" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Vertical *</label>
+                <select id="inp-ord-vertical" required class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                  <option value="Projects">Projects</option>
+                  <option value="Onboard">Onboard</option>
+                  <option value="Crane">Crane</option>
+                  <option value="Service and Parts">Service and Parts</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">HSN Code</label>
-              <input type="text" id="inp-ord-hsn" placeholder="e.g. 8423" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <!-- Section 2: Order Valuation & Commercials -->
+          <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
+            <div class="text-xs font-black uppercase text-indigo-400 tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-indian-rupee-sign"></i>
+              <span>Contract Valuation & Tax Details</span>
             </div>
 
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Invoice Number</label>
-              <input type="text" id="inp-ord-invoice" placeholder="INV/2025-26/042" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Order Date *</label>
-              <input type="text" id="inp-ord-date" required placeholder="DD/MM/YYYY" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Status *</label>
-              <select id="inp-ord-status" required onchange="checkLossReasonVisibility(); checkProjectSalesBanner();" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="Won" selected>Won</option>
-                <option value="Quoted">Quoted</option>
-                <option value="Lost">Lost</option>
-                <option value="Delivered">Delivered</option>
-              </select>
-            </div>
-
-            <div id="loss-reason-wrapper" class="hidden">
-              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Loss Reason</label>
-              <select id="inp-ord-lossreason" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Select Reason...</option>
-                <option value="Price">Price Competition</option>
-                <option value="Delay">Delivery Delay</option>
-                <option value="Competitor">Competitor Brand</option>
-                <option value="No Need">No Need / Cancelled</option>
-                <option value="Other">Other</option>
-              </select>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Order Value (Excl. GST) *</label>
+                <input type="number" id="inp-ord-value" required min="1" oninput="recalculateOrderTotals()" placeholder="4500000" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-bold text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">GST Rate *</label>
+                <select id="inp-ord-gstpct" onchange="recalculateOrderTotals()" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                  <option value="18" selected>18% Standard GST</option>
+                  <option value="12">12%</option>
+                  <option value="5">5%</option>
+                  <option value="0">0% (Export / Exempt)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Total with GST (₹)</label>
+                <input type="text" id="disp-ord-total" readonly class="w-full px-3 py-2 bg-slate-900 border border-slate-750 rounded-xl text-xs font-black text-emerald-400" value="₹0" />
+              </div>
             </div>
           </div>
 
-          <!-- PROJECT SALES AMBER BANNER -->
-          <div id="project-sales-banner" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 font-medium">
-            💡 <strong>Project Sales Order:</strong> If more than one person contributed to this deal, add them in the contributors section below. Otherwise full 100% revenue stays with the assigned owner.
-          </div>
-
-          <!-- CONTRIBUTORS BOXED SECTION -->
-          <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+          <!-- Section 3: Sales Contribution % Split (Feeds KRA / AOP Targets) -->
+          <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Who contributed to this order?</span>
-              <button type="button" onclick="addContributorRow()" class="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-lg transition-colors cursor-pointer">
-                + Add Contributor
-              </button>
+              <div class="text-xs font-black uppercase text-emerald-400 tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-users-gear"></i>
+                <span>Sales Contribution Split (% of Revenue Recognized) *</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <button type="button" onclick="autoBalanceSplits()" class="px-2 py-1 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/40 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer" title="Auto-balance splits to equal exactly 100%">
+                  <i class="fa-solid fa-scale-balanced"></i>
+                  <span>Auto-Balance 100%</span>
+                </button>
+                <button type="button" onclick="addSplitRow()" class="px-2.5 py-1 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 rounded-lg text-[11px] font-bold flex items-center gap-1 cursor-pointer">
+                  <i class="fa-solid fa-user-plus"></i>
+                  <span>+ Add Contributor</span>
+                </button>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-400">Total contribution must equal <strong>exactly 100%</strong> (neither lesser nor higher). This splits revenue directly towards individual employee AOP achievement.</p>
+
+            <!-- Dynamic Live Validation Warning / Success Banner -->
+            <div id="split-validation-alert" class="p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all"></div>
+
+            <div id="splits-container" class="space-y-2">
+              <!-- Dynamically rendered split rows -->
             </div>
 
-            <div id="contributors-rows-container" class="space-y-2">
-              <!-- Populated dynamically -->
-            </div>
-
-            <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-xs">
-              <span class="font-bold text-slate-600">Total Contribution:</span>
-              <span id="contrib-total-display" class="font-black text-emerald-600">Total: 100%</span>
-            </div>
-            <div id="contrib-error-msg" class="hidden text-xs text-rose-600 font-bold">
-              Contributions must add up to exactly 100%.
+            <div class="p-2.5 bg-slate-900 rounded-xl border border-slate-750 flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-300">Total Contribution:</span>
+              <div class="flex items-center space-x-2">
+                <span id="total-split-badge" class="font-black text-emerald-400">100%</span>
+              </div>
             </div>
           </div>
 
-          <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Remarks</label>
-            <textarea id="inp-ord-remarks" rows="2" placeholder="Specific notes or scope of supply..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          <!-- Section 4: Bank Guarantee & Performance Guarantee (BG / PG) -->
+          <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
+            <div class="text-xs font-black uppercase text-amber-400 tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Bank Guarantee / Performance Guarantee (BG/PG) Terms</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">PG / BG Required?</label>
+                <select id="inp-ord-bgreq" onchange="toggleBgFields()" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs font-semibold text-white focus:outline-none focus:border-indigo-500">
+                  <option value="No">No BG / PG Required</option>
+                  <option value="Yes">Yes - Performance Bank Guarantee Required</option>
+                </select>
+              </div>
+
+              <div id="bg-amount-box" class="hidden">
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">BG Amount (₹) / % of PO</label>
+                <input type="number" id="inp-ord-bgamt" placeholder="e.g. 450000 (10%)" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+
+              <div id="bg-expiry-box" class="hidden">
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">BG Expiry / Claim Date</label>
+                <input type="date" id="inp-ord-bgdate" class="w-full px-3 py-2 bg-slate-950 border border-slate-750 rounded-xl text-xs text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+            </div>
           </div>
 
-          <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3 shrink-0">
-            <button type="button" onclick="closeOrderModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl">Cancel</button>
-            <button type="submit" id="save-order-submit-btn" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:text-slate-400 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer">
-              Save Order
+          <!-- Section 5: Purchase Order File & Factory Instructions -->
+          <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-750 space-y-3">
+            <div class="text-xs font-black uppercase text-sky-400 tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-file-arrow-up"></i>
+              <span>Customer PO Copy & Technical Factory Instruction Document</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Customer PO Copy (PDF / Image) *</label>
+                <input type="file" id="inp-ord-pofile" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" class="w-full px-2 py-1.5 bg-slate-950 border border-slate-750 rounded-xl text-xs text-slate-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white cursor-pointer" />
+                <p class="text-[10px] text-slate-400 mt-1">Official signed purchase order document</p>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Technical Factory Instruction Document</label>
+                <input type="file" id="inp-ord-facfile" accept=".pdf,.doc,.docx,.zip,.xls,.xlsx" class="w-full px-2 py-1.5 bg-slate-950 border border-slate-750 rounded-xl text-xs text-slate-400 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-600 file:text-white cursor-pointer" />
+                <label class="inline-flex items-center mt-1.5 cursor-pointer">
+                  <input type="checkbox" id="inp-no-fac-doc" class="rounded text-indigo-500" />
+                  <span class="ml-1.5 text-[11px] text-slate-300 font-semibold">No special factory instruction document required</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-800 flex items-center justify-end space-x-3 shrink-0">
+            <button type="button" onclick="closeOrderModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl cursor-pointer">Cancel</button>
+            <button type="submit" class="px-5 py-2 bg-[#982B68] hover:bg-[#802256] text-white text-xs font-bold rounded-xl shadow-lg shadow-[#982B68]/30 transition-all cursor-pointer flex items-center gap-2">
+              <i class="fa-solid fa-check"></i>
+              <span>Book Order & Save</span>
             </button>
           </div>
         </form>
@@ -245,7 +302,7 @@
     </div>
 
     <script>
-      var currentContributors = [];
+      var currentSplits = [];
 
       document.addEventListener('DOMContentLoaded', function() {
         if (checkAuth(['admin', 'manager', 'staff'])) {
@@ -255,333 +312,475 @@
 
       function initOrdersPage() {
         var userRole = localStorage.getItem('userRole');
-        var myEmpId = localStorage.getItem('employeeId');
         var employees = window.RevOpsStore.getCollection('employees') || [];
 
         if (userRole === 'super_admin' || userRole === 'admin' || userRole === 'manager') {
           var wrapper = document.getElementById('order-filter-wrapper');
           var select = document.getElementById('order-emp-filter');
-          wrapper.classList.remove('hidden');
-
-          select.innerHTML = `<option value="All">All Contributors</option>`;
-          employees.forEach(function(e) {
-            var opt = document.createElement('option');
-            opt.value = e.employeeId;
-            opt.innerText = e.fullName + " (" + e.employeeId + ")";
-            select.appendChild(opt);
-          });
+          if (wrapper && select) {
+            wrapper.classList.remove('hidden');
+            select.innerHTML = `<option value="All">All Order Contributors</option>`;
+            employees.forEach(function(e) {
+              var opt = document.createElement('option');
+              opt.value = e.employeeId;
+              opt.innerText = e.fullName + " (" + e.employeeId + ")";
+              select.appendChild(opt);
+            });
+          }
         }
 
         renderOrdersTable();
       }
 
-      function renderOrdersTable() {
-        var userRole = localStorage.getItem('userRole');
-        var myEmpId = localStorage.getItem('employeeId');
-        var searchQuery = document.getElementById('order-search-input').value.toLowerCase();
+      function toggleBgFields() {
+        var req = document.getElementById('inp-ord-bgreq').value;
+        var amtBox = document.getElementById('bg-amount-box');
+        var expBox = document.getElementById('bg-expiry-box');
+        if (req === 'Yes') {
+          amtBox.classList.remove('hidden');
+          expBox.classList.remove('hidden');
+        } else {
+          amtBox.classList.add('hidden');
+          expBox.classList.add('hidden');
+        }
+      }
+
+      function recalculateOrderTotals() {
+        var val = Number(document.getElementById('inp-ord-value').value) || 0;
+        var gstPct = Number(document.getElementById('inp-ord-gstpct').value) || 0;
+        var total = val + (val * (gstPct / 100));
+        document.getElementById('disp-ord-total').value = '₹' + Math.round(total).toLocaleString('en-IN');
+      }
+
+      function addSplitRow(existing) {
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+        var defaultEmp = employees[0] ? employees[0].employeeId : 'E-002';
         
-        var selectedFilterEmp = "All";
-        var filterElem = document.getElementById('order-emp-filter');
-        if (filterElem && filterElem.value) selectedFilterEmp = filterElem.value;
+        var currentTotal = currentSplits.reduce(function(acc, s) { return acc + (parseFloat(s.percent) || 0); }, 0);
+        var remaining = Math.max(0, Math.round((100 - currentTotal) * 100) / 100);
 
-        var orders = window.RevOpsStore.getCollection('orders') || [];
+        var split = existing || {
+          employeeId: defaultEmp,
+          percent: remaining > 0 ? remaining : 0
+        };
 
-        // Scoping: Staff see only orders where they appear in contributors list
-        var selectedFy = document.getElementById('order-fy-filter') ? document.getElementById('order-fy-filter').value : '2026-27';
-        var visibleOrders = orders.filter(function(ord) {
-          if (selectedFy !== 'All') {
-            var ordFy = typeof getFinancialYear === 'function' ? getFinancialYear(ord.orderDate) : '2026-27';
-            if (ordFy !== selectedFy) return false;
-          }
-          var contribs = ord.contributors || [{ employeeId: ord.employeeId, contributionPct: 100 }];
-          var isContributor = contribs.some(function(c) { return c.employeeId === myEmpId; });
+        currentSplits.push(split);
+        renderSplitRows();
+      }
 
-          if (userRole === 'staff' && !isContributor) return false;
-          if (selectedFilterEmp !== 'All' && !contribs.some(function(c) { return c.employeeId === selectedFilterEmp; })) return false;
-
-          var textMatch = ord.customerName.toLowerCase().includes(searchQuery) ||
-                            (ord.invoiceNumber || '').toLowerCase().includes(searchQuery) ||
-                            ord.vertical.toLowerCase().includes(searchQuery);
-          return textMatch;
-        });
-
-        // Compute Summary Stats
-        var wonOrders = visibleOrders.filter(function(o) { return o.status === 'Won'; });
-        var totalVal = 0;
-        wonOrders.forEach(function(o) { totalVal += Number(o.orderValue) || 0; });
-        var avgVal = wonOrders.length > 0 ? Math.round(totalVal / wonOrders.length) : 0;
-
-        document.getElementById('stat-won-count').innerText = wonOrders.length;
-        document.getElementById('stat-total-value').innerText = formatINR(totalVal);
-        document.getElementById('stat-avg-value').innerText = formatINR(avgVal);
-
-        // Render Rows
-        var tbody = document.getElementById('orders-tbody');
-        tbody.innerHTML = "";
-
-        if (visibleOrders.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-slate-400">No commercial orders found.</td></tr>`;
+      function autoBalanceSplits() {
+        if (currentSplits.length === 0) {
+          var myEmpId = localStorage.getItem('employeeId') || 'E-002';
+          currentSplits = [{ employeeId: myEmpId, percent: 100 }];
+          renderSplitRows();
           return;
         }
 
-        visibleOrders.forEach(function(ord) {
-          var contribs = ord.contributors || [{ employeeId: ord.employeeId, employeeName: ord.employeeName, contributionPct: 100 }];
-          var contribChips = "";
-          contribs.forEach(function(c) {
-            contribChips += `<span class="inline-block px-2 py-0.5 mr-1 mb-1 rounded bg-slate-100 border border-slate-200 text-[10px] font-semibold text-slate-700">${escapeHtml(c.employeeName || c.employeeId)}: <strong>${escapeHtml(c.contributionPct)}%</strong></span>`;
-          });
+        if (currentSplits.length === 1) {
+          currentSplits[0].percent = 100;
+          renderSplitRows();
+          return;
+        }
 
-          var statusPill = "bg-emerald-100 text-emerald-800";
-          if (ord.status === "Quoted") statusPill = "bg-blue-100 text-blue-800";
-          else if (ord.status === "Lost") statusPill = "bg-rose-100 text-rose-800";
-          else if (ord.status === "Delivered") statusPill = "bg-purple-100 text-purple-800";
+        // Even distribution with rounding correction on the first person
+        var count = currentSplits.length;
+        var base = Math.floor(100 / count);
+        var remainder = 100 - (base * count);
 
-          var tr = document.createElement('tr');
-          tr.className = "hover:bg-slate-50 transition-colors";
-          tr.innerHTML = `
-            <td class="py-3 px-4 font-bold text-slate-900">${escapeHtml(ord.customerName)}</td>
-            <td class="py-3 px-4 font-medium text-slate-700">${escapeHtml(ord.vertical)}</td>
-            <td class="py-3 px-4 text-right font-black text-slate-900">${formatINR(ord.orderValue)}</td>
-            <td class="py-3 px-4">${contribChips}</td>
-            <td class="py-3 px-4 text-right text-slate-600 font-medium">${formatINR(ord.gstAmount || 0)}</td>
-            <td class="py-3 px-4 font-mono text-slate-600">${escapeHtml(ord.invoiceNumber || '--')}</td>
-            <td class="py-3 px-4 text-slate-500 font-mono">${escapeHtml(ord.orderDate)}</td>
-            <td class="py-3 px-4 text-center">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusPill}">${escapeHtml(ord.status)}</span>
-            </td>
-            <td class="py-3 px-4 text-center space-x-2">
-              <button onclick="editOrder('${escapeHtml(ord.id)}')" class="text-indigo-600 hover:text-indigo-800 font-bold hover:underline">Edit</button>
-              <button onclick="deleteOrder('${escapeHtml(ord.id)}')" class="text-rose-600 hover:text-rose-800 font-bold hover:underline">Delete</button>
-            </td>
+        for (var i = 0; i < count; i++) {
+          currentSplits[i].percent = base + (i === 0 ? remainder : 0);
+        }
+
+        renderSplitRows();
+      }
+
+      function removeSplitRow(idx) {
+        if (currentSplits.length <= 1) {
+          alert("Order must have at least one sales contributor with 100% split.");
+          return;
+        }
+        currentSplits.splice(idx, 1);
+        renderSplitRows();
+      }
+
+      function renderSplitRows() {
+        var container = document.getElementById('splits-container');
+        container.innerHTML = '';
+        var employees = window.RevOpsStore.getCollection('employees') || [];
+
+        currentSplits.forEach(function(s, i) {
+          var row = document.createElement('div');
+          row.className = "bg-slate-900 p-2.5 rounded-xl border border-slate-750 grid grid-cols-12 gap-2 items-center text-xs";
+          
+          var empOptions = employees.map(function(e) {
+            return `<option value="${e.employeeId}" ${e.employeeId === s.employeeId ? 'selected' : ''}>${escapeHtml(e.fullName)} (${e.employeeId})</option>`;
+          }).join('');
+
+          row.innerHTML = `
+            <div class="col-span-7 sm:col-span-8">
+              <select onchange="currentSplits[${i}].employeeId = this.value" class="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-semibold">
+                ${empOptions}
+              </select>
+            </div>
+            <div class="col-span-4 sm:col-span-3">
+              <div class="flex items-center space-x-1">
+                <input type="number" min="0" max="100" step="0.5" value="${s.percent}" oninput="currentSplits[${i}].percent = parseFloat(this.value) || 0; updateSplitTotal();" class="w-full px-2 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-white font-bold text-center" />
+                <span class="text-slate-400 font-bold">%</span>
+              </div>
+            </div>
+            <div class="col-span-1 text-right">
+              ${currentSplits.length > 1 ? `
+                <button type="button" onclick="removeSplitRow(${i})" class="text-rose-400 hover:text-rose-300 font-bold p-1 cursor-pointer" title="Remove contributor">&times;</button>
+              ` : ''}
+            </div>
           `;
-          tbody.appendChild(tr);
+          container.appendChild(row);
         });
+
+        updateSplitTotal();
       }
 
-      function recalculateGst() {
-        var val = Number(document.getElementById('inp-ord-value').value) || 0;
-        var gstPct = Number(document.getElementById('inp-ord-gstpct').value) || 0;
-        var gstAmt = (val * gstPct) / 100;
-        var totalInv = val + gstAmt;
+      function updateSplitTotal() {
+        var total = 0;
+        currentSplits.forEach(function(s) { total += parseFloat(s.percent) || 0; });
+        total = Math.round(total * 100) / 100;
 
-        document.getElementById('inp-ord-total-invoice').value = formatINR(totalInv) + " (GST: " + formatINR(gstAmt) + ")";
-      }
+        var badge = document.getElementById('total-split-badge');
+        var alertBox = document.getElementById('split-validation-alert');
 
-      function checkLossReasonVisibility() {
-        var st = document.getElementById('inp-ord-status').value;
-        var wrapper = document.getElementById('loss-reason-wrapper');
-        if (st === 'Lost') {
-          wrapper.classList.remove('hidden');
+        if (total === 100) {
+          if (badge) {
+            badge.innerText = '100% (Valid ✓)';
+            badge.className = "px-2.5 py-0.5 rounded-lg bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 font-black text-xs";
+          }
+          if (alertBox) {
+            alertBox.className = "p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between bg-emerald-950/40 border border-emerald-500/30 text-emerald-300";
+            alertBox.innerHTML = `
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                <span>Contribution split equals exactly <strong>100%</strong>. Order can be saved.</span>
+              </div>
+            `;
+          }
+        } else if (total < 100) {
+          var deficit = Math.round((100 - total) * 100) / 100;
+          if (badge) {
+            badge.innerText = total + '% (Deficit: -' + deficit + '%)';
+            badge.className = "px-2.5 py-0.5 rounded-lg bg-amber-950/80 text-amber-400 border border-amber-500/40 font-black text-xs animate-pulse";
+          }
+          if (alertBox) {
+            alertBox.className = "p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between bg-amber-950/50 border border-amber-500/50 text-amber-300";
+            alertBox.innerHTML = `
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-triangle-exclamation text-amber-400"></i>
+                <span>Total is <strong>${total}%</strong> (Lesser than 100%). Remaining to allocate: <strong>${deficit}%</strong>.</span>
+              </div>
+              <button type="button" onclick="autoBalanceSplits()" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-bold cursor-pointer">Fix to 100%</button>
+            `;
+          }
         } else {
-          wrapper.classList.add('hidden');
+          var excess = Math.round((total - 100) * 100) / 100;
+          if (badge) {
+            badge.innerText = total + '% (Exceeds: +' + excess + '%)';
+            badge.className = "px-2.5 py-0.5 rounded-lg bg-rose-950/80 text-rose-400 border border-rose-500/40 font-black text-xs animate-pulse";
+          }
+          if (alertBox) {
+            alertBox.className = "p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between bg-rose-950/50 border border-rose-500/50 text-rose-300";
+            alertBox.innerHTML = `
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-circle-xmark text-rose-400"></i>
+                <span>Total is <strong>${total}%</strong> (Higher than 100%). Exceeds by <strong>+${excess}%</strong>. Reduce by ${excess}%.</span>
+              </div>
+              <button type="button" onclick="autoBalanceSplits()" class="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold cursor-pointer">Fix to 100%</button>
+            `;
+          }
         }
       }
 
-      function checkProjectSalesBanner() {
-        var subV = document.getElementById('inp-ord-subvertical').value.toLowerCase();
-        var st = document.getElementById('inp-ord-status').value;
-        var banner = document.getElementById('project-sales-banner');
+      function handleQuoteSelectForOrder() {
+        var quoteId = document.getElementById('inp-ord-quote').value;
+        if (!quoteId) return;
 
-        if (subV.includes('project sales') && st === 'Won') {
-          banner.classList.remove('hidden');
-        } else {
-          banner.classList.add('hidden');
+        var quotes = window.RevOpsStore.getCollection('quotations') || [];
+        var q = quotes.find(function(item) { return item.id === quoteId; });
+        if (q) {
+          document.getElementById('inp-ord-customer').value = q.customerName || '';
+          if (q.vertical) document.getElementById('inp-ord-vertical').value = q.vertical;
+          var netVal = q.netTaxableAmount || q.grandTotal || 0;
+          document.getElementById('inp-ord-value').value = Math.round(netVal);
+          recalculateOrderTotals();
         }
       }
 
-      function openOrderModal() {
-        document.getElementById('ord-doc-id').value = "";
-        document.getElementById('order-modal-title').innerText = "Add New Commercial Order";
+      function openOrderModal(orderData) {
+        currentSplits = [];
+        var modal = document.getElementById('order-modal');
+        var form = document.getElementById('order-form');
+        form.reset();
 
-        document.getElementById('inp-ord-customer').value = "";
-        document.getElementById('inp-ord-gstin').value = "";
-        document.getElementById('inp-ord-vertical').value = "Sales";
-        document.getElementById('inp-ord-subvertical').value = "";
-        document.getElementById('inp-ord-value').value = "";
-        document.getElementById('inp-ord-gstpct').value = "18";
-        document.getElementById('inp-ord-hsn').value = "8423";
-        document.getElementById('inp-ord-invoice').value = "";
-        document.getElementById('inp-ord-date').value = getFormattedToday();
-        document.getElementById('inp-ord-status').value = "Won";
-        document.getElementById('inp-ord-remarks').value = "";
+        // Populate pending approved quotations
+        var quotes = window.RevOpsStore.getCollection('quotations') || [];
+        var quoteSelect = document.getElementById('inp-ord-quote');
+        quoteSelect.innerHTML = '<option value="">-- Select Approved Quotation --</option>';
+        quotes.forEach(function(q) {
+          var opt = document.createElement('option');
+          opt.value = q.id;
+          opt.innerText = (q.quoteNumber || q.id) + " - " + q.customerName + " (₹" + Number(q.grandTotal || 0).toLocaleString('en-IN') + ")";
+          quoteSelect.appendChild(opt);
+        });
 
-        // Default Contributors to logged-in user at 100%
-        var myEmpId = localStorage.getItem('employeeId');
-        var myName = localStorage.getItem('userName');
-        currentContributors = [{ employeeId: myEmpId, employeeName: myName, contributionPct: 100 }];
+        if (orderData) {
+          document.getElementById('order-modal-title').innerHTML = `<i class="fa-solid fa-pen-to-square text-purple-400"></i> <span>Edit Commercial Order (${orderData.poNumber || orderData.id})</span>`;
+          document.getElementById('ord-doc-id').value = orderData.id;
+          document.getElementById('inp-ord-quote').value = orderData.quotationId || '';
+          document.getElementById('inp-ord-customer').value = orderData.customerName || '';
+          document.getElementById('inp-ord-ponum').value = orderData.poNumber || '';
+          document.getElementById('inp-ord-podate').value = orderData.poDate || '';
+          document.getElementById('inp-ord-vertical').value = orderData.vertical || 'Projects';
+          document.getElementById('inp-ord-value').value = orderData.orderValue || orderData.value || 0;
+          document.getElementById('inp-ord-gstpct').value = orderData.gstPercent || 18;
+          recalculateOrderTotals();
 
-        recalculateGst();
-        checkLossReasonVisibility();
-        checkProjectSalesBanner();
-        renderContributorsRows();
+          if (orderData.bgRequired === 'Yes') {
+            document.getElementById('inp-ord-bgreq').value = 'Yes';
+            document.getElementById('inp-ord-bgamt').value = orderData.bgAmount || '';
+            document.getElementById('inp-ord-bgdate').value = orderData.bgExpiryDate || '';
+            toggleBgFields();
+          }
 
-        document.getElementById('order-modal').classList.remove('hidden');
+          if (orderData.splits && Array.isArray(orderData.splits)) {
+            currentSplits = JSON.parse(JSON.stringify(orderData.splits));
+          } else {
+            currentSplits = [{ employeeId: orderData.employeeId || 'E-002', percent: 100 }];
+          }
+        } else {
+          document.getElementById('order-modal-title').innerHTML = `<i class="fa-solid fa-file-contract text-purple-400"></i> <span>Book Commercial Order / PO</span>`;
+          document.getElementById('ord-doc-id').value = '';
+          document.getElementById('inp-ord-podate').value = new Date().toISOString().slice(0, 10);
+          var myEmpId = localStorage.getItem('employeeId') || 'E-002';
+          currentSplits = [{ employeeId: myEmpId, percent: 100 }];
+          toggleBgFields();
+        }
+
+        renderSplitRows();
+        modal.classList.remove('hidden');
       }
 
       function closeOrderModal() {
         document.getElementById('order-modal').classList.add('hidden');
       }
 
-      function renderContributorsRows() {
-        var container = document.getElementById('contributors-rows-container');
-        var employees = window.RevOpsStore.getCollection('employees') || [];
-        container.innerHTML = "";
+      function renderOrdersTable() {
+        var userRole = localStorage.getItem('userRole');
+        var myEmpId = localStorage.getItem('employeeId');
+        var searchQuery = (document.getElementById('order-search-input').value || '').toLowerCase();
+        var selectedFy = document.getElementById('order-fy-filter').value;
 
-        var totalPct = 0;
+        var selectedFilterEmp = "All";
+        var filterElem = document.getElementById('order-emp-filter');
+        if (filterElem && filterElem.value) selectedFilterEmp = filterElem.value;
 
-        currentContributors.forEach(function(c, index) {
-          totalPct += Number(c.contributionPct) || 0;
-
-          var row = document.createElement('div');
-          row.className = "flex items-center space-x-3";
-
-          var selectHtml = `<select onchange="updateContributorEmp(${index}, this.value)" class="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none">`;
-          employees.forEach(function(e) {
-            var selected = (e.employeeId === c.employeeId) ? 'selected' : '';
-            selectHtml += `<option value="${e.employeeId}" ${selected}>${e.fullName} (${e.employeeId})</option>`;
-          });
-          selectHtml += `</select>`;
-
-          var removeBtn = currentContributors.length > 1
-            ? `<button type="button" onclick="removeContributorRow(${index})" class="text-rose-600 hover:text-rose-800 font-bold text-base px-2">&times;</button>`
-            : `<span class="w-6"></span>`;
-
-          row.innerHTML = `
-            <div class="flex-1">${selectHtml}</div>
-            <div class="w-28 flex items-center space-x-1">
-              <input type="number" min="1" max="100" value="${c.contributionPct}" oninput="updateContributorPct(${index}, this.value)" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-center focus:outline-none" />
-              <span class="text-xs font-bold text-slate-500">%</span>
-            </div>
-            ${removeBtn}
-          `;
-          container.appendChild(row);
-        });
-
-        var display = document.getElementById('contrib-total-display');
-        var errorMsg = document.getElementById('contrib-error-msg');
-        var saveBtn = document.getElementById('save-order-submit-btn');
-
-        display.innerText = "Total: " + totalPct + "%";
-
-        if (totalPct === 100) {
-          display.className = "font-black text-emerald-600 text-xs";
-          errorMsg.classList.add('hidden');
-          saveBtn.disabled = false;
-        } else {
-          display.className = "font-black text-rose-600 text-xs";
-          errorMsg.classList.remove('hidden');
-          saveBtn.disabled = true;
-        }
-      }
-
-      function addContributorRow() {
-        var employees = window.RevOpsStore.getCollection('employees') || [];
-        var firstEmp = employees[0] || { employeeId: 'E-001', fullName: 'Employee' };
-        currentContributors.push({
-          employeeId: firstEmp.employeeId,
-          employeeName: firstEmp.fullName,
-          contributionPct: 0
-        });
-        renderContributorsRows();
-      }
-
-      function removeContributorRow(index) {
-        currentContributors.splice(index, 1);
-        renderContributorsRows();
-      }
-
-      function updateContributorEmp(index, empId) {
-        var employees = window.RevOpsStore.getCollection('employees') || [];
-        var emp = employees.find(function(e) { return e.employeeId === empId; });
-        currentContributors[index].employeeId = empId;
-        currentContributors[index].employeeName = emp ? emp.fullName : 'Employee';
-      }
-
-      function updateContributorPct(index, val) {
-        currentContributors[index].contributionPct = Number(val) || 0;
-        renderContributorsRows();
-      }
-
-      function editOrder(docId) {
         var orders = window.RevOpsStore.getCollection('orders') || [];
-        var ord = orders.find(function(o) { return o.id === docId; });
-        if (!ord) return;
+        var employees = window.RevOpsStore.getCollection('employees') || [];
 
-        document.getElementById('ord-doc-id').value = ord.id;
-        document.getElementById('order-modal-title').innerText = "Edit Commercial Order - " + ord.customerName;
+        var filtered = orders.filter(function(o) {
+          if (selectedFy !== 'All') {
+            var ordFy = typeof getFinancialYear === 'function' ? getFinancialYear(o.poDate || o.orderDate || o.createdAt) : '2026-27';
+            if (ordFy !== selectedFy) return false;
+          }
 
-        document.getElementById('inp-ord-customer').value = ord.customerName;
-        document.getElementById('inp-ord-gstin').value = ord.customerGstin || '';
-        document.getElementById('inp-ord-vertical').value = ord.vertical;
-        document.getElementById('inp-ord-subvertical').value = ord.subVertical || '';
-        document.getElementById('inp-ord-value').value = ord.orderValue;
-        document.getElementById('inp-ord-gstpct').value = ord.gstPct || 18;
-        document.getElementById('inp-ord-hsn').value = ord.hsnCode || '';
-        document.getElementById('inp-ord-invoice').value = ord.invoiceNumber || '';
-        document.getElementById('inp-ord-date').value = ord.orderDate;
-        document.getElementById('inp-ord-status').value = ord.status;
-        document.getElementById('inp-ord-remarks').value = ord.remarks || '';
+          if (userRole === 'staff') {
+            var isContributor = o.employeeId === myEmpId || (o.splits && o.splits.some(function(s){ return s.employeeId === myEmpId; }));
+            if (!isContributor) return false;
+          }
 
-        currentContributors = ord.contributors || [{ employeeId: ord.employeeId, employeeName: ord.employeeName, contributionPct: 100 }];
+          if (selectedFilterEmp !== 'All') {
+            var matchesEmp = o.employeeId === selectedFilterEmp || (o.splits && o.splits.some(function(s){ return s.employeeId === selectedFilterEmp; }));
+            if (!matchesEmp) return false;
+          }
 
-        recalculateGst();
-        checkLossReasonVisibility();
-        checkProjectSalesBanner();
-        renderContributorsRows();
+          var textMatch = (o.customerName || '').toLowerCase().includes(searchQuery) ||
+                          (o.poNumber || '').toLowerCase().includes(searchQuery) ||
+                          (o.vertical || '').toLowerCase().includes(searchQuery);
+          return textMatch;
+        });
 
-        document.getElementById('order-modal').classList.remove('hidden');
+        // Compute metrics
+        var totalWon = filtered.length;
+        var totalVal = 0;
+        filtered.forEach(function(o) {
+          totalVal += Number(o.orderValue) || Number(o.value) || 0;
+        });
+        var avgVal = totalWon > 0 ? (totalVal / totalWon) : 0;
+
+        document.getElementById('stat-won-count').innerText = totalWon;
+        document.getElementById('stat-total-value').innerText = formatINR(totalVal);
+        document.getElementById('stat-avg-value').innerText = formatINR(avgVal);
+        document.getElementById('order-count-badge').innerText = totalWon + ' orders';
+
+        var tbody = document.getElementById('orders-tbody');
+        tbody.innerHTML = '';
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-500">No commercial orders found matching the filter.</td></tr>`;
+          return;
+        }
+
+        filtered.forEach(function(o) {
+          var val = Number(o.orderValue) || Number(o.value) || 0;
+          var splits = o.splits || [{ employeeId: o.employeeId || 'E-002', percent: 100 }];
+
+          var splitsHtml = splits.map(function(s) {
+            var empObj = employees.find(function(e) { return e.employeeId === s.employeeId; });
+            var name = empObj ? empObj.fullName : s.employeeId;
+            return `<div class="text-[10px]"><span class="font-bold text-white">${escapeHtml(name)}:</span> <span class="text-emerald-400 font-extrabold">${s.percent}%</span></div>`;
+          }).join('');
+
+          var tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-800/40 transition-colors";
+          tr.innerHTML = `
+            <td class="py-3 px-4">
+              <div class="font-black text-indigo-400 font-mono">${escapeHtml(o.poNumber || o.id)}</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(o.poDate || o.orderDate || getFormattedToday())}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-white">${escapeHtml(o.customerName)}</div>
+              <span class="inline-block mt-1 px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-indigo-950 text-indigo-300 border border-indigo-800/60">${escapeHtml(o.vertical || 'Projects')}</span>
+            </td>
+            <td class="py-3 px-4 text-right">
+              <div class="font-black text-white">₹${Number(val).toLocaleString('en-IN')}</div>
+              <div class="text-[10px] text-slate-400">+18% GST</div>
+            </td>
+            <td class="py-3 px-4 space-y-0.5">
+              ${splitsHtml}
+            </td>
+            <td class="py-3 px-4">
+              ${o.bgRequired === 'Yes' ? `
+                <div class="text-[11px] font-bold text-amber-300">₹${Number(o.bgAmount || 0).toLocaleString('en-IN')}</div>
+                <div class="text-[10px] text-slate-400">Exp: ${escapeHtml(o.bgExpiryDate || 'N/A')}</div>
+              ` : `<span class="text-slate-500 text-[11px]">No BG</span>`}
+            </td>
+            <td class="py-3 px-4">
+              ${o.factoryDocAttached ? `
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-950 text-sky-300 border border-sky-800/60">
+                  <i class="fa-solid fa-file-pdf mr-1"></i> Attached
+                </span>
+              ` : `<span class="text-slate-500 text-[10px]">Standard Specs</span>`}
+            </td>
+            <td class="py-3 px-4 text-center">
+              <span class="px-2 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-950 text-emerald-300 border border-emerald-700/60">
+                Booked
+              </span>
+            </td>
+            <td class="py-3 px-4 text-center">
+              <button onclick="editOrder('${o.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg transition-colors" title="Edit Order Details">
+                <i class="fa-solid fa-pen-to-square text-xs"></i>
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function editOrder(id) {
+        var orders = window.RevOpsStore.getCollection('orders') || [];
+        var o = orders.find(function(item) { return item.id === id; });
+        if (o) {
+          openOrderModal(o);
+        }
       }
 
       function handleSaveOrder(e) {
         e.preventDefault();
+
+        // Validate splits total strictly equals 100% (neither lesser nor higher)
+        var totalSplit = 0;
+        currentSplits.forEach(function(s) { totalSplit += parseFloat(s.percent) || 0; });
+        totalSplit = Math.round(totalSplit * 100) / 100;
+
+        if (totalSplit < 100) {
+          var remaining = Math.round((100 - totalSplit) * 100) / 100;
+          alert("Cannot Save Order:\n\nSales contribution total is " + totalSplit + "% (lesser than 100%).\n\nYou must allocate the remaining " + remaining + "% before this order can be saved.");
+          var container = document.getElementById('splits-container');
+          if (container) container.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
+
+        if (totalSplit > 100) {
+          var excess = Math.round((totalSplit - 100) * 100) / 100;
+          alert("Cannot Save Order:\n\nSales contribution total is " + totalSplit + "% (higher than 100%).\n\nYou must reduce the split by " + excess + "% so it equals exactly 100% before saving.");
+          var container = document.getElementById('splits-container');
+          if (container) container.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
+
         var docId = document.getElementById('ord-doc-id').value;
+        var existingOrder = docId ? (window.RevOpsStore.getCollection('orders') || []).find(function(o) { return o.id === docId; }) : null;
 
+        var poNum = document.getElementById('inp-ord-ponum').value.trim();
         var val = Number(document.getElementById('inp-ord-value').value) || 0;
-        var gstPct = Number(document.getElementById('inp-ord-gstpct').value) || 0;
-        var gstAmt = (val * gstPct) / 100;
-        var totalInv = val + gstAmt;
+        var gstPct = Number(document.getElementById('inp-ord-gstpct').value) || 18;
+        var gstAmount = val * (gstPct / 100);
 
-        var contribIds = currentContributors.map(function(c) { return c.employeeId; });
+        var bgReq = document.getElementById('inp-ord-bgreq').value;
+        var quoteId = document.getElementById('inp-ord-quote').value;
 
-        var orderData = {
+        var newOrder = {
+          id: docId || ('ord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4)),
+          quotationId: quoteId,
+          poNumber: poNum,
+          poDate: document.getElementById('inp-ord-podate').value,
           customerName: document.getElementById('inp-ord-customer').value.trim(),
-          customerGstin: document.getElementById('inp-ord-gstin').value.trim(),
           vertical: document.getElementById('inp-ord-vertical').value,
-          subVertical: document.getElementById('inp-ord-subvertical').value.trim(),
           orderValue: val,
-          gstPct: gstPct,
-          gstAmount: gstAmt,
-          totalInvoiceValue: totalInv,
-          hsnCode: document.getElementById('inp-ord-hsn').value.trim(),
-          invoiceNumber: document.getElementById('inp-ord-invoice').value.trim(),
-          orderDate: document.getElementById('inp-ord-date').value.trim(),
-          status: document.getElementById('inp-ord-status').value,
-          lossReason: document.getElementById('inp-ord-lossreason').value,
-          remarks: document.getElementById('inp-ord-remarks').value.trim(),
-          contributors: currentContributors,
-          contributorIds: contribIds,
-          isMultiContributor: (currentContributors.length > 1),
-          employeeId: currentContributors[0] ? currentContributors[0].employeeId : localStorage.getItem('employeeId'),
-          employeeName: currentContributors[0] ? currentContributors[0].employeeName : localStorage.getItem('userName'),
+          value: val,
+          gstPercent: gstPct,
+          gstAmount: gstAmount,
+          totalWithGst: val + gstAmount,
+          splits: currentSplits,
+          employeeId: currentSplits[0].employeeId,
+          employeeName: 'Sales Team',
+          bgRequired: bgReq,
+          bgAmount: bgReq === 'Yes' ? Number(document.getElementById('inp-ord-bgamt').value) : 0,
+          bgExpiryDate: bgReq === 'Yes' ? document.getElementById('inp-ord-bgdate').value : '',
+          factoryDocAttached: !document.getElementById('inp-no-fac-doc').checked,
+          status: 'Booked',
+          createdDate: existingOrder ? existingOrder.createdDate : getFormattedToday(),
+          createdAt: existingOrder ? existingOrder.createdAt : new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
 
-        if (docId) {
-          window.RevOpsStore.updateItem('orders', docId, orderData);
-        } else {
-          orderData.createdAt = new Date().toISOString();
-          window.RevOpsStore.addItem('orders', orderData);
+        window.RevOpsStore.saveRecord('orders', newOrder);
+
+        // Update Lead Funnel status to 'Order Confirmed'
+        if (quoteId) {
+          var quotes = window.RevOpsStore.getCollection('quotations') || [];
+          var q = quotes.find(function(it) { return it.id === quoteId; });
+          if (q && q.leadId) {
+            var leads = window.RevOpsStore.getCollection('leads') || [];
+            var l = leads.find(function(it) { return it.id === q.leadId; });
+            if (l) {
+              l.stage = 'Order Confirmed';
+              l.status = 'Order Confirmed';
+              window.RevOpsStore.saveRecord('leads', l);
+            }
+          }
+        }
+
+        // Log to Universal Audit Trail
+        if (window.RevOpsStore.logAudit) {
+          window.RevOpsStore.logAudit(
+            'Orders',
+            newOrder.poNumber,
+            existingOrder ? 'UPDATE' : 'CREATE',
+            (existingOrder ? 'Updated commercial order ' : 'Booked new commercial order ') + newOrder.customerName + ' (₹' + val.toLocaleString('en-IN') + ')',
+            existingOrder,
+            newOrder
+          );
         }
 
         closeOrderModal();
         renderOrdersTable();
-      }
-
-      function deleteOrder(docId) {
-        if (confirm("Are you sure you want to delete this commercial order?")) {
-          window.RevOpsStore.deleteItem('orders', docId);
-          renderOrdersTable();
-        }
       }
     </script>
   </body>

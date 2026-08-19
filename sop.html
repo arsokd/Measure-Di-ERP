@@ -138,91 +138,116 @@
       <div class="flex items-center space-x-3 pb-4 border-b border-slate-800">
         <div class="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 font-black flex items-center justify-center text-base border border-emerald-500/30">2</div>
         <div>
-          <h2 class="text-xl font-black text-white">Sales & Commercial Team SOP: Lead-to-Cash Workflow</h2>
-          <p class="text-xs text-slate-400">Standard operating guidelines for capturing leads, quotation approvals, order booking, and AR collections.</p>
+          <h2 class="text-xl font-black text-white">Sales & Commercial Team SOP: Lead-to-Cash Workflow (RevOps v28)</h2>
+          <p class="text-xs text-slate-400">Standard operating guidelines for capturing leads across 10 sources, cascading vertical specs, 8-stage funnel, 2-tier quote approvals, order split attribution, and finance invoicing.</p>
         </div>
       </div>
 
       <!-- Flow Chart Diagram for Sales -->
       <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 text-xs">
         <div class="font-bold text-emerald-400 mb-2 flex items-center gap-2">
-          <span>&rarr; Lead-to-Cash Execution Pipeline:</span>
+          <span>&rarr; RevOps 5-Stage Commercial Execution Chain:</span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 text-center">
           <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-700">
             <div class="font-bold text-white">1. Capture Lead</div>
-            <div class="text-[10px] text-slate-400">leads.html</div>
+            <div class="text-[10px] text-slate-400">leads.html (8 Stages)</div>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-700">
-            <div class="font-bold text-white">2. Prepare Quote</div>
-            <div class="text-[10px] text-slate-400">quotations.html</div>
+            <div class="font-bold text-white">2. Quotation & Approvals</div>
+            <div class="text-[10px] text-slate-400">quotations.html (2-Tier)</div>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-700">
-            <div class="font-bold text-white">3. Discount Gate</div>
-            <div class="text-[10px] text-slate-400">Head / MD Sign-off</div>
+            <div class="font-bold text-white">3. Order Booking</div>
+            <div class="text-[10px] text-slate-400">orders.html (100% Split)</div>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-700">
-            <div class="font-bold text-white">4. Book Order</div>
-            <div class="text-[10px] text-slate-400">orders.html</div>
+            <div class="font-bold text-white">4. Finance Invoicing</div>
+            <div class="text-[10px] text-slate-400">invoices.html (Accounts Only)</div>
           </div>
           <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-700">
-            <div class="font-bold text-white">5. Invoice & AR</div>
-            <div class="text-[10px] text-slate-400">invoices / payments</div>
+            <div class="font-bold text-white">5. AR & Settlement</div>
+            <div class="text-[10px] text-slate-400">payments.html (BG/PG Alert)</div>
           </div>
         </div>
       </div>
 
       <div class="space-y-4 text-xs">
         <div class="p-4 bg-slate-800/60 rounded-xl border border-slate-700/80 space-y-2">
-          <h4 class="font-bold text-emerald-400 text-sm">Procedure 2.1: Lead Qualification & Funnel Stage Progression</h4>
-          <ol class="list-decimal list-inside text-slate-300 space-y-1.5 leading-relaxed">
-            <li>Open <strong>Leads & Pipeline CRM</strong> (<code>leads.html</code>) and click <strong>Add New Lead</strong>.</li>
-            <li>Enter Client Name, Project Scope, Estimated Deal Value (INR Lakhs), Target Close Date, and Vertical.</li>
-            <li>Assign Stage: <strong>New Enquiry (10%)</strong> &rarr; <strong>Technical Qualified (30%)</strong> &rarr; <strong>Proposal Quoted (60%)</strong> &rarr; <strong>Negotiation (80%)</strong> &rarr; <strong>Won (100%)</strong>.</li>
-            <li>Update notes after each client interaction. Stale leads (&gt;30 days without activity) will flag in the Director Review dashboard.</li>
-          </ol>
+          <h4 class="font-bold text-emerald-400 text-sm">Procedure 2.1: Commercial Lead Entry, 10 Standard Sources & 8-Stage Funnel</h4>
+          <p class="text-slate-300 leading-relaxed">
+            Open <strong>Leads & Pipeline</strong> (<code>leads.html</code>) and click <strong>+ Add New Lead</strong>. Follow these mandatory entry rules:
+          </p>
+          <ul class="list-disc list-inside text-slate-300 space-y-1.5 leading-relaxed">
+            <li><strong>Lead Source (Select from 10 Prescribed Channels):</strong> India Mart, Tender / E-Procurement Portal, SEO, Existing Client, Customer Reference, Ariba, OEM, Mail Marketing / Digital Marketing, Direct Customer Approach, or Exhibition / Trade Fair.</li>
+            <li><strong>Industry Origin:</strong> Select from <em>Onboard</em>, <em>Project</em> (specify sector: Steel, Cement, Power Plant, Infrastructure, Mining, Other), <em>Crane</em>, or <em>Spare/Service</em>.</li>
+            <li><strong>Vertical & Cascading Product Specs:</strong> Choose Vertical (<em>Projects, Onboard, Crane, Service and Parts</em>). The product dropdown will dynamically filter only items belonging to that vertical from the Product Master, auto-filling technical specs and HSN codes.</li>
+            <li><strong>Multi-Contact Entry:</strong> Add up to 5 customer contact persons with Designation, Mobile, Email, and Auto-CC toggles.</li>
+            <li><strong>8-Stage Funnel Progression:</strong> Maintain active progression through:
+              <ol class="list-decimal list-inside ml-4 text-slate-400 space-y-0.5 mt-1">
+                <li>Customer Contacted / Contact Attempted</li>
+                <li>Follow-Up Scheduled</li>
+                <li>Site Visit Completed</li>
+                <li>Technical Evaluation in Progress</li>
+                <li>Commercial Offer Submitted (Auto-synced from Quotation)</li>
+                <li>Pre-Qualification Completed (Eligibility confirmed)</li>
+                <li>Lead Qualified (Confirmed sales opportunity with high order probability)</li>
+                <li>Order Confirmed (Won - Ready for PO / Order Booking)</li>
+              </ol>
+            </li>
+          </ul>
         </div>
 
         <div class="p-4 bg-slate-800/60 rounded-xl border border-slate-700/80 space-y-2">
-          <h4 class="font-bold text-emerald-400 text-sm">Procedure 2.2: Quotation Generation & Multi-Tier Discount Approval Matrix</h4>
-          <p class="text-slate-300">Measure DI enforces strict gross margin controls through automated quotation approval gates:</p>
+          <h4 class="font-bold text-emerald-400 text-sm">Procedure 2.2: Quotation Generation & 2-Tier Approval Workflow</h4>
+          <p class="text-slate-300">Quotation pricing and gross margins follow a strict 2-tier approval hierarchy:</p>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs border border-slate-700 rounded-lg overflow-hidden mt-2">
               <thead class="bg-slate-900 text-slate-200">
                 <tr>
-                  <th class="p-2.5 border-b border-slate-700 font-bold">Discount Percentage</th>
-                  <th class="p-2.5 border-b border-slate-700 font-bold">Approval Authority Required</th>
-                  <th class="p-2.5 border-b border-slate-700 font-bold">Action in System</th>
+                  <th class="p-2.5 border-b border-slate-700 font-bold">Approval Level</th>
+                  <th class="p-2.5 border-b border-slate-700 font-bold">Designated Authority</th>
+                  <th class="p-2.5 border-b border-slate-700 font-bold">Threshold Condition</th>
+                  <th class="p-2.5 border-b border-slate-700 font-bold">System Enforcement</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-800 text-slate-300">
-                <tr class="bg-emerald-950/20">
-                  <td class="p-2.5 font-bold text-emerald-400">0% to 15.0%</td>
-                  <td class="p-2.5">Sales Engineer / Standard Sales Team</td>
-                  <td class="p-2.5">Auto-Approved. Instant PDF generation & client dispatch.</td>
-                </tr>
-                <tr class="bg-amber-950/20">
-                  <td class="p-2.5 font-bold text-amber-400">15.1% to 25.0%</td>
-                  <td class="p-2.5">Commercial Head / VP RevOps</td>
-                  <td class="p-2.5">Quotation locks in <code>Pending Head Approval</code> status until authorized.</td>
+                <tr class="bg-slate-850">
+                  <td class="p-2.5 font-bold text-indigo-400">Level 1</td>
+                  <td class="p-2.5 font-semibold text-white">Mr. Murugan V (Sales & Marketing Head)</td>
+                  <td class="p-2.5">Standard Quotations (&le;25% Discount)</td>
+                  <td class="p-2.5">Mandatory technical & commercial review before client email dispatch.</td>
                 </tr>
                 <tr class="bg-rose-950/20">
-                  <td class="p-2.5 font-bold text-rose-400">Greater than 25.0%</td>
-                  <td class="p-2.5">Managing Director (MD) Exclusive</td>
-                  <td class="p-2.5">Hard escalation to MD. Requires executive business case notes.</td>
+                  <td class="p-2.5 font-bold text-rose-400">Level 2</td>
+                  <td class="p-2.5 font-semibold text-white">Mr. Ravichandran (Director)</td>
+                  <td class="p-2.5 font-bold text-amber-400">Discount Exceeds 25.0%</td>
+                  <td class="p-2.5">Escalated to Director sign-off. Quotation locked until approved.</td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <p class="text-[11px] text-slate-400 mt-1">Discounts can be entered as absolute value (₹) with auto % calculation. Up to 10 PDF/ZIP attachments and delivery commitment lead-time are supported.</p>
         </div>
 
         <div class="p-4 bg-slate-800/60 rounded-xl border border-slate-700/80 space-y-2">
-          <h4 class="font-bold text-emerald-400 text-sm">Procedure 2.3: Order Booking & Purchase Order (PO) Intake</h4>
-          <ol class="list-decimal list-inside text-slate-300 space-y-1.5 leading-relaxed">
-            <li>Once the quotation is approved and customer PO is received, convert Quote to Order or open <strong>Orders & Contracts</strong> (<code>orders.html</code>).</li>
-            <li>Enter Customer PO Number, PO Date, Agreed Value, and Payment Terms (e.g., 20% Advance, 70% Against Proforma, 10% Post-Commissioning).</li>
-            <li>Upload or reference scanned purchase order and tag assigned Project Manager / Commissioning Lead.</li>
-          </ol>
+          <h4 class="font-bold text-emerald-400 text-sm">Procedure 2.3: Order Booking & 100% Sales Contribution Split</h4>
+          <ul class="list-disc list-inside text-slate-300 space-y-1">
+            <li>Open <strong>Orders & Contracts</strong> (<code>orders.html</code>) and link the approved Quotation.</li>
+            <li><strong>Mandatory 100% Contribution Split:</strong> Add all contributing sales engineers and allocate percentage effort (summing to exactly 100%). This feeds individual AOP revenue achievement in <code>my-scorecard.html</code>.</li>
+            <li>Attach signed Customer PO Copy and Technical Factory Instruction Document.</li>
+            <li>Configure Bank / Performance Guarantee (BG/PG) amount and expiry date if required by customer contract.</li>
+          </ul>
+        </div>
+
+        <div class="p-4 bg-slate-800/60 rounded-xl border border-slate-700/80 space-y-2">
+          <h4 class="font-bold text-indigo-400 text-sm">Procedure 2.4: Finance Department Commercial Invoicing & AR Governance</h4>
+          <ul class="list-disc list-inside text-slate-300 space-y-1">
+            <li><strong>Role Restriction:</strong> Commercial Invoices (Tax & Proforma) are raised strictly by the <strong>Accounting and Finance Department</strong> (and Director / Super Admin). Sales engineers can view invoice statuses and balance dues.</li>
+            <li>Invoices auto-populate line items and GST details directly from confirmed POs.</li>
+            <li>Official invoices feature company bank details from <code>bankDetailsMaster</code> and the authorized signatory seal and digital signature of <strong>Mr. Ravichandran (Director)</strong>.</li>
+            <li>All activities across Leads, Quotes, Orders, Invoices, and Master Data are logged into the <strong>Universal Audit Trail</strong> viewable exclusively by the Director and Super Admin.</li>
+          </ul>
         </div>
       </div>
     </section>

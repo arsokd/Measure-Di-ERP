@@ -252,14 +252,14 @@ function renderRevOpsNavbar(userName, userRole, hasDirectReports) {
   ];
 
   var serviceItems = [
-    { title: "Service Tickets & QC", path: "service-tickets.html", desc: "Ticket raising, live popup alerts, SLA & repeat complaint detection", icon: "🛠️", show: true },
-    { title: "AMC Registration & Monitoring", path: "amc-contracts.html", desc: "Contract registry, quarterly PM visits, SLA & renewal countdown", icon: "📋", show: true },
-    { title: "Service & AMC Leads", path: "service-leads.html", desc: "Dedicated AMC renewals, breakdown calls & service opportunities", icon: "🎯", show: true },
-    { title: "AMC Quotations & Proposals", path: "amc-quotes.html", desc: "Comprehensive & Non-Comprehensive AMC commercial proposals", icon: "📑", show: true },
-    { title: "AMC Order Registration", path: "amc-orders.html", desc: "Booked AMC contracts & milestone execution agreements", icon: "📦", show: true },
-    { title: "AMC Invoice Generation", path: "amc-invoices.html", desc: "Quarterly & annual AMC billing milestones & GST tax invoices", icon: "🧾", show: true },
-    { title: "Parts Sales Revenue Model", path: "parts-sales.html", desc: "High-margin spare parts catalog, COGS, margins & revenue analytics", icon: "⚙️", show: true },
-    { title: "Warranty Management & Claims", path: "warranty-management.html", desc: "Installed base warranty tracking, RMA claims & 1-click AMC conversion", icon: "🛡️", show: true }
+    { title: "Service & Spares Leads", path: "service-leads.html", desc: "Dedicated pipeline for Spare Parts, Paid Services, AMC Renewals & Calls", icon: "🎯", show: true },
+    { title: "Spare Parts Sales Hub", path: "parts-sales.html", desc: "Spare parts catalog, inventory, prices, COGS & margin analytics", icon: "⚙️", show: true },
+    { title: "Service Tickets & QC", path: "service-tickets.html", desc: "Breakdown calls, on-site diagnostics, field SLAs & QC alerts", icon: "🛠️", show: true },
+    { title: "AMC Contracts & PM Visits", path: "amc-contracts.html", desc: "Contract registry, quarterly PM visits, SLA & renewal countdown", icon: "📋", show: true },
+    { title: "AMC & Service Quotations", path: "amc-quotes.html", desc: "Comprehensive & Non-Comprehensive AMC commercial proposals", icon: "📑", show: true },
+    { title: "AMC & Service Orders", path: "amc-orders.html", desc: "Booked AMC contracts & service execution agreements", icon: "📦", show: true },
+    { title: "AMC & Service Invoices", path: "amc-invoices.html", desc: "Quarterly & annual AMC billing milestones & GST tax invoices", icon: "🧾", show: true },
+    { title: "Warranty & Equipment Health", path: "warranty-management.html", desc: "Installed base warranty tracking, RMA claims & 1-click AMC conversion", icon: "🛡️", show: true }
   ];
 
   var roleBadgeColor = "bg-[#982B68]/30 text-[#E283BD] border-[#982B68]/50";
@@ -800,6 +800,47 @@ if (document.readyState === 'loading') {
   autoInitGlobalAuthGuard();
 }
 
+// Top Navigation Dropdown Toggle Handlers
+window.toggleTopNavMenu = function(event, menuId) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  var target = document.getElementById(menuId);
+  if (!target) return;
+  var container = target.closest('.top-nav-dropdown-container');
+  var isOpen = container ? container.classList.contains('open') : false;
+  
+  // Close all other dropdown containers first
+  document.querySelectorAll('.top-nav-dropdown-container').forEach(function(c) {
+    if (c !== container) {
+      c.classList.remove('open');
+    }
+  });
+
+  if (isOpen) {
+    if (container) container.classList.remove('open');
+  } else {
+    if (container) container.classList.add('open');
+  }
+};
+
+window.closeAllTopNavMenus = function() {
+  document.querySelectorAll('.top-nav-dropdown-container').forEach(function(c) {
+    c.classList.remove('open');
+  });
+  var userMenu = document.getElementById('topbar-user-menu');
+  if (userMenu) userMenu.classList.add('hidden');
+  var userMenuDesktop = document.getElementById('sidebar-user-menu-desktop');
+  if (userMenuDesktop) userMenuDesktop.classList.add('hidden');
+};
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.top-nav-dropdown-container') && !e.target.closest('#topbar-user-menu') && !e.target.closest('#sidebar-user-menu-desktop')) {
+    window.closeAllTopNavMenus();
+  }
+});
+
 function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, roleBadgeColor, currentPath, salesItems, financeItems, hrItems, perfItems, serviceItems, showTeamAndReviews, isAdmin) {
   function renderSidebarItem(title, path, icon, show) {
     if (!show) return '';
@@ -819,7 +860,10 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
       ? "px-2.5 py-1.5 rounded-lg text-xs font-bold bg-[#982B68] text-white shadow-xs flex items-center space-x-1"
       : "px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-all flex items-center space-x-1";
 
-    var itemsHtml = items.filter(function(i) { return i.show; }).map(function(item) {
+    var safeId = 'top-menu-' + title.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    var visibleItems = items.filter(function(i) { return i.show; });
+
+    var itemsHtml = visibleItems.map(function(item) {
       var isActive = currentPath === item.path;
       return `
         <a href="${item.path}" class="block p-2 rounded-lg text-xs hover:bg-slate-800 transition-colors ${isActive ? 'bg-indigo-900/80 text-white font-bold border-l-2 border-[#982B68]' : 'text-slate-300'}">
@@ -833,20 +877,35 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
     }).join('');
 
     return `
-      <div class="relative group">
-        <button class="${catClass} cursor-pointer">
-          <span class="text-xs">${iconEmoji}</span>
-          <span>${title}</span>
-          <svg class="w-3 h-3 text-slate-400 group-hover:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      <div class="relative group top-nav-dropdown-container">
+        <button type="button" onclick="toggleTopNavMenu(event, '${safeId}')" class="${catClass} cursor-pointer select-none" title="Open ${title} Menu">
+          <span class="text-xs pointer-events-none">${iconEmoji}</span>
+          <span class="pointer-events-none">${title}</span>
+          <svg class="w-3 h-3 text-slate-400 group-hover:rotate-180 transition-transform pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
-        <div class="absolute left-0 mt-1 w-60 bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-1.5 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all z-50 space-y-1">
-          ${itemsHtml}
+        <div id="${safeId}" class="top-nav-dropdown-menu absolute left-0 top-full pt-1.5 w-72 md:w-80 z-50">
+          <div class="bg-slate-900 border border-slate-700/90 rounded-xl shadow-2xl p-2 space-y-1 backdrop-blur-md">
+            <div class="text-[10px] font-black uppercase text-amber-400 tracking-wider px-2 py-1 border-b border-slate-800 flex items-center justify-between">
+              <span>${title} Hubs</span>
+              <span class="text-[9px] text-slate-400 font-bold">${visibleItems.length} Modules</span>
+            </div>
+            ${itemsHtml}
+          </div>
         </div>
       </div>
     `;
   }
 
   return `
+    <style id="revops-dropdown-core-styles">
+      .top-nav-dropdown-menu {
+        display: none;
+      }
+      .top-nav-dropdown-container:hover .top-nav-dropdown-menu,
+      .top-nav-dropdown-container.open .top-nav-dropdown-menu {
+        display: block !important;
+      }
+    </style>
     <!-- TOP HORIZONTAL NAVIGATION HEADER BAR (FIXED AT VERY TOP ACROSS ALL PAGES) -->
     <header class="fixed top-0 left-0 right-0 z-50 h-14 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-slate-200 shadow-xl px-4 flex items-center justify-between">
       

@@ -829,15 +829,39 @@
         setupQuotePageFilters();
         renderQuotations();
 
-        // Check URL params for leadId
+        // Check URL params for leadId or action=new
         var params = new URLSearchParams(window.location.search);
         var urlLeadId = params.get('leadId');
-        if (urlLeadId) {
+        var action = params.get('action');
+
+        if (urlLeadId || action === 'new') {
           openQuoteModal();
-          var leadSelect = document.getElementById('inp-quote-lead');
-          if (leadSelect) {
-            leadSelect.value = urlLeadId;
-            onLeadSelected();
+
+          // Check sessionStorage for prefilled lead or fetch from collection
+          var prefillLead = null;
+          var storedPrefill = sessionStorage.getItem('prefill_quote_lead');
+          if (storedPrefill) {
+            try {
+              prefillLead = JSON.parse(storedPrefill);
+            } catch(e) {}
+            sessionStorage.removeItem('prefill_quote_lead');
+          }
+
+          var targetLeadId = urlLeadId || (prefillLead ? prefillLead.id : '');
+          if (targetLeadId) {
+            var leadSelect = document.getElementById('inp-quote-lead');
+            if (leadSelect) {
+              // Ensure the option exists in select
+              var optionExists = Array.from(leadSelect.options).some(function(o) { return o.value === targetLeadId; });
+              if (!optionExists && prefillLead) {
+                var opt = document.createElement('option');
+                opt.value = prefillLead.id;
+                opt.innerText = (prefillLead.leadNumber || prefillLead.id) + " - " + prefillLead.customerName + " (" + (prefillLead.vertical || 'Projects') + ")";
+                leadSelect.appendChild(opt);
+              }
+              leadSelect.value = targetLeadId;
+            }
+            onLeadSelected(prefillLead);
           }
         }
       });
@@ -1221,21 +1245,31 @@
         document.getElementById('quoteModal').classList.add('hidden');
       }
 
-      function onLeadSelected() {
+      function onLeadSelected(passedLead) {
         var leadId = document.getElementById('inp-quote-lead').value;
         var notice = document.getElementById('lead-autofill-notice');
         
-        if (!leadId) {
+        var leads = window.RevOpsStore.getCollection('leads') || [];
+        var lead = passedLead || leads.find(function(l) { return l.id === leadId || l.leadNumber === leadId; });
+        
+        if (!lead && !leadId) {
           if (notice) notice.classList.add('hidden');
           return;
         }
 
-        var leads = window.RevOpsStore.getCollection('leads') || [];
-        var lead = leads.find(function(l) { return l.id === leadId; });
         if (!lead) return;
 
+        // Ensure dropdown reflects the leadId
+        var leadSelect = document.getElementById('inp-quote-lead');
+        if (leadSelect && lead.id && leadSelect.value !== lead.id) {
+          leadSelect.value = lead.id;
+        }
+
         // 1. Customer Name
-        document.getElementById('inp-quote-customer').value = lead.customerName || '';
+        var custInput = document.getElementById('inp-quote-customer');
+        if (custInput) {
+          custInput.value = lead.customerName || lead.companyName || lead.organization || '';
+        }
 
         // 2. Primary Contact Person Details
         var contactName = '';
@@ -1245,9 +1279,9 @@
 
         if (lead.contacts && Array.isArray(lead.contacts) && lead.contacts.length > 0) {
           var primary = lead.contacts[0];
-          contactName = primary.name || primary.contactPerson || '';
-          contactEmail = primary.email || '';
-          contactMobile = primary.phone || primary.mobile || '';
+          contactName = primary.name || primary.contactPerson || primary.contactName || '';
+          contactEmail = primary.email || primary.emailAddress || '';
+          contactMobile = primary.phone || primary.mobile || primary.contactPhone || '';
 
           if (lead.contacts.length > 1) {
             lead.contacts.slice(1).forEach(function(c) {
@@ -1255,21 +1289,20 @@
             });
           }
         } else {
-          contactName = lead.contactPerson || '';
+          contactName = lead.contactPerson || lead.contactName || lead.name || '';
           contactEmail = lead.contactEmail || lead.email || '';
           contactMobile = lead.contactPhone || lead.phone || lead.mobile || '';
         }
 
         if (lead.ccEmails) {
           if (typeof lead.ccEmails === 'string') secondaryEmails.push(lead.ccEmails);
+          else if (Array.isArray(lead.ccEmails)) secondaryEmails = secondaryEmails.concat(lead.ccEmails);
         }
 
         document.getElementById('inp-quote-contact').value = contactName;
         document.getElementById('inp-quote-email').value = contactEmail;
         document.getElementById('inp-quote-mobile').value = contactMobile;
-        if (secondaryEmails.length > 0) {
-          document.getElementById('inp-quote-cc').value = secondaryEmails.join(', ');
-        }
+        document.getElementById('inp-quote-cc').value = secondaryEmails.join(', ');
 
         // 3. Vertical Classification
         if (lead.vertical) {
@@ -1288,7 +1321,7 @@
         }
 
         // 5. Billing & Delivery Address
-        var addr = lead.address || lead.location || lead.siteLocation || lead.city || '';
+        var addr = lead.address || lead.location || lead.siteLocation || lead.city || lead.plantLocation || '';
         if (addr) {
           document.getElementById('inp-quote-address').value = addr;
         }
@@ -1296,31 +1329,34 @@
         // 6. Product Specs & Line Items Auto-Fill (Multi-product aware)
         if (lead.products && Array.isArray(lead.products) && lead.products.length > 0) {
           activeQuoteItems = lead.products.map(function(p, pIdx) {
-            var fullDesc = p.spec ? (p.name + ' - ' + p.spec) : p.name;
+            var prodName = p.name || p.productName || 'Industrial System';
+            var prodSpec = p.spec || p.technicalSpec || '';
+            var fullDesc = prodSpec ? (prodName + ' - ' + prodSpec) : prodName;
             return {
               itemId: "ITEM-" + (pIdx + 1),
               description: fullDesc,
-              hsnCode: p.hsn || '90318000',
+              hsnCode: p.hsn || p.hsnCode || '90318000',
               qty: Number(p.quantity) || 1,
-              unitPrice: Number(p.unitPrice) || 0,
+              unitPrice: Number(p.unitPrice) || Number(p.price) || 0,
               lineDiscountPercent: 0,
               taxPercent: 18
             };
           });
           renderQuoteLineItems();
           calculateQuoteTotals();
-        } else if (lead.productName || lead.productId) {
+        } else if (lead.productName || lead.productId || lead.product) {
           var prodsMaster = window.RevOpsStore.getCollection('productsMaster') || [];
+          var prodKey = lead.productName || lead.product || '';
           var matchedProd = prodsMaster.find(function(p) {
-            return p.id === lead.productId || p.productName === lead.productName || p.name === lead.productName;
+            return p.id === lead.productId || p.productName === prodKey || p.name === prodKey;
           });
 
-          var prodTitle = lead.productName || (matchedProd ? matchedProd.productName : 'Commercial System');
+          var prodTitle = prodKey || (matchedProd ? matchedProd.productName : 'Commercial System');
           var prodSpec = lead.productSpec || (matchedProd ? (matchedProd.technicalSpec || matchedProd.spec) : '');
           var fullDesc = prodSpec ? (prodTitle + ' - ' + prodSpec) : prodTitle;
           var hsn = lead.hsnCode || (matchedProd ? (matchedProd.hsnCode || matchedProd.hsn) : '90318000');
           var qty = Number(lead.quantity) || 1;
-          var rate = Number(lead.estimatedValue) || Number(lead.unitPrice) || Number(lead.dealValue) || (matchedProd ? (Number(matchedProd.unitPrice) || Number(matchedProd.price)) : 1000000);
+          var rate = Number(lead.unitPrice) || Number(lead.estimatedValue) || Number(lead.dealValue) || (matchedProd ? (Number(matchedProd.unitPrice) || Number(matchedProd.price)) : 1000000);
 
           activeQuoteItems = [
             {
@@ -1336,18 +1372,34 @@
 
           renderQuoteLineItems();
           calculateQuoteTotals();
+        } else if (lead.estimatedValue || lead.dealValue) {
+          // If no specific product name, create line item from deal value
+          activeQuoteItems = [
+            {
+              itemId: "ITEM-1",
+              description: "Commercial Supply & Engineering Package",
+              hsnCode: "90318000",
+              qty: 1,
+              unitPrice: Number(lead.estimatedValue) || Number(lead.dealValue) || 1000000,
+              lineDiscountPercent: 0,
+              taxPercent: 18
+            }
+          ];
+          renderQuoteLineItems();
+          calculateQuoteTotals();
         }
 
         // 7. Show auto-fill success confirmation
         if (notice) {
+          var repName = lead.employeeName || (lead.employeeId ? lead.employeeId : '');
           notice.innerHTML = `
             <span class="text-base">✓</span>
             <div>
-              <strong>Auto-filled from CRM Lead:</strong> ${escapeHtml(lead.customerName)} 
+              <strong>Auto-filled from CRM Lead:</strong> ${escapeHtml(lead.customerName || lead.companyName)} 
               ${contactName ? '• Contact: ' + escapeHtml(contactName) : ''} 
               ${contactMobile ? '• Ph: ' + escapeHtml(contactMobile) : ''} 
               ${lead.vertical ? '• Vertical: ' + escapeHtml(lead.vertical) : ''} 
-              ${lead.employeeName ? '• Rep: ' + escapeHtml(lead.employeeName) : ''}
+              ${repName ? '• Rep: ' + escapeHtml(repName) : ''}
             </div>
           `;
           notice.classList.remove('hidden');
@@ -1361,30 +1413,31 @@
 
         activeQuoteItems.forEach(function(item, idx) {
           var tr = document.createElement('tr');
+          tr.setAttribute('data-row-idx', idx);
           
           var lineSub = (item.qty || 1) * (item.unitPrice || 0) * (1 - (item.lineDiscountPercent || 0)/100);
 
           tr.innerHTML = `
             <td class="p-2">
-              <input type="text" value="${escapeHtml(item.description || '')}" oninput="updateLineItem(${idx}, 'description', this.value)" placeholder="Item Description" class="w-full px-2 py-1 border border-slate-300 rounded text-xs">
+              <input type="text" value="${escapeHtml(item.description || '')}" oninput="updateLineItem(${idx}, 'description', this.value, this)" placeholder="Item Description" class="quote-item-desc w-full px-2 py-1 border border-slate-300 rounded text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="p-2">
-              <input type="text" value="${escapeHtml(item.hsnCode || '842389')}" oninput="updateLineItem(${idx}, 'hsnCode', this.value)" placeholder="HSN" class="w-full px-1.5 py-1 border border-slate-300 rounded text-xs text-center font-mono">
+              <input type="text" value="${escapeHtml(item.hsnCode || '842389')}" oninput="updateLineItem(${idx}, 'hsnCode', this.value, this)" placeholder="HSN" class="quote-item-hsn w-full px-1.5 py-1 border border-slate-300 rounded text-xs text-center font-mono focus:ring-1 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="p-2">
-              <input type="number" value="${item.qty || 1}" min="1" oninput="updateLineItem(${idx}, 'qty', this.value)" class="w-full px-1 py-1 border border-slate-300 rounded text-xs text-center font-bold">
+              <input type="number" value="${item.qty || 1}" min="1" oninput="updateLineItem(${idx}, 'qty', this.value, this)" class="quote-item-qty w-full px-1 py-1 border border-slate-300 rounded text-xs text-center font-bold focus:ring-1 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="p-2">
-              <input type="number" value="${item.unitPrice || 0}" min="0" step="1000" oninput="updateLineItem(${idx}, 'unitPrice', this.value)" class="w-full px-2 py-1 border border-slate-300 rounded text-xs text-right font-bold">
+              <input type="number" value="${item.unitPrice || 0}" min="0" step="1000" oninput="updateLineItem(${idx}, 'unitPrice', this.value, this)" class="quote-item-price w-full px-2 py-1 border border-slate-300 rounded text-xs text-right font-bold focus:ring-1 focus:ring-indigo-500 focus:outline-none">
             </td>
             <td class="p-2">
-              <input type="number" value="${item.lineDiscountPercent || 0}" min="0" max="80" step="1" oninput="updateLineItem(${idx}, 'lineDiscountPercent', this.value)" class="w-full px-1 py-1 border border-slate-300 rounded text-xs text-center text-amber-800 font-bold">
+              <input type="number" value="${item.lineDiscountPercent || 0}" min="0" max="80" step="1" oninput="updateLineItem(${idx}, 'lineDiscountPercent', this.value, this)" class="quote-item-disc w-full px-1 py-1 border border-slate-300 rounded text-xs text-center text-amber-800 font-bold focus:ring-1 focus:ring-indigo-500 focus:outline-none">
             </td>
-            <td class="p-2 text-right font-bold text-slate-800">
+            <td class="p-2 text-right font-bold text-slate-800 quote-item-subtotal">
               ₹${Math.round(lineSub).toLocaleString('en-IN')}
             </td>
             <td class="p-2 text-center">
-              <button type="button" onclick="removeQuoteLineItem(${idx})" class="text-rose-500 hover:text-rose-700 font-black text-sm">&times;</button>
+              <button type="button" onclick="removeQuoteLineItem(${idx})" class="text-rose-500 hover:text-rose-700 font-black text-sm p-1 cursor-pointer" title="Remove item">&times;</button>
             </td>
           `;
           tbody.appendChild(tr);
@@ -1415,13 +1468,53 @@
         calculateQuoteTotals();
       }
 
-      function updateLineItem(idx, key, value) {
+      function updateLineItem(idx, key, value, inputEl) {
+        if (!activeQuoteItems[idx]) return;
+
         if (key === 'qty' || key === 'unitPrice' || key === 'lineDiscountPercent') {
           activeQuoteItems[idx][key] = parseFloat(value) || 0;
         } else {
           activeQuoteItems[idx][key] = value;
         }
-        renderQuoteLineItems();
+
+        // Live update the line item's subtotal directly in the DOM row without destroying focus
+        var tr = inputEl ? inputEl.closest('tr') : document.querySelector(`#quote-items-tbody tr[data-row-idx="${idx}"]`);
+        if (tr) {
+          var item = activeQuoteItems[idx];
+          var lineSub = (item.qty || 1) * (item.unitPrice || 0) * (1 - (item.lineDiscountPercent || 0)/100);
+          var subEl = tr.querySelector('.quote-item-subtotal');
+          if (subEl) {
+            subEl.innerText = '₹' + Math.round(lineSub).toLocaleString('en-IN');
+          }
+        }
+
+        // Recalculate totals without resetting or re-rendering input elements
+        calculateQuoteTotals();
+      }
+
+      function onDiscPercentChanged() {
+        var grossSubtotal = 0;
+        activeQuoteItems.forEach(function(it) {
+          grossSubtotal += (it.qty || 1) * (it.unitPrice || 0);
+        });
+        var pct = parseFloat(document.getElementById('inp-overall-disc-percent').value) || 0;
+        var amt = grossSubtotal * (pct / 100);
+        document.getElementById('inp-overall-disc-amount').value = Math.round(amt);
+        calculateQuoteTotals();
+      }
+
+      function onDiscAmtChanged() {
+        var grossSubtotal = 0;
+        activeQuoteItems.forEach(function(it) {
+          grossSubtotal += (it.qty || 1) * (it.unitPrice || 0);
+        });
+        var amt = parseFloat(document.getElementById('inp-overall-disc-amount').value) || 0;
+        if (grossSubtotal > 0) {
+          var pct = (amt / grossSubtotal) * 100;
+          document.getElementById('inp-overall-disc-percent').value = parseFloat(pct.toFixed(2));
+        } else {
+          document.getElementById('inp-overall-disc-percent').value = 0;
+        }
         calculateQuoteTotals();
       }
 
@@ -1439,11 +1532,20 @@
         var taxAmount = netSubtotal * 0.18; // 18% GST standard
         var grandTotal = netSubtotal + taxAmount;
 
-        document.getElementById('disp-gross-subtotal').innerText = '₹' + Math.round(grossSubtotal).toLocaleString('en-IN');
-        document.getElementById('disp-overall-disc-amt').innerText = '(₹' + Math.round(overallDiscAmt).toLocaleString('en-IN') + ')';
-        document.getElementById('disp-net-subtotal').innerText = '₹' + Math.round(netSubtotal).toLocaleString('en-IN');
-        document.getElementById('disp-tax-amount').innerText = '₹' + Math.round(taxAmount).toLocaleString('en-IN');
-        document.getElementById('disp-grand-total').innerText = '₹' + Math.round(grandTotal).toLocaleString('en-IN');
+        var grossEl = document.getElementById('disp-gross-subtotal');
+        if (grossEl) grossEl.innerText = '₹' + Math.round(grossSubtotal).toLocaleString('en-IN');
+        
+        var overallDiscEl = document.getElementById('disp-overall-disc-amt');
+        if (overallDiscEl) overallDiscEl.innerText = '(₹' + Math.round(overallDiscAmt).toLocaleString('en-IN') + ')';
+        
+        var netEl = document.getElementById('disp-net-subtotal');
+        if (netEl) netEl.innerText = '₹' + Math.round(netSubtotal).toLocaleString('en-IN');
+        
+        var taxEl = document.getElementById('disp-tax-amount');
+        if (taxEl) taxEl.innerText = '₹' + Math.round(taxAmount).toLocaleString('en-IN');
+        
+        var grandEl = document.getElementById('disp-grand-total');
+        if (grandEl) grandEl.innerText = '₹' + Math.round(grandTotal).toLocaleString('en-IN');
 
         // Approval Threshold Engine Banner
         var badge = document.getElementById('approval-rule-badge');

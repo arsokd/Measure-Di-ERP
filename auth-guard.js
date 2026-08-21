@@ -771,7 +771,7 @@ function executeDataExportCSV() {
   var csvStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csvLines.join('\n'));
   var link = document.createElement('a');
   link.setAttribute("href", csvStr);
-  link.setAttribute("download", "MeasureDI_" + col + "_" + new Date().toISOString().slice(0, 10) + ".csv");
+  link.setAttribute("download", "K30_ERP_" + col + "_" + new Date().toISOString().slice(0, 10) + ".csv");
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -865,8 +865,8 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
             </svg>
           </div>
           <div>
-            <span class="text-xs font-black text-white tracking-wider block leading-none">MEASURE DI</span>
-            <span class="text-[8px] font-bold text-[#E283BD] tracking-widest uppercase block leading-tight mt-0.5">MADE TO MEASURE REVOPS</span>
+            <span class="text-xs font-black text-white tracking-wider block leading-none">K-30_ERP</span>
+            <span class="text-[8px] font-bold text-[#E283BD] tracking-widest uppercase block leading-tight mt-0.5">ENTERPRISE REVOPS & ERP</span>
           </div>
         </a>
         <span class="hidden sm:inline-block text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${roleBadgeColor}">${userRole}</span>
@@ -950,8 +950,8 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
             </svg>
           </div>
           <div>
-            <span class="text-sm font-extrabold text-white tracking-wider block leading-none">MEASURE DI</span>
-            <span class="text-[9px] font-bold text-[#E283BD] tracking-widest uppercase block leading-tight mt-0.5">MADE TO MEASURE</span>
+            <span class="text-sm font-extrabold text-white tracking-wider block leading-none">K-30_ERP</span>
+            <span class="text-[9px] font-bold text-[#E283BD] tracking-widest uppercase block leading-tight mt-0.5">ENTERPRISE ERP</span>
           </div>
         </a>
         <span class="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800/60">REVOPS</span>
@@ -1143,11 +1143,11 @@ function getRevOpsNavigationHtml(userName, userRole, employeeId, userEmail, role
           <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
             <div class="flex items-center space-x-2.5">
               <div class="w-8 h-8 rounded-lg bg-[#982B68] text-white font-black flex items-center justify-center text-sm shadow-xs">
-                M
+                K
               </div>
               <div>
-                <span class="text-xs font-black text-white uppercase tracking-wider block">Measure DI</span>
-                <span class="text-[9px] font-bold text-[#E283BD]">App Navigation</span>
+                <span class="text-xs font-black text-white uppercase tracking-wider block">K-30_ERP</span>
+                <span class="text-[9px] font-bold text-[#E283BD]">Enterprise RevOps</span>
               </div>
             </div>
             <button onclick="toggleMobileNavDrawer()" class="p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-lg text-lg font-bold">&times;</button>

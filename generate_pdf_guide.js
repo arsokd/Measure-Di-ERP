@@ -28,7 +28,7 @@ function buildDemoGuidePDF() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text('Measure DI Technologies -- RevOps Enterprise Operating Manual & SOP Guide', margin, margin - 3);
+    doc.text('K-30_ERP -- Enterprise Operating Manual & Standard Operating Procedures (SOP)', margin, margin - 3);
     doc.setDrawColor(226, 232, 240);
     doc.line(margin, margin - 1, pageWidth - margin, margin - 1);
   }
@@ -39,7 +39,7 @@ function buildDemoGuidePDF() {
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
     doc.text(`Page ${pageNum}`, pageWidth - margin - 12, pageHeight - 8);
-    doc.text('CONFIDENTIAL -- Measure DI RevOps Enterprise Standard Operating Procedures & User Guide (v3.0)', margin, pageHeight - 8);
+    doc.text('CONFIDENTIAL -- K-30_ERP Enterprise Standard Operating Procedures & User Guide (v3.0)', margin, pageHeight - 8);
   }
 
   // ==========================================
@@ -55,7 +55,7 @@ function buildDemoGuidePDF() {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   doc.setTextColor(255, 255, 255);
-  doc.text('Measure DI Technologies', margin + 9, y + 12);
+  doc.text('K-30_ERP Enterprise Platform', margin + 9, y + 12);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12.5);

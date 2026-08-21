@@ -1,55 +1,57 @@
-# Netlify Deployment Guide for Measure DI RevOps
+# Netlify & GitHub Deployment Guide: K-30_ERP
 
-**Account Email configured for deployment**: `measuredichennai@gmail.com`
+**Project Name**: `K-30_ERP`  
+**Target Netlify URL**: `https://k-30-erp.netlify.app`  
+**Configured Admin Account**: `measuredichennai@gmail.com`
 
 ---
 
-## Deployment Settings
+## 1. Setting / Changing the Name on GitHub
+
+To name or rename your repository as **`K-30_ERP`** on GitHub:
+
+1. Open your repository on [GitHub](https://github.com).
+2. Click on the **Settings** tab (the gear icon near the top right of the repo).
+3. Under the **General** section, find **Repository name**.
+4. Enter **`K-30_ERP`** (or `k-30-erp`).
+5. Click **Rename**.
+6. GitHub will automatically handle redirecting old git remote URLs to the new repository name.
+
+---
+
+## 2. Setting / Changing the Name on Netlify
+
+To name or rename your Netlify site as **`K-30_ERP`**:
+
+1. Log in to your [Netlify Dashboard](https://app.netlify.com) using `measuredichennai@gmail.com`.
+2. Select your site.
+3. Go to **Site configuration** -> **General** -> **Site details**.
+4. Click **Change site name**.
+5. Type **`k-30-erp`** (Netlify subdomains accept lowercase letters, numbers, and hyphens).
+6. Click **Save**.
+7. Your app will immediately be live at: **`https://k-30-erp.netlify.app`**
+
+---
+
+## 3. Build & Deployment Settings
 
 - **Build Command**: `npm run build`
 - **Publish Directory**: `dist`
-- **Node.js Version**: `20.x` or higher
-- **Configuration File**: `netlify.toml` (already included in repository root)
+- **Functions Directory**: `netlify/functions`
+- **Node.js Version**: `20.x`
+- **Configuration File**: `netlify.toml` (included in repository root)
 
 ---
 
-## Option 1: Deploy via GitHub (Recommended for Automatic Updates)
+## 4. Deployment Methods
 
-1. **Log in to Netlify**:
-   - Go to [https://app.netlify.com](https://app.netlify.com)
-   - Sign in using **`measuredichennai@gmail.com`** (or GitHub connected to this account).
+### Option A: Automatic CI/CD with GitHub (Recommended)
+1. In Netlify, click **"Add new site"** -> **"Import an existing project"**.
+2. Connect to GitHub and select repository **`K-30_ERP`**.
+3. Build settings will auto-populate from `netlify.toml`.
+4. Click **Deploy K-30_ERP**. Every git push will automatically build and deploy the latest version.
 
-2. **Add New Site**:
-   - Click **"Add new site"** -> **"Import an existing project"**.
-   - Select **GitHub** as your Git provider.
-
-3. **Select Repository**:
-   - Choose your repository for **Measure DI RevOps**.
-
-4. **Verify Build Settings** (Auto-detected from `netlify.toml`):
-   - **Base directory**: (leave blank / root)
-   - **Build command**: `npm run build`
-   - **Publish directory**: `dist`
-
-5. **Deploy Site**:
-   - Click **"Deploy site"**. Netlify will build and host your application in ~1 minute!
-
----
-
-## Option 2: Direct Drag-and-Drop Deployment (Instant)
-
-1. **Build locally or download output**:
-   - Run `npm run build` in your terminal to generate the `dist` folder.
-2. **Log in to Netlify**:
-   - Visit [https://app.netlify.com/drop](https://app.netlify.com/drop) with **`measuredichennai@gmail.com`**.
-3. **Upload**:
-   - Drag and drop the `dist` folder directly onto the upload zone.
-   - Your site will be live instantly!
-
----
-
-## Custom Domain Setup (Optional)
-To point your custom domain (e.g. `revops.measuredi.com`) to Netlify:
-1. Go to **Site settings** -> **Domain management** on Netlify.
-2. Click **"Add a domain"** and enter your corporate domain.
-3. Update your DNS CNAME record to point to your Netlify app URL.
+### Option B: Direct Drag-and-Drop Deploy
+1. Run `npm run build` to generate the `dist` folder.
+2. Go to [https://app.netlify.com/drop](https://app.netlify.com/drop).
+3. Drag and drop the `dist` folder directly onto the upload zone.

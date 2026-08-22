@@ -561,11 +561,11 @@
 
             <div>
               <label class="block font-bold text-slate-700 mb-1">Severity / Priority *</label>
-              <select id="input-severity" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
-                <option value="Critical">Critical (SLA 24 Hrs)</option>
-                <option value="High" selected>High (SLA 48 Hrs)</option>
-                <option value="Medium">Medium (SLA 72 Hrs)</option>
-                <option value="Low">Low (SLA 120 Hrs)</option>
+              <select id="input-severity" required onchange="handleSeveritySelectChange(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-semibold">
+                <option value="Critical">Critical (SLA 1 Day)</option>
+                <option value="High" selected>High (SLA 2 Days)</option>
+                <option value="Medium">Medium (SLA 3 Days)</option>
+                <option value="Low">Low (SLA 5 Days)</option>
               </select>
             </div>
           </div>
@@ -1251,10 +1251,25 @@
           var sevSelect = document.getElementById('input-severity');
           if (sevSelect && (sevSelect.value === 'Low' || sevSelect.value === 'Medium')) {
             sevSelect.value = 'High';
+            handleSeveritySelectChange('High');
           }
         } else {
           banner.classList.add('hidden');
         }
+      }
+
+      function handleSeveritySelectChange(sevVal) {
+        var slaDateInput = document.getElementById('input-sla-date');
+        if (!slaDateInput) return;
+        var daysToAdd = 2; // Default for High
+        if (sevVal === 'Critical') daysToAdd = 1;
+        else if (sevVal === 'High') daysToAdd = 2;
+        else if (sevVal === 'Medium') daysToAdd = 3;
+        else if (sevVal === 'Low') daysToAdd = 5;
+
+        var targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + daysToAdd);
+        slaDateInput.value = targetDate.toISOString().slice(0, 10);
       }
 
       function parseDateDMY(dateStr) {
@@ -1969,13 +1984,10 @@
           }
         }
 
-        // Set default SLA date to +2 days from now
-        var slaDateInput = document.getElementById('input-sla-date');
-        if (slaDateInput) {
-          var targetDate = new Date();
-          targetDate.setDate(targetDate.getDate() + 2);
-          slaDateInput.value = targetDate.toISOString().slice(0, 10);
-        }
+        // Set default severity (High = 2 Days SLA) and calculate Target SLA date
+        var sevSelect = document.getElementById('input-severity');
+        if (sevSelect) sevSelect.value = 'High';
+        handleSeveritySelectChange('High');
 
         // Reset Other category input
         var catSelect = document.getElementById('input-category');

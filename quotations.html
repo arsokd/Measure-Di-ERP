@@ -835,8 +835,6 @@
         var action = params.get('action');
 
         if (urlLeadId || action === 'new') {
-          openQuoteModal();
-
           // Check sessionStorage for prefilled lead or fetch from collection
           var prefillLead = null;
           var storedPrefill = sessionStorage.getItem('prefill_quote_lead');
@@ -848,21 +846,12 @@
           }
 
           var targetLeadId = urlLeadId || (prefillLead ? prefillLead.id : '');
-          if (targetLeadId) {
-            var leadSelect = document.getElementById('inp-quote-lead');
-            if (leadSelect) {
-              // Ensure the option exists in select
-              var optionExists = Array.from(leadSelect.options).some(function(o) { return o.value === targetLeadId; });
-              if (!optionExists && prefillLead) {
-                var opt = document.createElement('option');
-                opt.value = prefillLead.id;
-                opt.innerText = (prefillLead.leadNumber || prefillLead.id) + " - " + prefillLead.customerName + " (" + (prefillLead.vertical || 'Projects') + ")";
-                leadSelect.appendChild(opt);
-              }
-              leadSelect.value = targetLeadId;
-            }
-            onLeadSelected(prefillLead);
+          if (targetLeadId && !prefillLead) {
+            var leads = window.RevOpsStore.getCollection('leads') || [];
+            prefillLead = leads.find(function(l) { return l.id === targetLeadId || l.leadNumber === targetLeadId; });
           }
+
+          openQuoteModal(null, prefillLead);
         }
       });
 
@@ -1147,7 +1136,7 @@
       }
 
       // MODAL CONTROLS & FORM LOGIC
-      function openQuoteModal(quoteId) {
+      function openQuoteModal(quoteId, prefillLead) {
         currentEditingQuoteId = quoteId || null;
         var modal = document.getElementById('quoteModal');
         modal.classList.remove('hidden');
@@ -1234,6 +1223,10 @@
             { itemId: "ITEM-1", description: "Measure DI High-Precision Dynamic Weigher", hsnCode: "90318000", qty: 1, unitPrice: 1000000, lineDiscountPercent: 0, taxPercent: 18 }
           ];
           activeQuoteAttachments = [];
+
+          if (prefillLead) {
+            onLeadSelected(prefillLead);
+          }
         }
 
         renderQuoteLineItems();
@@ -1243,6 +1236,31 @@
 
       function closeQuoteModal() {
         document.getElementById('quoteModal').classList.add('hidden');
+      }
+
+      function syncLineItemsFromDOM() {
+        var rows = document.querySelectorAll('#quote-items-tbody tr');
+        if (!rows || rows.length === 0) return;
+        var updated = [];
+        rows.forEach(function(tr, idx) {
+          var descEl = tr.querySelector('.quote-item-desc');
+          var hsnEl = tr.querySelector('.quote-item-hsn');
+          var qtyEl = tr.querySelector('.quote-item-qty');
+          var priceEl = tr.querySelector('.quote-item-price');
+          var discEl = tr.querySelector('.quote-item-disc');
+
+          var orig = activeQuoteItems[idx] || {};
+          updated.push({
+            itemId: orig.itemId || ('ITEM-' + (idx + 1)),
+            description: descEl ? descEl.value : (orig.description || ''),
+            hsnCode: hsnEl ? hsnEl.value : (orig.hsnCode || '842389'),
+            qty: qtyEl ? (parseFloat(qtyEl.value) || 1) : (orig.qty || 1),
+            unitPrice: priceEl ? (parseFloat(priceEl.value) || 0) : (orig.unitPrice || 0),
+            lineDiscountPercent: discEl ? (parseFloat(discEl.value) || 0) : (orig.lineDiscountPercent || 0),
+            taxPercent: orig.taxPercent || 18
+          });
+        });
+        activeQuoteItems = updated;
       }
 
       function onLeadSelected(passedLead) {
@@ -1261,14 +1279,22 @@
 
         // Ensure dropdown reflects the leadId
         var leadSelect = document.getElementById('inp-quote-lead');
-        if (leadSelect && lead.id && leadSelect.value !== lead.id) {
-          leadSelect.value = lead.id;
+        if (leadSelect) {
+          var leadValueToMatch = lead.id || lead.leadNumber;
+          var optionExists = Array.from(leadSelect.options).some(function(o) { return o.value === leadValueToMatch; });
+          if (!optionExists && lead.id) {
+            var opt = document.createElement('option');
+            opt.value = lead.id;
+            opt.innerText = (lead.leadNumber || lead.id) + " - " + (lead.customerName || lead.companyName || 'Lead') + " (" + (lead.vertical || 'Projects') + ")";
+            leadSelect.appendChild(opt);
+          }
+          if (lead.id) leadSelect.value = lead.id;
         }
 
         // 1. Customer Name
         var custInput = document.getElementById('inp-quote-customer');
         if (custInput) {
-          custInput.value = lead.customerName || lead.companyName || lead.organization || '';
+          custInput.value = lead.customerName || lead.companyName || lead.organization || lead.clientName || '';
         }
 
         // 2. Primary Contact Person Details
@@ -1285,7 +1311,8 @@
 
           if (lead.contacts.length > 1) {
             lead.contacts.slice(1).forEach(function(c) {
-              if (c.email) secondaryEmails.push(c.email);
+              var em = c.email || c.emailAddress;
+              if (em && secondaryEmails.indexOf(em) === -1) secondaryEmails.push(em);
             });
           }
         } else {
@@ -1295,35 +1322,48 @@
         }
 
         if (lead.ccEmails) {
-          if (typeof lead.ccEmails === 'string') secondaryEmails.push(lead.ccEmails);
-          else if (Array.isArray(lead.ccEmails)) secondaryEmails = secondaryEmails.concat(lead.ccEmails);
-        }
-
-        document.getElementById('inp-quote-contact').value = contactName;
-        document.getElementById('inp-quote-email').value = contactEmail;
-        document.getElementById('inp-quote-mobile').value = contactMobile;
-        document.getElementById('inp-quote-cc').value = secondaryEmails.join(', ');
-
-        // 3. Vertical Classification
-        if (lead.vertical) {
-          var vertSelect = document.getElementById('inp-quote-vertical');
-          if (vertSelect) {
-            vertSelect.value = lead.vertical;
+          if (typeof lead.ccEmails === 'string') {
+            lead.ccEmails.split(',').forEach(function(em) {
+              var clean = em.trim();
+              if (clean && secondaryEmails.indexOf(clean) === -1) secondaryEmails.push(clean);
+            });
+          } else if (Array.isArray(lead.ccEmails)) {
+            lead.ccEmails.forEach(function(em) {
+              if (em && secondaryEmails.indexOf(em) === -1) secondaryEmails.push(em);
+            });
           }
         }
 
+        var contactEl = document.getElementById('inp-quote-contact');
+        if (contactEl) contactEl.value = contactName;
+        var emailEl = document.getElementById('inp-quote-email');
+        if (emailEl) emailEl.value = contactEmail;
+        var mobileEl = document.getElementById('inp-quote-mobile');
+        if (mobileEl) mobileEl.value = contactMobile;
+        var ccEl = document.getElementById('inp-quote-cc');
+        if (ccEl) ccEl.value = secondaryEmails.join(', ');
+
+        // 3. Vertical Classification
+        var targetVertical = lead.vertical || 'Projects';
+        var vertSelect = document.getElementById('inp-quote-vertical');
+        if (vertSelect) {
+          vertSelect.value = targetVertical;
+        }
+
         // 4. Sales Representative / Owner
-        if (lead.employeeId) {
+        var targetOwner = lead.employeeId;
+        if (targetOwner) {
           var ownerSelect = document.getElementById('inp-quote-owner');
           if (ownerSelect) {
-            ownerSelect.value = lead.employeeId;
+            ownerSelect.value = targetOwner;
           }
         }
 
         // 5. Billing & Delivery Address
         var addr = lead.address || lead.location || lead.siteLocation || lead.city || lead.plantLocation || '';
-        if (addr) {
-          document.getElementById('inp-quote-address').value = addr;
+        var addrEl = document.getElementById('inp-quote-address');
+        if (addrEl && addr) {
+          addrEl.value = addr;
         }
 
         // 6. Product Specs & Line Items Auto-Fill (Multi-product aware)
@@ -1395,7 +1435,7 @@
           notice.innerHTML = `
             <span class="text-base">✓</span>
             <div>
-              <strong>Auto-filled from CRM Lead:</strong> ${escapeHtml(lead.customerName || lead.companyName)} 
+              <strong>Auto-filled from CRM Lead:</strong> ${escapeHtml(lead.customerName || lead.companyName || 'Lead')} 
               ${contactName ? '• Contact: ' + escapeHtml(contactName) : ''} 
               ${contactMobile ? '• Ph: ' + escapeHtml(contactMobile) : ''} 
               ${lead.vertical ? '• Vertical: ' + escapeHtml(lead.vertical) : ''} 
@@ -1445,6 +1485,7 @@
       }
 
       function addQuoteLineItem() {
+        syncLineItemsFromDOM();
         activeQuoteItems.push({
           itemId: "ITEM-" + (activeQuoteItems.length + 1),
           description: "New Equipment / Service Item",
@@ -1459,6 +1500,7 @@
       }
 
       function removeQuoteLineItem(idx) {
+        syncLineItemsFromDOM();
         if (activeQuoteItems.length <= 1) {
           alert("Quotation must include at least one item line.");
           return;
@@ -1565,6 +1607,7 @@
 
       function handleQuoteSubmit(e) {
         e.preventDefault();
+        syncLineItemsFromDOM();
         var userRole = localStorage.getItem('userRole');
         var myEmpId = localStorage.getItem('employeeId') || 'E-001';
         var employees = window.RevOpsStore.getCollection('employees') || [];

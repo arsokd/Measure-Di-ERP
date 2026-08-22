@@ -49,7 +49,7 @@ if (typeof firebase !== 'undefined') {
             db._delegate = namedModularDb;
           }
         } catch (e1) {
-          console.warn("Could not bind named Firestore database:", e1);
+          console.warn("Named Firestore database lookup:", e1.message || e1);
         }
       }
     } else if (typeof firebase.firestore === 'function') {
@@ -68,3 +68,4 @@ if (typeof firebase !== 'undefined') {
 window.db = db;
 window.auth = auth;
 window.firebaseConfig = firebaseConfig;
+
